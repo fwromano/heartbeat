@@ -24,6 +24,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 FORCE_MODE=""
 INTERACTIVE=false
 ARG_TEAM=""
+ARG_SERVER_IP=""
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -31,6 +32,7 @@ while [[ $# -gt 0 ]]; do
         --interactive)  INTERACTIVE=true; shift ;;
         -i)             INTERACTIVE=true; shift ;;
         --team)         ARG_TEAM="$2"; shift 2 ;;
+        --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -39,6 +41,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
             echo "  --team \"Name\"    Set team/org name"
+            echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -144,7 +147,11 @@ main() {
 
     # ---- Server IP (auto-detect) ----
     local server_ip
-    server_ip=$(detect_ip)
+    if [[ -n "$ARG_SERVER_IP" ]]; then
+        server_ip="$ARG_SERVER_IP"
+    else
+        server_ip=$(detect_ip)
+    fi
     log_ok "Server IP: ${server_ip}"
 
     if $INTERACTIVE; then
