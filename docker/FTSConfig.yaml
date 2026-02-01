@@ -1,0 +1,24 @@
+System:
+  FTS_CONNECTION_MESSAGE: "Welcome to Test VFD TAK"
+  FTS_OPTIMIZE_API: true
+  FTS_SECRET_KEY: "Kzebm9jyMNYNxPGLzTHSd2iObaRljJsM"
+
+Addresses:
+  FTS_COT_PORT: 8087
+  FTS_SSLCOT_PORT: 8090
+  FTS_DP_ADDRESS: "192.168.1.237"
+  FTS_USER_ADDRESS: "192.168.1.237"
+  FTS_API_PORT: 19023
+  FTS_FED_PORT: 9000
+  FTS_API_ADDRESS: "0.0.0.0"
+
+FileSystem:
+  FTS_DB_PATH: "/opt/fts/data"
+  FTS_COT_TO_DB: true
+  FTS_MAINPATH: "/opt/fts"
+  FTS_CERTS_PATH: "/opt/fts/certs"
+  FTS_EXCHECK_PATH: "/opt/fts/ExCheck"
+  FTS_EXCHECK_TEMPLATE_PATH: "/opt/fts/ExCheck/template"
+  FTS_EXCHECK_CHECKLIST_PATH: "/opt/fts/ExCheck/checklist"
+  FTS_DATAPACKAGE_PATH: "/opt/fts/FreeTAKServerDataPackages"
+  FTS_LOGFILE_PATH: "/opt/fts/logs"

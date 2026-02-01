@@ -1,0 +1,32 @@
+# ==========================================================================
+# Heartbeat - TAK Server Configuration
+# ==========================================================================
+# Copy this to heartbeat.conf and edit, or run ./setup.sh to generate.
+
+# Organization / team name (shown in connection packages)
+TEAM_NAME="My Volunteer FD"
+
+# Server IP that clients connect to (auto-detected during setup)
+SERVER_IP=""
+
+# Deployment mode: "docker" or "native"
+DEPLOY_MODE="docker"
+
+# ---------------------------------------------------------------------------
+# Ports
+# ---------------------------------------------------------------------------
+COT_PORT=8087            # Main Cursor-on-Target streaming (TCP)
+SSL_COT_PORT=8089        # SSL CoT port
+API_PORT=19023           # FreeTAKServer REST API
+DATAPACKAGE_PORT=8443    # Data package service
+
+# ---------------------------------------------------------------------------
+# FreeTAKServer settings
+# ---------------------------------------------------------------------------
+FTS_SECRET_KEY=""        # Generated during setup
+FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
+
+# ---------------------------------------------------------------------------
+# Paths (relative to heartbeat repo root)
+# ---------------------------------------------------------------------------
+FTS_DATA_DIR=""          # Set during setup

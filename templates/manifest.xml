@@ -1,0 +1,12 @@
+<MissionPackageManifest version="2">
+    <Configuration>
+        <Parameter name="uid" value="{{PACKAGE_UID}}"/>
+        <Parameter name="name" value="{{PACKAGE_NAME}}"/>
+        <Parameter name="onReceiveDelete" value="true"/>
+    </Configuration>
+    <Contents>
+        <Content ignore="false" zipEntry="{{PREF_PATH}}">
+            <Parameter name="name" value="{{TEAM_NAME}} TAK Server"/>
+        </Content>
+    </Contents>
+</MissionPackageManifest>

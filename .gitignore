@@ -1,0 +1,31 @@
+# Generated packages
+packages/*.zip
+packages/*.tar.gz
+
+# Runtime data
+data/
+*.pid
+*.log
+
+# Config with secrets
+config/heartbeat.conf
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Docker volumes
+docker/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

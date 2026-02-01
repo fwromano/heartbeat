@@ -1,0 +1,274 @@
+#!/usr/bin/env bash
+# ==========================================================================
+# Heartbeat - TAK Server Manager for Volunteer Teams
+# ==========================================================================
+# Main CLI tool for managing your FreeTAKServer deployment.
+#
+# Usage:
+#   ./heartbeat <command> [args]
+#
+# Commands:
+#   start                Start the TAK server
+#   stop                 Stop the TAK server
+#   restart              Restart the TAK server
+#   status               Show server status
+#   logs [-f]            View server logs (-f to follow)
+#   package <name>       Generate a connection package for a team member
+#   packages             List all generated packages
+#   serve [port]         Serve packages over HTTP for phone download
+#   info                 Show server connection info
+#   update               Update FreeTAKServer
+#   uninstall            Remove everything
+#   help                 Show this help
+# ==========================================================================
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/common.sh"
+
+# ---------------------------------------------------------------------------
+# Help
+# ---------------------------------------------------------------------------
+show_help() {
+    banner
+    echo -e "${BOLD}Usage:${NC} ./heartbeat <command> [args]"
+    echo ""
+    echo -e "${BOLD}Server:${NC}"
+    echo "  start                Start the TAK server"
+    echo "  stop                 Stop the TAK server"
+    echo "  restart              Restart the TAK server"
+    echo "  status               Show server status and port checks"
+    echo "  listen               Live monitor -- follow connections and events"
+    echo "  logs [-f]            View server logs (-f to follow)"
+    echo ""
+    echo -e "${BOLD}Team:${NC}"
+    echo "  qr                   Show QR code to scan from iTAK/ATAK"
+    echo "  adduser <name>       Create a TAK server login for a team member"
+    echo "  package <name>       Generate a connection package for a member"
+    echo "  packages             List all generated packages"
+    echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
+    echo ""
+    echo -e "${BOLD}System:${NC}"
+    echo "  info                 Show server connection details"
+    echo "  update               Update FreeTAKServer to latest version"
+    echo "  systemd              Install systemd service (native mode, requires sudo)"
+    echo "  uninstall            Remove FreeTAKServer and optionally data"
+    echo "  help                 Show this help"
+    echo ""
+    echo -e "${BOLD}Examples:${NC}"
+    echo "  ./heartbeat start"
+    echo "  ./heartbeat package \"Chief Smith\""
+    echo "  ./heartbeat serve"
+    echo "  ./heartbeat status"
+    echo ""
+}
+
+# ---------------------------------------------------------------------------
+# Info command
+# ---------------------------------------------------------------------------
+cmd_info() {
+    load_config
+
+    banner
+    echo -e "${BOLD}Server Connection Info${NC}"
+    echo -e "${DIM}──────────────────────────────────${NC}"
+    echo ""
+    echo -e "  Team:        ${TEAM_NAME}"
+    echo -e "  Server IP:   ${CYAN}${SERVER_IP}${NC}"
+    echo -e "  CoT Port:    ${CYAN}${COT_PORT}${NC} (TCP)"
+    echo -e "  SSL Port:    ${SSL_COT_PORT}"
+    echo -e "  API Port:    ${API_PORT}"
+    echo -e "  Mode:        ${DEPLOY_MODE}"
+    echo ""
+    echo -e "  ${BOLD}Manual connection in iTAK/ATAK:${NC}"
+    echo -e "  1. Open Settings > Network Preferences > Servers"
+    echo -e "  2. Add new server:"
+    echo -e "     Address:  ${CYAN}${SERVER_IP}${NC}"
+    echo -e "     Port:     ${CYAN}${COT_PORT}${NC}"
+    echo -e "     Protocol: TCP"
+    echo ""
+
+    local public_ip
+    public_ip=$(detect_public_ip)
+    if [[ -n "$public_ip" && "$public_ip" != "$SERVER_IP" ]]; then
+        echo -e "  ${BOLD}Public IP:${NC} ${public_ip}"
+        echo -e "  ${DIM}(Use this if team connects over the internet, not local WiFi)${NC}"
+        echo ""
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Update command
+# ---------------------------------------------------------------------------
+cmd_update() {
+    load_config
+
+    if [[ "$DEPLOY_MODE" == "docker" ]]; then
+        log_step "Updating Docker image"
+        local compose_cmd
+        compose_cmd=$(get_compose_cmd)
+        if [[ -z "$compose_cmd" ]]; then
+            log_error "Docker Compose not available."
+            return 1
+        fi
+        (cd "$DOCKER_DIR" && $compose_cmd build --no-cache --quiet)
+        log_ok "Image rebuilt. Restart with: ./heartbeat restart"
+    else
+        log_step "Updating FreeTAKServer"
+        local venv_dir="${DATA_DIR}/venv"
+        if [[ ! -d "$venv_dir" ]]; then
+            log_error "Virtualenv not found. Run ./setup.sh first."
+            return 1
+        fi
+        "${venv_dir}/bin/pip" install --quiet --upgrade FreeTAKServer
+        log_ok "Updated. Restart with: ./heartbeat restart"
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Command prefix matching
+# Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
+# ---------------------------------------------------------------------------
+COMMANDS=(start stop restart status listen logs qr adduser package packages serve info update systemd uninstall help)
+
+resolve_cmd() {
+    local input="$1"
+    # Exact match first (including aliases)
+    case "$input" in
+        log) echo "logs"; return ;;
+        pkg) echo "package"; return ;;
+        pkgs|list) echo "packages"; return ;;
+        upgrade) echo "update"; return ;;
+        remove) echo "uninstall"; return ;;
+        --help|-h) echo "help"; return ;;
+    esac
+    # Prefix match
+    local matches=()
+    for c in "${COMMANDS[@]}"; do
+        if [[ "$c" == "$input"* ]]; then
+            matches+=("$c")
+        fi
+    done
+    if [[ ${#matches[@]} -eq 1 ]]; then
+        echo "${matches[0]}"
+    elif [[ ${#matches[@]} -gt 1 ]]; then
+        log_error "Ambiguous command '${input}' matches: ${matches[*]}"
+        exit 1
+    else
+        echo ""
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Route commands
+# ---------------------------------------------------------------------------
+raw_cmd="${1:-help}"
+shift || true
+
+cmd=$(resolve_cmd "$raw_cmd")
+if [[ -z "$cmd" ]]; then
+    log_error "Unknown command: ${raw_cmd}"
+    echo ""
+    show_help
+    exit 1
+fi
+
+case "$cmd" in
+    start)
+        source "${LIB_DIR}/server.sh"
+        server_start
+        ;;
+    stop)
+        source "${LIB_DIR}/server.sh"
+        server_stop
+        ;;
+    restart)
+        source "${LIB_DIR}/server.sh"
+        server_restart
+        ;;
+    status)
+        source "${LIB_DIR}/server.sh"
+        server_status
+        ;;
+    listen)
+        source "${LIB_DIR}/server.sh"
+        server_listen
+        ;;
+    logs)
+        source "${LIB_DIR}/server.sh"
+        server_logs "${1:-}"
+        ;;
+    qr)
+        source "${LIB_DIR}/qr.sh"
+        show_qr
+        ;;
+    adduser)
+        if [[ $# -lt 1 ]]; then
+            log_error "Usage: ./heartbeat adduser <username> [password]"
+            exit 1
+        fi
+        load_config
+        local au_name="$1"
+        local au_pass="${2:-heartbeat}"
+        log_info "Creating user '${au_name}'..."
+        docker exec heartbeat-fts python3 -c "
+import urllib.request, json, sys
+body = json.dumps({
+    'systemUsers': [{
+        'Name': sys.argv[1],
+        'Token': sys.argv[2],
+        'Password': sys.argv[2],
+        'Group': '__ANON__',
+        'DeviceType': 'mobile',
+        'Certs': 'true'
+    }]
+}).encode()
+req = urllib.request.Request(
+    'http://127.0.0.1:19023/ManageSystemUser/postSystemUser',
+    data=body,
+    headers={'Content-Type': 'application/json'}
+)
+r = urllib.request.urlopen(req, timeout=5)
+print(r.read().decode())
+" "$au_name" "$au_pass" 2>&1
+        if [[ $? -eq 0 ]]; then
+            log_ok "User created: ${au_name} / ${au_pass}"
+        else
+            log_error "Failed to create user. Is the server running?"
+        fi
+        ;;
+    package)
+        if [[ $# -lt 1 ]]; then
+            log_error "Usage: ./heartbeat package \"Member Name\""
+            exit 1
+        fi
+        source "${LIB_DIR}/package.sh"
+        generate_package "$1"
+        ;;
+    packages)
+        source "${LIB_DIR}/package.sh"
+        list_packages
+        ;;
+    serve)
+        source "${LIB_DIR}/package.sh"
+        serve_packages "${1:-9000}"
+        ;;
+    info)
+        cmd_info
+        ;;
+    update)
+        cmd_update
+        ;;
+    systemd)
+        source "${LIB_DIR}/install.sh"
+        install_systemd_service
+        ;;
+    uninstall)
+        source "${LIB_DIR}/install.sh"
+        uninstall
+        ;;
+    help)
+        show_help
+        ;;
+esac
