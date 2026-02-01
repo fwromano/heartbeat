@@ -415,25 +415,28 @@ _create_default_user() {
     local username="${FTS_USERNAME:-team}"
     local password="${FTS_PASSWORD:-heartbeat}"
 
-    # Wait for API to be ready
-    local i=0
-    while [[ $i -lt 15 ]]; do
-        if docker exec heartbeat-fts python3 -c "
-import urllib.request
+    if [[ "$DEPLOY_MODE" == "docker" ]]; then
+        # Wait for API to be ready
+        local i=0
+        while [[ $i -lt 15 ]]; do
+            if docker exec heartbeat-fts python3 -c "
+import urllib.request, os
+port = os.environ.get('API_PORT', '19023')
 try:
-    urllib.request.urlopen('http://127.0.0.1:19023/AuthenticateUser', timeout=2)
+    urllib.request.urlopen('http://127.0.0.1:' + port + '/AuthenticateUser', timeout=2)
 except urllib.error.HTTPError:
     pass  # 401 = API is up
 " 2>/dev/null; then
-            break
-        fi
-        sleep 1
-        ((i++))
-    done
+                break
+            fi
+            sleep 1
+            ((i++))
+        done
 
-    # Create user via FTS REST API
-    docker exec heartbeat-fts python3 -c "
-import urllib.request, json, sys
+        # Create user via FTS REST API
+        if ! docker exec heartbeat-fts python3 -c "
+import urllib.request, json, sys, os
+port = os.environ.get('API_PORT', '19023')
 body = json.dumps({
     'systemUsers': [{
         'Name': '${username}',
@@ -445,7 +448,7 @@ body = json.dumps({
     }]
 }).encode()
 req = urllib.request.Request(
-    'http://127.0.0.1:19023/ManageSystemUser/postSystemUser',
+    'http://127.0.0.1:' + port + '/ManageSystemUser/postSystemUser',
     data=body,
     headers={'Content-Type': 'application/json'}
 )
@@ -453,12 +456,51 @@ try:
     r = urllib.request.urlopen(req, timeout=5)
     if r.status == 201:
         print('ok')
-except urllib.error.HTTPError as e:
+except urllib.error.HTTPError:
     # User may already exist -- that's fine
     print('exists')
 except Exception:
     print('fail')
-" 2>/dev/null
+" 2>/dev/null; then
+            echo "fail"
+        fi
+        return
+    fi
+
+    # Native mode: call API on localhost
+    if ! has_cmd python3; then
+        echo "fail"
+        return
+    fi
+    if ! python3 - "$username" "$password" "$API_PORT" <<'PY' 2>/dev/null; then
+import urllib.request, urllib.error, json, sys
+name, pw, port = sys.argv[1], sys.argv[2], sys.argv[3]
+body = json.dumps({
+    'systemUsers': [{
+        'Name': name,
+        'Token': pw,
+        'Password': pw,
+        'Group': '__ANON__',
+        'DeviceType': 'mobile',
+        'Certs': 'true'
+    }]
+}).encode()
+req = urllib.request.Request(
+    f'http://127.0.0.1:{port}/ManageSystemUser/postSystemUser',
+    data=body,
+    headers={'Content-Type': 'application/json'}
+)
+try:
+    r = urllib.request.urlopen(req, timeout=5)
+    if r.status == 201:
+        print('ok')
+except urllib.error.HTTPError:
+    print('exists')
+except Exception:
+    print('fail')
+PY
+        echo "fail"
+    fi
 }
 
 _show_running_info() {

@@ -14,19 +14,19 @@ install_system_deps() {
         sudo apt-get update -qq
         sudo apt-get install -y -qq \
             python3 python3-pip python3-venv \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2-dev libxslt1-dev gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd dnf; then
         sudo dnf install -y -q \
             python3 python3-pip \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2-devel libxslt-devel gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd pacman; then
         sudo pacman -Sy --noconfirm --needed \
             python python-pip \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2 libxslt gcc 2>/dev/null
         log_ok "System dependencies installed"
     else

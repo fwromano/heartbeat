@@ -18,6 +18,8 @@ venv/
 
 # Docker volumes
 docker/data/
+docker/certs/
+docker/FTSConfig.yaml
 
 # OS
 .DS_Store
@@ -29,3 +31,7 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# Generated download page / QR artifacts
+packages/index.html
+packages/*.png

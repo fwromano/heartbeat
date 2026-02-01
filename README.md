@@ -22,6 +22,9 @@ Automates [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) setup so
 
 Open the URL on your phone, download the `.zip`, and import it into iTAK/ATAK.
 
+Setup generates default TAK credentials. You can view them anytime with `./heartbeat qr`
+or in `config/heartbeat.conf`.
+
 ## Requirements
 
 **Server** (any one of):
@@ -43,9 +46,12 @@ Server:
   stop                 Stop the TAK server
   restart              Restart the TAK server
   status               Show server status and port checks
+  listen               Live monitor -- follow connections and events
   logs [-f]            View server logs (-f to follow)
 
 Team:
+  qr                   Show QR code to scan from iTAK/ATAK
+  adduser <name> [pw]  Create a TAK server login for a team member
   package <name>       Generate a connection package for a member
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
@@ -66,6 +72,9 @@ Runs FreeTAKServer in an isolated container. Requires Docker and Docker Compose.
 ```bash
 ./setup.sh --docker
 ```
+
+Note: `./setup.sh` generates `docker/FTSConfig.yaml` from your config values; the
+tracked `docker/FTSConfig.yaml.example` is just a template.
 
 ### Native
 
@@ -114,7 +123,8 @@ heartbeat/
   docker/
     Dockerfile
     docker-compose.yml
-    FTSConfig.yaml
+    FTSConfig.yaml.example
+    certs/              Generated TLS certs (gitignored)
   templates/
     manifest.xml        Data package manifest template
     server.pref         Connection preferences template
@@ -126,6 +136,7 @@ heartbeat/
 
 - Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over the internet (port forwarding / cloud VM)
 - Default CoT port is **8087 TCP** - ensure your firewall allows it
+- DataPackage port is **8443** (FreeTAKServer default)
 - `./heartbeat info` shows both local and public IPs when available
 - For internet-facing deployments, consider using the SSL CoT port (8089) with certificates
 

@@ -55,7 +55,10 @@ auto_ports() {
     cot=$(find_free_port 8087)
     ssl=$(find_free_port 8089)
     api=$(find_free_port 19023)
-    dp=$(find_free_port 8443)
+    dp=8443
+    if ! port_available "$dp"; then
+        log_warn "Port 8443 in use, DataPackage service may not be reachable" >&2
+    fi
 
     # Log any ports that shifted (to stderr so they don't mix with output)
     if [[ "$cot" != "8087" ]]; then
@@ -67,10 +70,6 @@ auto_ports() {
     if [[ "$api" != "19023" ]]; then
         log_warn "Port 19023 in use, API port -> ${api}" >&2
     fi
-    if [[ "$dp" != "8443" ]]; then
-        log_warn "Port 8443 in use, DataPackage port -> ${dp}" >&2
-    fi
-
     echo "${cot} ${ssl} ${api} ${dp}"
 }
 
@@ -167,7 +166,7 @@ main() {
             cot_port=$(prompt_default "CoT port" "$cot_port")
             ssl_cot_port=$(prompt_default "SSL CoT port" "$ssl_cot_port")
             api_port=$(prompt_default "REST API port" "$api_port")
-            dp_port=$(prompt_default "DataPackage port" "$dp_port")
+            echo -e "${DIM}DataPackage port stays at 8443 (FreeTAKServer default).${NC}"
         fi
     fi
 
@@ -175,6 +174,16 @@ main() {
     local conn_msg="Welcome to ${team_name} TAK"
     if $INTERACTIVE; then
         conn_msg=$(prompt_default "Connection welcome message" "$conn_msg")
+    fi
+
+    # ---- Default credentials ----
+    local fts_user="team"
+    local fts_pass
+    fts_pass=$(gen_secret | head -c 16)
+    if $INTERACTIVE; then
+        echo ""
+        fts_user=$(prompt_default "Default TAK username" "$fts_user")
+        fts_pass=$(prompt_default "Default TAK password" "$fts_pass")
     fi
 
     # ---- Write config ----
@@ -197,8 +206,8 @@ FTS_SECRET_KEY=""
 FTS_CONNECTION_MSG="${conn_msg}"
 FTS_DATA_DIR="${DATA_DIR}/fts"
 
-FTS_USERNAME="team"
-FTS_PASSWORD="heartbeat"
+FTS_USERNAME="${fts_user}"
+FTS_PASSWORD="${fts_pass}"
 EOF
 
     log_ok "Config: ${HEARTBEAT_CONF}"
@@ -249,6 +258,11 @@ EOF
     echo -e "    1. Connect to the same WiFi as this machine"
     echo -e "    2. Scan the QR code with your phone camera"
     echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    echo ""
+    echo -e "  ${BOLD}Default credentials:${NC}"
+    echo ""
+    echo -e "    Username: ${CYAN}${fts_user}${NC}"
+    echo -e "    Password: ${CYAN}${fts_pass}${NC}"
     echo ""
     echo -e "  ${BOLD}Or connect manually in iTAK/ATAK:${NC}"
     echo ""

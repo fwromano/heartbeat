@@ -25,6 +25,10 @@ DATAPACKAGE_PORT=8443    # Data package service
 # ---------------------------------------------------------------------------
 FTS_SECRET_KEY=""        # Generated during setup
 FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
+FTS_USERNAME="team"      # Default TAK username (generated during setup)
+FTS_PASSWORD=""          # Default TAK password (generated during setup)
+FTS_USERNAME="team"
+FTS_PASSWORD=""
 
 # ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)
