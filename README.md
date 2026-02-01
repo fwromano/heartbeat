@@ -52,6 +52,7 @@ Server:
 Team:
   qr                   Show QR code to scan from iTAK/ATAK
   adduser <name> [pw]  Create a TAK server login for a team member
+  addusers <file>      Create users from a list (one name per line)
   package <name>       Generate a connection package for a member
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
@@ -61,6 +62,10 @@ System:
   update               Update FreeTAKServer to latest version
   systemd              Install systemd service (native mode, requires sudo)
   uninstall            Remove FreeTAKServer and optionally data
+
+Notes:
+- If you omit `[pw]` in `adduser`, the password defaults to the name.
+- `addusers` ignores blank lines and `#` comments.
 ```
 
 ## Setup Modes

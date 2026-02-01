@@ -178,12 +178,11 @@ main() {
 
     # ---- Default credentials ----
     local fts_user="team"
-    local fts_pass
-    fts_pass=$(gen_secret | head -c 16)
+    local fts_pass="${fts_user}"
     if $INTERACTIVE; then
         echo ""
         fts_user=$(prompt_default "Default TAK username" "$fts_user")
-        fts_pass=$(prompt_default "Default TAK password" "$fts_pass")
+        fts_pass=$(prompt_default "Default TAK password" "$fts_user")
     fi
 
     # ---- Write config ----
