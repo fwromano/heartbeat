@@ -67,6 +67,7 @@ System:
 Notes:
 - If you omit `[pw]` in `adduser`, the password defaults to the name.
 - `addusers` ignores blank lines and `#` comments.
+- Packages embed the server IP; if the IP changes, regenerate packages.
 ```
 
 ## Setup Modes
