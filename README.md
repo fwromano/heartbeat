@@ -167,6 +167,8 @@ For a one-command end-to-end deploy (requires OCI CLI), use `deploy_oracle_free_
 - Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over the internet (port forwarding / cloud VM)
 - Default CoT port is **8087 TCP** - ensure your firewall allows it
 - DataPackage port is **8443** (FreeTAKServer default)
+- If Tailscale is installed, setup defaults to the Tailscale IP (use --no-tailscale to force LAN)
+- WebMap defaults on (use --no-webmap to disable)
 - If TAILSCALE_MODE is enabled, Heartbeat will auto-refresh SERVER_IP to the current Tailscale IP
 - `./heartbeat info` shows both local and public IPs when available
 - For internet-facing deployments, consider using the SSL CoT port (8089) with certificates

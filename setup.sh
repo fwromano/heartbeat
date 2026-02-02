@@ -25,8 +25,10 @@ FORCE_MODE=""
 INTERACTIVE=false
 ARG_TEAM=""
 ARG_SERVER_IP=""
-USE_TAILSCALE=false
+FORCE_TAILSCALE=false
+DISABLE_TAILSCALE=false
 USE_WEBMAP=false
+DISABLE_WEBMAP=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -35,8 +37,10 @@ while [[ $# -gt 0 ]]; do
         -i)             INTERACTIVE=true; shift ;;
         --team)         ARG_TEAM="$2"; shift 2 ;;
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
-        --tailscale)    USE_TAILSCALE=true; shift ;;
+        --tailscale)    FORCE_TAILSCALE=true; shift ;;
+        --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
         --webmap)       USE_WEBMAP=true; shift ;;
+        --no-webmap)    DISABLE_WEBMAP=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -46,8 +50,10 @@ while [[ $# -gt 0 ]]; do
             echo "  --native         Force native pip deployment"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
-            echo "  --tailscale      Use the Tailscale IP for clients"
+            echo "  --tailscale      Force Tailscale IP for clients"
+            echo "  --no-tailscale   Do not use Tailscale (LAN IP only)"
             echo "  --webmap         Enable the browser map (WebMap)"
+            echo "  --no-webmap      Disable the browser map (WebMap)"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -145,7 +151,7 @@ main() {
     fi
 
     # ---- Team name ----
-    local team_name="${ARG_TEAM:-Volunteer FD}"
+    local team_name="${ARG_TEAM:-Test VFD}"
     if $INTERACTIVE; then
         echo ""
         team_name=$(prompt_default "Team / organization name" "$team_name")
@@ -154,31 +160,28 @@ main() {
     # ---- Server IP (auto-detect) ----
     local server_ip
     local tailscale_mode="false"
-    if $USE_TAILSCALE; then
-        server_ip=$(detect_tailscale_ip || true)
-        if [[ -z "$server_ip" ]]; then
+    local ts_ip
+    ts_ip=$(detect_tailscale_ip || true)
+    if $FORCE_TAILSCALE; then
+        if [[ -z "$ts_ip" ]]; then
             log_error "Tailscale IP not found. Is Tailscale running?"
             exit 1
         fi
+        server_ip="$ts_ip"
         tailscale_mode="true"
+    elif $DISABLE_TAILSCALE; then
+        if [[ -n "$ARG_SERVER_IP" ]]; then
+            server_ip="$ARG_SERVER_IP"
+        else
+            server_ip=$(detect_ip)
+        fi
     elif [[ -n "$ARG_SERVER_IP" ]]; then
         server_ip="$ARG_SERVER_IP"
+    elif [[ -n "$ts_ip" ]]; then
+        server_ip="$ts_ip"
+        tailscale_mode="true"
     else
         server_ip=$(detect_ip)
-        if $INTERACTIVE; then
-            local ts_ip
-            ts_ip=$(detect_tailscale_ip || true)
-            if [[ -n "$ts_ip" ]]; then
-                if prompt_yn "Use Tailscale IP (${ts_ip})?" "y"; then
-                    server_ip="$ts_ip"
-                    tailscale_mode="true"
-                fi
-            else
-                if prompt_yn "Use Tailscale IP?" "n"; then
-                    log_warn "Tailscale not detected or no IP assigned."
-                fi
-            fi
-        fi
     fi
     if [[ "$tailscale_mode" == "false" ]] && is_tailscale_ip "$server_ip"; then
         tailscale_mode="true"
@@ -215,15 +218,23 @@ main() {
     fi
 
     # ---- Web map (optional) ----
-    local webmap_enabled="false"
+    local webmap_enabled="true"
     local webmap_url="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
     local webmap_port="8000"
-    if $USE_WEBMAP; then
+    if $DISABLE_WEBMAP; then
+        webmap_enabled="false"
+    elif $USE_WEBMAP; then
         webmap_enabled="true"
-    elif $INTERACTIVE; then
-        if prompt_yn "Enable browser map (WebMap)?" "n"; then
-            webmap_enabled="true"
+    fi
+    if [[ "$webmap_enabled" == "true" ]]; then
+        if [[ "$(uname -s)" != "Linux" ]]; then
+            log_warn "WebMap supported on Linux x86_64 only. Disabling."
+            webmap_enabled="false"
         fi
+        case "$(uname -m)" in
+            x86_64|amd64) ;;
+            *) log_warn "WebMap supported on Linux x86_64 only. Disabling."; webmap_enabled="false" ;;
+        esac
     fi
 
     # ---- Default credentials ----

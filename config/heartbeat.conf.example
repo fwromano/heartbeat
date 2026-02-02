@@ -30,7 +30,7 @@ FTS_USERNAME="team"      # Default TAK username (generated during setup)
 FTS_PASSWORD="team"      # Default TAK password (generated during setup)
 
 # Web map (FreeTAKHub WebMap)
-WEBMAP_ENABLED="false"
+WEBMAP_ENABLED="true"
 WEBMAP_PORT=8000
 WEBMAP_URL="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
 FTS_USERNAME="team"
