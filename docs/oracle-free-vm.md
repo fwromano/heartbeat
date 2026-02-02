@@ -53,6 +53,18 @@ TEAM_NAME="My Team" PUBLIC_IP="$(curl -s ifconfig.me)" ./deploy_public_vm.sh
 This installs Docker, sets the server IP to your public IP, and starts the
 TAK server.
 
+## One-command option (local terminal)
+
+If you have the Oracle CLI configured, you can create the VM and deploy in one
+shot from your local terminal:
+```bash
+OCI_COMPARTMENT_OCID=ocid1.compartment... \
+OCI_SSH_PUBLIC_KEY=$HOME/.ssh/id_ed25519.pub \
+HEARTBEAT_REPO_URL=git@github.com:you/heartbeat.git \
+TEAM_NAME="My Team" \
+./deploy_oracle_free_vm.sh
+```
+
 ## 4) Connect phones over the internet
 
 On each phone (5G/LTE):

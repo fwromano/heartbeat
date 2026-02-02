@@ -144,6 +144,7 @@ See `docs/field-quickstart.md` for a one-page, non-technical runbook.
 ## Public VM Hosting (Oracle Free)
 
 See `docs/oracle-free-vm.md` for the Oracle Always Free VM setup.
+For a one-command end-to-end deploy (requires OCI CLI), use `deploy_oracle_free_vm.sh`.
 
 ## Network Notes
 
