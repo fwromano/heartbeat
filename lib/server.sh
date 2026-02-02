@@ -15,6 +15,11 @@ server_start() {
     else
         _native_start
     fi
+
+    if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
+        source "${LIB_DIR}/webmap.sh"
+        webmap_start || true
+    fi
 }
 
 _docker_start() {
@@ -80,6 +85,11 @@ server_stop() {
         _docker_stop
     else
         _native_stop
+    fi
+
+    if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
+        source "${LIB_DIR}/webmap.sh"
+        webmap_stop || true
     fi
 }
 
@@ -512,12 +522,15 @@ _show_running_info() {
     echo -e "  Port:    ${CYAN}${COT_PORT}${NC}"
     echo -e "  Proto:   TCP"
 
-    # Create default user
+    # Create default user and sync certificate package
     local user_result
     user_result=$(_create_default_user)
     if [[ "$user_result" == "ok" ]]; then
         log_ok "Default user created"
     fi
+
+    # Sync FTS-generated package (with SSL certs) to packages dir
+    _sync_fts_package
 
     # Show QR code
     if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
@@ -528,6 +541,68 @@ _show_running_info() {
     echo -e "  ${DIM}./heartbeat adduser NAME  add another team member${NC}"
     echo -e "  ${DIM}./heartbeat listen        live server monitor${NC}"
     echo ""
+}
+
+# Sync the default user's FTS certificate package to the packages dir
+_sync_fts_package() {
+    [[ "$DEPLOY_MODE" != "docker" ]] && return 0
+
+    local username="${FTS_USERNAME:-team}"
+
+    # Look up the package name from the FTS database
+    local fts_pkg
+    fts_pkg=$(docker exec heartbeat-fts python3 -c "
+import sqlite3, sys
+conn = sqlite3.connect('/opt/fts/FTSDataBase.db')
+cur = conn.cursor()
+cur.execute('SELECT certificate_package_name FROM SystemUser WHERE name = ?', (sys.argv[1],))
+row = cur.fetchone()
+print(row[0] if row and row[0] else '')
+conn.close()
+" "$username" 2>/dev/null)
+
+    [[ -z "$fts_pkg" ]] && return 0
+
+    local container_path="/opt/fts/certs/clientPackages/${fts_pkg}"
+    local local_pkg="${PACKAGES_DIR}/${username}_connection.zip"
+
+    if docker exec heartbeat-fts test -f "$container_path" 2>/dev/null; then
+        ensure_dir "$PACKAGES_DIR"
+        if docker cp "heartbeat-fts:${container_path}" "$local_pkg" 2>/dev/null; then
+            # Patch: enable connection by default (FTS sets enabled0=false)
+            _patch_package_enabled "$local_pkg"
+            log_ok "Connection package synced: ${local_pkg}"
+        fi
+    fi
+}
+
+# Fix up an FTS-generated data package for iTAK/ATAK compatibility:
+#   1. Enable connection by default (FTS sets enabled0=false)
+#   2. Restructure files to match manifest zipEntry paths (cert/ prefix)
+_patch_package_enabled() {
+    local pkg="$1"
+    [[ -f "$pkg" ]] || return 0
+    python3 -c "
+import zipfile, os, sys
+src = sys.argv[1]
+tmp = src + '.tmp'
+with zipfile.ZipFile(src, 'r') as zin, zipfile.ZipFile(tmp, 'w') as zout:
+    for item in zin.infolist():
+        data = zin.read(item.filename)
+        name = item.filename
+        # Patch enabled0=true in pref files
+        if name.endswith('.pref'):
+            text = data.decode('ascii', errors='replace')
+            text = text.replace('\"enabled0\" class=\"class java.lang.Boolean\">false',
+                                '\"enabled0\" class=\"class java.lang.Boolean\">true')
+            data = text.encode('ascii', errors='replace')
+        # Restructure: manifest.xml at root, everything else under cert/
+        if name == 'manifest.xml' or name.startswith('cert/'):
+            zout.writestr(name, data)
+        else:
+            zout.writestr('cert/' + name, data)
+os.replace(tmp, src)
+" "$pkg" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------

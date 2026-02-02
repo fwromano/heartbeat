@@ -26,6 +26,7 @@ INTERACTIVE=false
 ARG_TEAM=""
 ARG_SERVER_IP=""
 USE_TAILSCALE=false
+USE_WEBMAP=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -35,6 +36,7 @@ while [[ $# -gt 0 ]]; do
         --team)         ARG_TEAM="$2"; shift 2 ;;
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
         --tailscale)    USE_TAILSCALE=true; shift ;;
+        --webmap)       USE_WEBMAP=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -45,6 +47,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --tailscale      Use the Tailscale IP for clients"
+            echo "  --webmap         Enable the browser map (WebMap)"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -211,6 +214,18 @@ main() {
         conn_msg=$(prompt_default "Connection welcome message" "$conn_msg")
     fi
 
+    # ---- Web map (optional) ----
+    local webmap_enabled="false"
+    local webmap_url="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
+    local webmap_port="8000"
+    if $USE_WEBMAP; then
+        webmap_enabled="true"
+    elif $INTERACTIVE; then
+        if prompt_yn "Enable browser map (WebMap)?" "n"; then
+            webmap_enabled="true"
+        fi
+    fi
+
     # ---- Default credentials ----
     local fts_user="team"
     local fts_pass="${fts_user}"
@@ -243,6 +258,10 @@ FTS_DATA_DIR="${DATA_DIR}/fts"
 
 FTS_USERNAME="${fts_user}"
 FTS_PASSWORD="${fts_pass}"
+
+WEBMAP_ENABLED="${webmap_enabled}"
+WEBMAP_PORT=${webmap_port}
+WEBMAP_URL="${webmap_url}"
 EOF
 
     log_ok "Config: ${HEARTBEAT_CONF}"

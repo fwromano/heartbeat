@@ -135,8 +135,22 @@ heartbeat/
   templates/
     manifest.xml        Data package manifest template
     server.pref         Connection preferences template
+  docs/
+    field-quickstart.md
+    network-options.md
+    oracle-free-vm.md
   packages/             Generated .zip packages (gitignored)
   data/                 Runtime data (gitignored)
+```
+
+## Browser Map (WebMap)
+
+Heartbeat can auto-launch the FreeTAKHub WebMap (browser map) on startup.
+Enable it during setup with `./setup.sh --webmap` or set `WEBMAP_ENABLED="true"`
+in `config/heartbeat.conf`. WebMap will run locally and be accessible at:
+
+```
+http://SERVER_IP:8000/tak-map
 ```
 
 ## Field Quick Start

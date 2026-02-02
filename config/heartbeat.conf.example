@@ -28,6 +28,11 @@ FTS_SECRET_KEY=""        # Generated during setup
 FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
 FTS_USERNAME="team"      # Default TAK username (generated during setup)
 FTS_PASSWORD="team"      # Default TAK password (generated during setup)
+
+# Web map (FreeTAKHub WebMap)
+WEBMAP_ENABLED="false"
+WEBMAP_PORT=8000
+WEBMAP_URL="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
 FTS_USERNAME="team"
 FTS_PASSWORD=""
 

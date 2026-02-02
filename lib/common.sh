@@ -47,10 +47,13 @@ PACKAGES_DIR="${HEARTBEAT_DIR}/packages"
 LIB_DIR="${HEARTBEAT_DIR}/lib"
 DATA_DIR="${HEARTBEAT_DIR}/data"
 DOCKER_DIR="${HEARTBEAT_DIR}/docker"
+WEBMAP_DIR="${DATA_DIR}/webmap"
 
 HEARTBEAT_CONF="${CONFIG_DIR}/heartbeat.conf"
 PID_FILE="${DATA_DIR}/fts.pid"
 LOG_FILE="${DATA_DIR}/fts.log"
+WEBMAP_PID_FILE="${DATA_DIR}/webmap.pid"
+WEBMAP_LOG_FILE="${DATA_DIR}/webmap.log"
 
 # ---------------------------------------------------------------------------
 # Config
