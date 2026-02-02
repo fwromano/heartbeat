@@ -33,7 +33,7 @@ banner() {
     echo ' | __ | _| / _ \|   / | | | _ \ _| / _ \| |'
     echo ' |_||_|___/_/ \_\_|_\ |_| |___/___/_/ \_\_|'
     echo -e "${NC}"
-    echo -e " ${DIM}TAK Server Manager for Volunteer Teams${NC}"
+    echo -e " ${DIM}TAK Server Manager for Teams${NC}"
     echo ""
 }
 

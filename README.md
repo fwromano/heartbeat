@@ -1,6 +1,6 @@
 # Heartbeat
 
-TAK server deployment and management for volunteer teams.
+TAK server deployment and management for teams.
 
 Automates [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) setup so your team can share locations via [iTAK](https://apps.apple.com/us/app/itak/id1561656396) (iOS) and [ATAK](https://play.google.com/store/apps/details?id=com.atakmap.app.civ) (Android) over cellular or WiFi.
 

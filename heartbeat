@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ==========================================================================
-# Heartbeat - TAK Server Manager for Volunteer Teams
+# Heartbeat - TAK Server Manager for Teams
 # ==========================================================================
 # Main CLI tool for managing your FreeTAKServer deployment.
 #
