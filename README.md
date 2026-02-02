@@ -139,7 +139,11 @@ heartbeat/
 
 ## Field Quick Start
 
-See `docs/field-quickstart.md` for a one‑page, non‑technical runbook.
+See `docs/field-quickstart.md` for a one-page, non-technical runbook.
+
+## Public VM Hosting (Oracle Free)
+
+See `docs/oracle-free-vm.md` for the Oracle Always Free VM setup.
 
 ## Network Notes
 

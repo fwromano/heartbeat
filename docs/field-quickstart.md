@@ -1,6 +1,6 @@
-# Field Quick Start (One‑Page)
+# Field Quick Start (One-Page)
 
-Goal: get everyone’s phone sharing live location on the same map, fast.
+Goal: get everyone's phone sharing live location on the same map, fast.
 
 ## 1) Start the server
 ```bash
@@ -26,14 +26,14 @@ Option A (recommended):
 ```bash
 ./heartbeat serve
 ```
-Phones open: `http://SERVER_IP:9000` → download zip → import into iTAK/ATAK.
+Phones open: `http://SERVER_IP:9000` -> download zip -> import into iTAK/ATAK.
 
 Option B (manual):
 - Server: `SERVER_IP`
 - Port: `8087`
 - Protocol: TCP
 
-## 5) Confirm it’s working
+## 5) Confirm it's working
 ```bash
 ./heartbeat listen
 ```
@@ -43,15 +43,15 @@ You should see connections and data events.
 
 # Network reality check (fast)
 
-## Same Wi‑Fi (easiest)
-- All phones + server on same Wi‑Fi
+## Same Wi-Fi (easiest)
+- All phones + server on same Wi-Fi
 - Works with no internet
 
 ## Internet hosting (when phones are on 5G)
 - Server must be reachable from the public internet
-- If you don’t control the router or inbound ports, **hosting from a work laptop usually won’t work**
+- If you don't control the router or inbound ports, **hosting from a work laptop usually won't work**
 - Alternatives:
   - Public VM (works anywhere)
-  - Mesh VPN (Tailscale/ZeroTier) for no‑router setups
+  - Mesh VPN (Tailscale/ZeroTier) for no-router setups
 
 If you tell me your environment (work network rules, phone coverage), we can pick the best path.
