@@ -137,6 +137,10 @@ heartbeat/
   data/                 Runtime data (gitignored)
 ```
 
+## Field Quick Start
+
+See `docs/field-quickstart.md` for a one‑page, non‑technical runbook.
+
 ## Network Notes
 
 - Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over the internet (port forwarding / cloud VM)
