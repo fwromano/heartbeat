@@ -103,6 +103,17 @@ has_docker() {
     has_cmd docker && docker info &>/dev/null 2>&1
 }
 
+detect_tailscale_ip() {
+    if has_cmd tailscale; then
+        tailscale ip -4 2>/dev/null | head -1
+    fi
+}
+
+is_tailscale_ip() {
+    # Tailscale uses CGNAT range 100.64.0.0/10
+    [[ "$1" =~ ^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\. ]]
+}
+
 get_compose_cmd() {
     if docker compose version &>/dev/null 2>&1; then
         echo "docker compose"

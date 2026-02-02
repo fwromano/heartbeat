@@ -25,6 +25,7 @@ FORCE_MODE=""
 INTERACTIVE=false
 ARG_TEAM=""
 ARG_SERVER_IP=""
+USE_TAILSCALE=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -33,6 +34,7 @@ while [[ $# -gt 0 ]]; do
         -i)             INTERACTIVE=true; shift ;;
         --team)         ARG_TEAM="$2"; shift 2 ;;
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
+        --tailscale)    USE_TAILSCALE=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -42,6 +44,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --native         Force native pip deployment"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
+            echo "  --tailscale      Use the Tailscale IP for clients"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -147,10 +150,29 @@ main() {
 
     # ---- Server IP (auto-detect) ----
     local server_ip
-    if [[ -n "$ARG_SERVER_IP" ]]; then
+    if $USE_TAILSCALE; then
+        server_ip=$(detect_tailscale_ip || true)
+        if [[ -z "$server_ip" ]]; then
+            log_error "Tailscale IP not found. Is Tailscale running?"
+            exit 1
+        fi
+    elif [[ -n "$ARG_SERVER_IP" ]]; then
         server_ip="$ARG_SERVER_IP"
     else
         server_ip=$(detect_ip)
+        if $INTERACTIVE; then
+            local ts_ip
+            ts_ip=$(detect_tailscale_ip || true)
+            if [[ -n "$ts_ip" ]]; then
+                if prompt_yn "Use Tailscale IP (${ts_ip})?" "y"; then
+                    server_ip="$ts_ip"
+                fi
+            else
+                if prompt_yn "Use Tailscale IP?" "n"; then
+                    log_warn "Tailscale not detected or no IP assigned."
+                fi
+            fi
+        fi
     fi
     log_ok "Server IP: ${server_ip}"
 
@@ -261,9 +283,15 @@ EOF
     echo ""
     echo -e "  ${BOLD}Then on your phone:${NC}"
     echo ""
-    echo -e "    1. Connect to the same WiFi as this machine"
-    echo -e "    2. Scan the QR code with your phone camera"
-    echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    if is_tailscale_ip "$server_ip"; then
+        echo -e "    1. Connect to Tailscale on your phone"
+        echo -e "    2. Scan the QR code with your phone camera"
+        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    else
+        echo -e "    1. Connect to the same WiFi as this machine"
+        echo -e "    2. Scan the QR code with your phone camera"
+        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    fi
     echo ""
     echo -e "  ${BOLD}Default credentials:${NC}"
     echo ""

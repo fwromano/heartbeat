@@ -53,6 +53,7 @@ Team:
   qr                   Show QR code to scan from iTAK/ATAK
   adduser <name> [pw]  Create a TAK server login for a team member
   addusers <file>      Create users from a list (one name per line)
+  tailscale            Set SERVER_IP to the Tailscale IP
   package <name>       Generate a connection package for a member
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
