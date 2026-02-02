@@ -133,7 +133,7 @@ cmd_info() {
 
     banner
     echo -e "${BOLD}Server Connection Info${NC}"
-    echo -e "${DIM}──────────────────────────────────${NC}"
+    echo -e "${DIM}----------------------------------${NC}"
     echo ""
     echo -e "  Team:        ${TEAM_NAME}"
     echo -e "  Server IP:   ${CYAN}${SERVER_IP}${NC}"
@@ -322,6 +322,7 @@ case "$cmd" in
             log_error "Tailscale IP not found. Is Tailscale running?"
             exit 1
         fi
+        set_config "TAILSCALE_MODE" "true"
         set_config "SERVER_IP" "$ts_ip"
         log_ok "SERVER_IP set to ${ts_ip}"
         log_info "Regenerate packages to update the server IP."

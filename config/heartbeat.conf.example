@@ -11,6 +11,7 @@ SERVER_IP=""
 
 # Deployment mode: "docker" or "native"
 DEPLOY_MODE="docker"
+TAILSCALE_MODE="false"
 
 # ---------------------------------------------------------------------------
 # Ports

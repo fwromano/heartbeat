@@ -59,6 +59,14 @@ load_config() {
     if [[ -f "$HEARTBEAT_CONF" ]]; then
         # shellcheck source=/dev/null
         source "$HEARTBEAT_CONF"
+        if [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
+            local ts_ip
+            ts_ip=$(detect_tailscale_ip || true)
+            if [[ -n "$ts_ip" && "$ts_ip" != "$SERVER_IP" ]]; then
+                SERVER_IP="$ts_ip"
+                set_config "SERVER_IP" "$ts_ip"
+            fi
+        fi
     else
         log_error "Config not found: $HEARTBEAT_CONF"
         log_error "Run ./setup.sh first."

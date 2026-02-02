@@ -150,12 +150,14 @@ main() {
 
     # ---- Server IP (auto-detect) ----
     local server_ip
+    local tailscale_mode="false"
     if $USE_TAILSCALE; then
         server_ip=$(detect_tailscale_ip || true)
         if [[ -z "$server_ip" ]]; then
             log_error "Tailscale IP not found. Is Tailscale running?"
             exit 1
         fi
+        tailscale_mode="true"
     elif [[ -n "$ARG_SERVER_IP" ]]; then
         server_ip="$ARG_SERVER_IP"
     else
@@ -166,6 +168,7 @@ main() {
             if [[ -n "$ts_ip" ]]; then
                 if prompt_yn "Use Tailscale IP (${ts_ip})?" "y"; then
                     server_ip="$ts_ip"
+                    tailscale_mode="true"
                 fi
             else
                 if prompt_yn "Use Tailscale IP?" "n"; then
@@ -173,6 +176,9 @@ main() {
                 fi
             fi
         fi
+    fi
+    if [[ "$tailscale_mode" == "false" ]] && is_tailscale_ip "$server_ip"; then
+        tailscale_mode="true"
     fi
     log_ok "Server IP: ${server_ip}"
 
@@ -224,6 +230,7 @@ main() {
 TEAM_NAME="${team_name}"
 SERVER_IP="${server_ip}"
 DEPLOY_MODE="${mode}"
+TAILSCALE_MODE="${tailscale_mode}"
 
 COT_PORT=${cot_port}
 SSL_COT_PORT=${ssl_cot_port}
@@ -272,9 +279,9 @@ EOF
 
     # ---- Done ----
     echo ""
-    echo -e "${DIM}══════════════════════════════════════════════${NC}"
+    echo -e "${DIM}==============================================${NC}"
     echo -e "${GREEN}${BOLD}  Setup complete!${NC}"
-    echo -e "${DIM}══════════════════════════════════════════════${NC}"
+    echo -e "${DIM}==============================================${NC}"
     echo ""
     echo -e "  ${BOLD}Next steps:${NC}"
     echo ""
