@@ -138,7 +138,6 @@ heartbeat/
   docs/
     field-quickstart.md
     network-options.md
-    oracle-free-vm.md
   packages/             Generated .zip packages (gitignored)
   data/                 Runtime data (gitignored)
 ```
@@ -153,25 +152,30 @@ in `config/heartbeat.conf`. WebMap will run locally and be accessible at:
 http://SERVER_IP:8000/tak-map
 ```
 
+## Server Beacon (Map Dot)
+
+Heartbeat can send a simple CoT beacon so the server/laptop appears on the map.
+Set coordinates once and it will auto-start on `./heartbeat start`:
+
+```
+./heartbeat beacon set --lat 34.0500 --lon -118.2500 --name "HQ"
+```
+
+Disable with `--no-beacon` during setup or `BEACON_ENABLED="false"` in config.
+
 ## Field Quick Start
 
 See `docs/field-quickstart.md` for a one-page, non-technical runbook.
 
-## Public VM Hosting (Oracle Free)
-
-See `docs/oracle-free-vm.md` for the Oracle Always Free VM setup.
-For a one-command end-to-end deploy (requires OCI CLI), use `deploy_oracle_free_vm.sh`.
-
 ## Network Notes
 
-- Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over the internet (port forwarding / cloud VM)
+- Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over a VPN
 - Default CoT port is **8087 TCP** - ensure your firewall allows it
 - DataPackage port is **8443** (FreeTAKServer default)
 - If Tailscale is installed, setup defaults to the Tailscale IP (use --no-tailscale to force LAN)
 - WebMap defaults on (use --no-webmap to disable)
+- Beacon defaults on (set `BEACON_LAT/LON` to place the dot, or disable with --no-beacon)
 - If TAILSCALE_MODE is enabled, Heartbeat will auto-refresh SERVER_IP to the current Tailscale IP
-- `./heartbeat info` shows both local and public IPs when available
-- For internet-facing deployments, consider using the SSL CoT port (8089) with certificates
 
 ## Troubleshooting
 

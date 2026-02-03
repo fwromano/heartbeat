@@ -104,10 +104,6 @@ detect_ip() {
     echo "$ip"
 }
 
-detect_public_ip() {
-    curl -s --max-time 5 https://ifconfig.me 2>/dev/null || echo ""
-}
-
 has_cmd() {
     command -v "$1" &>/dev/null
 }

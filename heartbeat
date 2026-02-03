@@ -47,6 +47,7 @@ show_help() {
     echo "  adduser <name> [pw]  Create a TAK server login for a team member"
     echo "  addusers <file>      Create users from a list (one name per line)"
     echo "  tailscale            Set SERVER_IP to the Tailscale IP"
+    echo "  beacon [cmd]         Send a server beacon (map dot)"
     echo "  package <name>       Generate a connection package for a member"
     echo "  packages             List all generated packages"
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
@@ -150,13 +151,6 @@ cmd_info() {
     echo -e "     Protocol: TCP"
     echo ""
 
-    local public_ip
-    public_ip=$(detect_public_ip)
-    if [[ -n "$public_ip" && "$public_ip" != "$SERVER_IP" ]]; then
-        echo -e "  ${BOLD}Public IP:${NC} ${public_ip}"
-        echo -e "  ${DIM}(Use this if team connects over the internet, not local WiFi)${NC}"
-        echo ""
-    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -191,7 +185,7 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart status listen logs qr adduser addusers tailscale package packages serve info update systemd uninstall help)
+COMMANDS=(start stop restart status listen logs qr adduser addusers tailscale beacon package packages serve info update systemd uninstall help)
 
 resolve_cmd() {
     local input="$1"
@@ -326,6 +320,10 @@ case "$cmd" in
         set_config "SERVER_IP" "$ts_ip"
         log_ok "SERVER_IP set to ${ts_ip}"
         log_info "Regenerate packages to update the server IP."
+        ;;
+    beacon)
+        source "${LIB_DIR}/beacon.sh"
+        beacon_cmd "$@"
         ;;
     package)
         if [[ $# -lt 1 ]]; then
