@@ -17,10 +17,18 @@ _webmap_bin_path() {
     find "$WEBMAP_DIR" -maxdepth 1 -type f -name 'FTH-webmap-*' ! -name '*.json' 2>/dev/null | head -1
 }
 
+_webmap_fts_url() {
+    if [[ -n "${WEBMAP_FTS_URL:-}" ]]; then
+        echo "$WEBMAP_FTS_URL"
+    else
+        echo "${SERVER_IP:-127.0.0.1}"
+    fi
+}
+
 _webmap_write_config() {
     cat > "${WEBMAP_DIR}/webMAP_config.json" <<EOF
 {
-  "FTH_FTS_URL": "${SERVER_IP}",
+  "FTH_FTS_URL": "$(_webmap_fts_url)",
   "FTH_FTS_TCP_Port": ${COT_PORT},
   "FTH_FTS_UDP_Port": ${COT_PORT}
 }
@@ -93,6 +101,12 @@ webmap_start() {
     if [[ -f "$WEBMAP_PID_FILE" ]] && kill -0 "$(cat "$WEBMAP_PID_FILE")" 2>/dev/null; then
         return 0
     fi
+
+    local i=0
+    while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 15 ]]; do
+        sleep 1
+        ((i++))
+    done
 
     _webmap_write_config
 

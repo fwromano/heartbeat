@@ -255,6 +255,12 @@ main() {
     elif $USE_BEACON; then
         beacon_enabled="true"
     fi
+    if [[ "$beacon_enabled" == "true" ]] && $INTERACTIVE; then
+        echo ""
+        echo -e "${BOLD}Beacon location (so your server shows on the map):${NC}"
+        beacon_lat=$(prompt_default "Latitude (e.g. 30.2672)" "$beacon_lat")
+        beacon_lon=$(prompt_default "Longitude (e.g. -97.7431)" "$beacon_lon")
+    fi
 
     # ---- Default credentials ----
     local fts_user="team"
