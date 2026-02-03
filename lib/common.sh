@@ -54,6 +54,8 @@ PID_FILE="${DATA_DIR}/fts.pid"
 LOG_FILE="${DATA_DIR}/fts.log"
 WEBMAP_PID_FILE="${DATA_DIR}/webmap.pid"
 WEBMAP_LOG_FILE="${DATA_DIR}/webmap.log"
+BEACON_PID_FILE="${DATA_DIR}/beacon.pid"
+BEACON_LOG_FILE="${DATA_DIR}/beacon.log"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -152,6 +154,10 @@ gen_secret() {
     head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 32
 }
 
+gen_password() {
+    head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 12
+}
+
 ensure_dir() {
     mkdir -p "$1"
 }
@@ -160,6 +166,36 @@ ensure_dir() {
 port_listening() {
     local port="$1"
     ss -tlnp 2>/dev/null | grep -q ":${port} " || return 1
+}
+
+# Check if a TCP port is accepting connections
+port_accepting() {
+    local host="${1:-127.0.0.1}" port="$2" rc
+    if has_cmd python3; then
+        set +e
+        python3 - "$host" "$port" <<'PY'
+import socket, sys
+host = sys.argv[1]
+port = int(sys.argv[2])
+s = socket.socket()
+s.settimeout(1)
+try:
+    s.connect((host, port))
+except Exception:
+    sys.exit(1)
+finally:
+    s.close()
+sys.exit(0)
+PY
+        rc=$?
+        set -e
+        return $rc
+    fi
+    set +e
+    bash -c "exec 3<>/dev/tcp/${host}/${port}" >/dev/null 2>&1
+    rc=$?
+    set -e
+    return $rc
 }
 
 # Check if a port is available (not in use)

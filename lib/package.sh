@@ -267,5 +267,5 @@ serve_packages() {
     fi
 
     cd "$PACKAGES_DIR"
-    python3 -m http.server "$port" --bind 0.0.0.0 2>/dev/null
+    python3 -m http.server "$port" --bind "${SERVER_IP}" 2>/dev/null
 }

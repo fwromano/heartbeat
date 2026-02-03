@@ -29,6 +29,8 @@ FORCE_TAILSCALE=false
 DISABLE_TAILSCALE=false
 USE_WEBMAP=false
 DISABLE_WEBMAP=false
+USE_BEACON=false
+DISABLE_BEACON=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -41,6 +43,8 @@ while [[ $# -gt 0 ]]; do
         --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
         --webmap)       USE_WEBMAP=true; shift ;;
         --no-webmap)    DISABLE_WEBMAP=true; shift ;;
+        --beacon)       USE_BEACON=true; shift ;;
+        --no-beacon)    DISABLE_BEACON=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -54,6 +58,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --no-tailscale   Do not use Tailscale (LAN IP only)"
             echo "  --webmap         Enable the browser map (WebMap)"
             echo "  --no-webmap      Disable the browser map (WebMap)"
+            echo "  --beacon         Enable server beacon (map dot)"
+            echo "  --no-beacon      Disable server beacon"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -237,13 +243,27 @@ main() {
         esac
     fi
 
+    # ---- Beacon (optional) ----
+    local beacon_enabled="true"
+    local beacon_name="${team_name} Beacon"
+    local beacon_interval="10"
+    local beacon_lat=""
+    local beacon_lon=""
+    local beacon_alt="0"
+    if $DISABLE_BEACON; then
+        beacon_enabled="false"
+    elif $USE_BEACON; then
+        beacon_enabled="true"
+    fi
+
     # ---- Default credentials ----
     local fts_user="team"
-    local fts_pass="${fts_user}"
+    local fts_pass
+    fts_pass=$(gen_password)
     if $INTERACTIVE; then
         echo ""
         fts_user=$(prompt_default "Default TAK username" "$fts_user")
-        fts_pass=$(prompt_default "Default TAK password" "$fts_user")
+        fts_pass=$(prompt_default "Default TAK password" "$fts_pass")
     fi
 
     # ---- Write config ----
@@ -273,6 +293,13 @@ FTS_PASSWORD="${fts_pass}"
 WEBMAP_ENABLED="${webmap_enabled}"
 WEBMAP_PORT=${webmap_port}
 WEBMAP_URL="${webmap_url}"
+
+BEACON_ENABLED="${beacon_enabled}"
+BEACON_NAME="${beacon_name}"
+BEACON_INTERVAL=${beacon_interval}
+BEACON_LAT="${beacon_lat}"
+BEACON_LON="${beacon_lon}"
+BEACON_ALT=${beacon_alt}
 EOF
 
     log_ok "Config: ${HEARTBEAT_CONF}"
