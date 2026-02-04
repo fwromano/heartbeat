@@ -113,6 +113,18 @@ server_stop() {
 
     # Clean up stale PID files
     rm -f "$BEACON_PID_FILE" "$WEBMAP_PID_FILE" "$PID_FILE" 2>/dev/null
+
+    # Truncate logs (keep last 200 lines for debugging)
+    for lf in "$BEACON_LOG_FILE" "$WEBMAP_LOG_FILE"; do
+        if [[ -f "$lf" ]]; then
+            tail -200 "$lf" > "${lf}.tmp" && mv "${lf}.tmp" "$lf"
+        fi
+    done
+
+    # Clean Node-RED junk that may have leaked to repo root (pre-cwd-fix runs)
+    rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
+          "${HEARTBEAT_DIR}/package.json" 2>/dev/null
+    rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
 }
 
 _docker_stop() {

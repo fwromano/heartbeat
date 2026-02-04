@@ -117,7 +117,7 @@ webmap_start() {
         return 1
     fi
 
-    nohup "$bin" "${WEBMAP_DIR}/webMAP_config.json" >> "$WEBMAP_LOG_FILE" 2>&1 &
+    (cd "$WEBMAP_DIR" && nohup "$bin" "webMAP_config.json" >> "$WEBMAP_LOG_FILE" 2>&1) &
     echo $! > "$WEBMAP_PID_FILE"
     log_ok "WebMap started (port ${WEBMAP_PORT:-8000})"
 
@@ -136,4 +136,8 @@ webmap_stop() {
         fi
         rm -f "$WEBMAP_PID_FILE"
     fi
+    # Clean Node-RED runtime artifacts
+    rm -f "${WEBMAP_DIR}/.config.nodes.json" "${WEBMAP_DIR}/.config.runtime.json" \
+          "${WEBMAP_DIR}/package.json" 2>/dev/null
+    rm -rf "${WEBMAP_DIR}/JsonDB" 2>/dev/null
 }

@@ -113,6 +113,39 @@ main() {
         fi
     fi
 
+    # ---- Clean previous installation artifacts ----
+    if [[ -f "$HEARTBEAT_CONF" ]]; then
+        log_step "Cleaning previous installation artifacts"
+
+        # Stop running services
+        source "${LIB_DIR}/server.sh"
+        server_stop 2>/dev/null || true
+
+        # Remove stale packages (certs will change on fresh setup)
+        rm -f "${PACKAGES_DIR}"/*.zip "${PACKAGES_DIR}"/*.png "${PACKAGES_DIR}"/index.html 2>/dev/null
+
+        # Remove Docker volumes (may be root-owned from container)
+        if has_docker; then
+            local compose_cmd
+            compose_cmd=$(get_compose_cmd)
+            if [[ -n "$compose_cmd" ]]; then
+                (cd "$DOCKER_DIR" && $compose_cmd down -v 2>/dev/null) || true
+            fi
+        fi
+        sudo rm -rf "${DOCKER_DIR}/certs" "${DOCKER_DIR}/data" "${DOCKER_DIR}/logs" 2>/dev/null || true
+        ensure_dir "${DOCKER_DIR}/data"
+        ensure_dir "${DOCKER_DIR}/logs"
+        ensure_dir "${DOCKER_DIR}/certs"
+
+        # Remove stale logs and runtime data
+        rm -f "${DATA_DIR}"/*.log "${DATA_DIR}"/*.pid 2>/dev/null
+        rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
+              "${HEARTBEAT_DIR}/package.json" 2>/dev/null
+        rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
+
+        log_ok "Previous artifacts cleaned"
+    fi
+
     ensure_dir "$CONFIG_DIR"
     ensure_dir "$DATA_DIR"
     ensure_dir "$PACKAGES_DIR"
