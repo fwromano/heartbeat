@@ -6,10 +6,10 @@ services:
     container_name: heartbeat-fts
     restart: unless-stopped
     ports:
-      - "${COT_PORT:-8087}:${COT_PORT:-8087}"
-      - "${SSL_COT_PORT:-8089}:${SSL_COT_PORT:-8089}"
-      - "${API_PORT:-19023}:${API_PORT:-19023}"
-      - "${DATAPACKAGE_PORT:-8443}:${DATAPACKAGE_PORT:-8443}"
+      - "${SERVER_IP:-127.0.0.1}:${COT_PORT:-8087}:${COT_PORT:-8087}"
+      - "${SERVER_IP:-127.0.0.1}:${SSL_COT_PORT:-8089}:${SSL_COT_PORT:-8089}"
+      - "127.0.0.1:${API_PORT:-19023}:${API_PORT:-19023}"
+      - "${SERVER_IP:-127.0.0.1}:${DATAPACKAGE_PORT:-8443}:8443"
     volumes:
       - ./data:/opt/fts/data
       - ./logs:/opt/fts/logs

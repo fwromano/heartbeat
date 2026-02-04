@@ -24,11 +24,20 @@ _qrencode() {
         qrencode "$@"
         return
     fi
+    if ! has_cmd docker; then
+        return 1
+    fi
     if docker ps --filter name=heartbeat-fts --format '{{.Names}}' 2>/dev/null | grep -q heartbeat-fts; then
         docker exec heartbeat-fts qrencode "$@"
         return
     fi
-    docker run --rm "$(docker images -q docker-fts 2>/dev/null | head -1)" qrencode "$@" 2>/dev/null
+    local image
+    image=$(docker images -q docker-fts 2>/dev/null | head -1)
+    if [[ -n "$image" ]]; then
+        docker run --rm "$image" qrencode "$@" 2>/dev/null
+        return
+    fi
+    return 1
 }
 
 # ---------------------------------------------------------------------------

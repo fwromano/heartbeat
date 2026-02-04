@@ -18,6 +18,14 @@ venv/
 
 # Docker volumes
 docker/data/
+docker/certs/
+docker/logs/
+docker/FTSConfig.yaml
+
+# WebMap / Node-RED runtime artifacts
+.config.*.json
+JsonDB/
+package.json
 
 # OS
 .DS_Store
@@ -29,3 +37,7 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# Generated download page / QR artifacts
+packages/index.html
+packages/*.png

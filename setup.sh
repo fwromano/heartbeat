@@ -24,6 +24,13 @@ source "${SCRIPT_DIR}/lib/common.sh"
 FORCE_MODE=""
 INTERACTIVE=false
 ARG_TEAM=""
+ARG_SERVER_IP=""
+FORCE_TAILSCALE=false
+DISABLE_TAILSCALE=false
+USE_WEBMAP=false
+DISABLE_WEBMAP=false
+USE_BEACON=false
+DISABLE_BEACON=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -31,6 +38,13 @@ while [[ $# -gt 0 ]]; do
         --interactive)  INTERACTIVE=true; shift ;;
         -i)             INTERACTIVE=true; shift ;;
         --team)         ARG_TEAM="$2"; shift 2 ;;
+        --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
+        --tailscale)    FORCE_TAILSCALE=true; shift ;;
+        --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
+        --webmap)       USE_WEBMAP=true; shift ;;
+        --no-webmap)    DISABLE_WEBMAP=true; shift ;;
+        --beacon)       USE_BEACON=true; shift ;;
+        --no-beacon)    DISABLE_BEACON=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -39,6 +53,13 @@ while [[ $# -gt 0 ]]; do
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
             echo "  --team \"Name\"    Set team/org name"
+            echo "  --server-ip IP   Set server IP/hostname for clients"
+            echo "  --tailscale      Force Tailscale IP for clients"
+            echo "  --no-tailscale   Do not use Tailscale (LAN IP only)"
+            echo "  --webmap         Enable the browser map (WebMap)"
+            echo "  --no-webmap      Disable the browser map (WebMap)"
+            echo "  --beacon         Enable server beacon (map dot)"
+            echo "  --no-beacon      Disable server beacon"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -55,7 +76,10 @@ auto_ports() {
     cot=$(find_free_port 8087)
     ssl=$(find_free_port 8089)
     api=$(find_free_port 19023)
-    dp=$(find_free_port 8443)
+    dp=8443
+    if ! port_available "$dp"; then
+        log_warn "Port 8443 in use, DataPackage service may not be reachable" >&2
+    fi
 
     # Log any ports that shifted (to stderr so they don't mix with output)
     if [[ "$cot" != "8087" ]]; then
@@ -67,10 +91,6 @@ auto_ports() {
     if [[ "$api" != "19023" ]]; then
         log_warn "Port 19023 in use, API port -> ${api}" >&2
     fi
-    if [[ "$dp" != "8443" ]]; then
-        log_warn "Port 8443 in use, DataPackage port -> ${dp}" >&2
-    fi
-
     echo "${cot} ${ssl} ${api} ${dp}"
 }
 
@@ -91,6 +111,39 @@ main() {
         else
             log_info "Re-running setup (overwriting existing config)"
         fi
+    fi
+
+    # ---- Clean previous installation artifacts ----
+    if [[ -f "$HEARTBEAT_CONF" ]]; then
+        log_step "Cleaning previous installation artifacts"
+
+        # Stop running services
+        source "${LIB_DIR}/server.sh"
+        server_stop 2>/dev/null || true
+
+        # Remove stale packages (certs will change on fresh setup)
+        rm -f "${PACKAGES_DIR}"/*.zip "${PACKAGES_DIR}"/*.png "${PACKAGES_DIR}"/index.html 2>/dev/null
+
+        # Remove Docker volumes (may be root-owned from container)
+        if has_docker; then
+            local compose_cmd
+            compose_cmd=$(get_compose_cmd)
+            if [[ -n "$compose_cmd" ]]; then
+                (cd "$DOCKER_DIR" && $compose_cmd down -v 2>/dev/null) || true
+            fi
+        fi
+        sudo rm -rf "${DOCKER_DIR}/certs" "${DOCKER_DIR}/data" "${DOCKER_DIR}/logs" 2>/dev/null || true
+        ensure_dir "${DOCKER_DIR}/data"
+        ensure_dir "${DOCKER_DIR}/logs"
+        ensure_dir "${DOCKER_DIR}/certs"
+
+        # Remove stale logs and runtime data
+        rm -f "${DATA_DIR}"/*.log "${DATA_DIR}"/*.pid 2>/dev/null
+        rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
+              "${HEARTBEAT_DIR}/package.json" 2>/dev/null
+        rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
+
+        log_ok "Previous artifacts cleaned"
     fi
 
     ensure_dir "$CONFIG_DIR"
@@ -137,7 +190,7 @@ main() {
     fi
 
     # ---- Team name ----
-    local team_name="${ARG_TEAM:-Volunteer FD}"
+    local team_name="${ARG_TEAM:-Test VFD}"
     if $INTERACTIVE; then
         echo ""
         team_name=$(prompt_default "Team / organization name" "$team_name")
@@ -145,7 +198,33 @@ main() {
 
     # ---- Server IP (auto-detect) ----
     local server_ip
-    server_ip=$(detect_ip)
+    local tailscale_mode="false"
+    local ts_ip
+    ts_ip=$(detect_tailscale_ip || true)
+    if $FORCE_TAILSCALE; then
+        if [[ -z "$ts_ip" ]]; then
+            log_error "Tailscale IP not found. Is Tailscale running?"
+            exit 1
+        fi
+        server_ip="$ts_ip"
+        tailscale_mode="true"
+    elif $DISABLE_TAILSCALE; then
+        if [[ -n "$ARG_SERVER_IP" ]]; then
+            server_ip="$ARG_SERVER_IP"
+        else
+            server_ip=$(detect_ip)
+        fi
+    elif [[ -n "$ARG_SERVER_IP" ]]; then
+        server_ip="$ARG_SERVER_IP"
+    elif [[ -n "$ts_ip" ]]; then
+        server_ip="$ts_ip"
+        tailscale_mode="true"
+    else
+        server_ip=$(detect_ip)
+    fi
+    if [[ "$tailscale_mode" == "false" ]] && is_tailscale_ip "$server_ip"; then
+        tailscale_mode="true"
+    fi
     log_ok "Server IP: ${server_ip}"
 
     if $INTERACTIVE; then
@@ -167,7 +246,7 @@ main() {
             cot_port=$(prompt_default "CoT port" "$cot_port")
             ssl_cot_port=$(prompt_default "SSL CoT port" "$ssl_cot_port")
             api_port=$(prompt_default "REST API port" "$api_port")
-            dp_port=$(prompt_default "DataPackage port" "$dp_port")
+            echo -e "${DIM}DataPackage port stays at 8443 (FreeTAKServer default).${NC}"
         fi
     fi
 
@@ -175,6 +254,55 @@ main() {
     local conn_msg="Welcome to ${team_name} TAK"
     if $INTERACTIVE; then
         conn_msg=$(prompt_default "Connection welcome message" "$conn_msg")
+    fi
+
+    # ---- Web map (optional) ----
+    local webmap_enabled="true"
+    local webmap_url="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
+    local webmap_port="8000"
+    if $DISABLE_WEBMAP; then
+        webmap_enabled="false"
+    elif $USE_WEBMAP; then
+        webmap_enabled="true"
+    fi
+    if [[ "$webmap_enabled" == "true" ]]; then
+        if [[ "$(uname -s)" != "Linux" ]]; then
+            log_warn "WebMap supported on Linux x86_64 only. Disabling."
+            webmap_enabled="false"
+        fi
+        case "$(uname -m)" in
+            x86_64|amd64) ;;
+            *) log_warn "WebMap supported on Linux x86_64 only. Disabling."; webmap_enabled="false" ;;
+        esac
+    fi
+
+    # ---- Beacon (optional) ----
+    local beacon_enabled="true"
+    local beacon_name="${team_name} Beacon"
+    local beacon_interval="10"
+    local beacon_lat=""
+    local beacon_lon=""
+    local beacon_alt="0"
+    if $DISABLE_BEACON; then
+        beacon_enabled="false"
+    elif $USE_BEACON; then
+        beacon_enabled="true"
+    fi
+    if [[ "$beacon_enabled" == "true" ]] && $INTERACTIVE; then
+        echo ""
+        echo -e "${BOLD}Beacon location (so your server shows on the map):${NC}"
+        beacon_lat=$(prompt_default "Latitude (e.g. 30.2672)" "$beacon_lat")
+        beacon_lon=$(prompt_default "Longitude (e.g. -97.7431)" "$beacon_lon")
+    fi
+
+    # ---- Default credentials ----
+    local fts_user="team"
+    local fts_pass
+    fts_pass=$(gen_password)
+    if $INTERACTIVE; then
+        echo ""
+        fts_user=$(prompt_default "Default TAK username" "$fts_user")
+        fts_pass=$(prompt_default "Default TAK password" "$fts_pass")
     fi
 
     # ---- Write config ----
@@ -187,6 +315,7 @@ main() {
 TEAM_NAME="${team_name}"
 SERVER_IP="${server_ip}"
 DEPLOY_MODE="${mode}"
+TAILSCALE_MODE="${tailscale_mode}"
 
 COT_PORT=${cot_port}
 SSL_COT_PORT=${ssl_cot_port}
@@ -197,8 +326,19 @@ FTS_SECRET_KEY=""
 FTS_CONNECTION_MSG="${conn_msg}"
 FTS_DATA_DIR="${DATA_DIR}/fts"
 
-FTS_USERNAME="team"
-FTS_PASSWORD="heartbeat"
+FTS_USERNAME="${fts_user}"
+FTS_PASSWORD="${fts_pass}"
+
+WEBMAP_ENABLED="${webmap_enabled}"
+WEBMAP_PORT=${webmap_port}
+WEBMAP_URL="${webmap_url}"
+
+BEACON_ENABLED="${beacon_enabled}"
+BEACON_NAME="${beacon_name}"
+BEACON_INTERVAL=${beacon_interval}
+BEACON_LAT="${beacon_lat}"
+BEACON_LON="${beacon_lon}"
+BEACON_ALT=${beacon_alt}
 EOF
 
     log_ok "Config: ${HEARTBEAT_CONF}"
@@ -235,9 +375,9 @@ EOF
 
     # ---- Done ----
     echo ""
-    echo -e "${DIM}══════════════════════════════════════════════${NC}"
+    echo -e "${DIM}==============================================${NC}"
     echo -e "${GREEN}${BOLD}  Setup complete!${NC}"
-    echo -e "${DIM}══════════════════════════════════════════════${NC}"
+    echo -e "${DIM}==============================================${NC}"
     echo ""
     echo -e "  ${BOLD}Next steps:${NC}"
     echo ""
@@ -246,9 +386,20 @@ EOF
     echo ""
     echo -e "  ${BOLD}Then on your phone:${NC}"
     echo ""
-    echo -e "    1. Connect to the same WiFi as this machine"
-    echo -e "    2. Scan the QR code with your phone camera"
-    echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    if is_tailscale_ip "$server_ip"; then
+        echo -e "    1. Connect to Tailscale on your phone"
+        echo -e "    2. Scan the QR code with your phone camera"
+        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    else
+        echo -e "    1. Connect to the same WiFi as this machine"
+        echo -e "    2. Scan the QR code with your phone camera"
+        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    fi
+    echo ""
+    echo -e "  ${BOLD}Default credentials:${NC}"
+    echo ""
+    echo -e "    Username: ${CYAN}${fts_user}${NC}"
+    echo -e "    Password: ${CYAN}${fts_pass}${NC}"
     echo ""
     echo -e "  ${BOLD}Or connect manually in iTAK/ATAK:${NC}"
     echo ""

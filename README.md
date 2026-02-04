@@ -1,6 +1,6 @@
 # Heartbeat
 
-TAK server deployment and management for volunteer teams.
+TAK server deployment and management for teams.
 
 Automates [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) setup so your team can share locations via [iTAK](https://apps.apple.com/us/app/itak/id1561656396) (iOS) and [ATAK](https://play.google.com/store/apps/details?id=com.atakmap.app.civ) (Android) over cellular or WiFi.
 
@@ -21,6 +21,9 @@ Automates [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) setup so
 ```
 
 Open the URL on your phone, download the `.zip`, and import it into iTAK/ATAK.
+
+Setup generates default TAK credentials. You can view them anytime with `./heartbeat qr`
+or in `config/heartbeat.conf`.
 
 ## Requirements
 
@@ -43,9 +46,14 @@ Server:
   stop                 Stop the TAK server
   restart              Restart the TAK server
   status               Show server status and port checks
+  listen               Live monitor -- follow connections and events
   logs [-f]            View server logs (-f to follow)
 
 Team:
+  qr                   Show QR code to scan from iTAK/ATAK
+  adduser <name> [pw]  Create a TAK server login for a team member
+  addusers <file>      Create users from a list (one name per line)
+  tailscale            Set SERVER_IP to the Tailscale IP
   package <name>       Generate a connection package for a member
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
@@ -55,6 +63,11 @@ System:
   update               Update FreeTAKServer to latest version
   systemd              Install systemd service (native mode, requires sudo)
   uninstall            Remove FreeTAKServer and optionally data
+
+Notes:
+- If you omit `[pw]` in `adduser`, the password defaults to the name.
+- `addusers` ignores blank lines and `#` comments.
+- Packages embed the server IP; if the IP changes, regenerate packages.
 ```
 
 ## Setup Modes
@@ -66,6 +79,9 @@ Runs FreeTAKServer in an isolated container. Requires Docker and Docker Compose.
 ```bash
 ./setup.sh --docker
 ```
+
+Note: `./setup.sh` generates `docker/FTSConfig.yaml` from your config values; the
+tracked `docker/FTSConfig.yaml.example` is just a template.
 
 ### Native
 
@@ -114,20 +130,52 @@ heartbeat/
   docker/
     Dockerfile
     docker-compose.yml
-    FTSConfig.yaml
+    FTSConfig.yaml.example
+    certs/              Generated TLS certs (gitignored)
   templates/
     manifest.xml        Data package manifest template
     server.pref         Connection preferences template
+  docs/
+    field-quickstart.md
+    network-options.md
   packages/             Generated .zip packages (gitignored)
   data/                 Runtime data (gitignored)
 ```
 
+## Browser Map (WebMap)
+
+Heartbeat can auto-launch the FreeTAKHub WebMap (browser map) on startup.
+Enable it during setup with `./setup.sh --webmap` or set `WEBMAP_ENABLED="true"`
+in `config/heartbeat.conf`. WebMap will run locally and be accessible at:
+
+```
+http://SERVER_IP:8000/tak-map
+```
+
+## Server Beacon (Map Dot)
+
+Heartbeat can send a simple CoT beacon so the server/laptop appears on the map.
+Set coordinates once and it will auto-start on `./heartbeat start`:
+
+```
+./heartbeat beacon set --lat 34.0500 --lon -118.2500 --name "HQ"
+```
+
+Disable with `--no-beacon` during setup or `BEACON_ENABLED="false"` in config.
+
+## Field Quick Start
+
+See `docs/field-quickstart.md` for a one-page, non-technical runbook.
+
 ## Network Notes
 
-- Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over the internet (port forwarding / cloud VM)
+- Server and phones must be on the same network (WiFi/LAN), or the server must be reachable over a VPN
 - Default CoT port is **8087 TCP** - ensure your firewall allows it
-- `./heartbeat info` shows both local and public IPs when available
-- For internet-facing deployments, consider using the SSL CoT port (8089) with certificates
+- DataPackage port is **8443** (FreeTAKServer default)
+- If Tailscale is installed, setup defaults to the Tailscale IP (use --no-tailscale to force LAN)
+- WebMap defaults on (use --no-webmap to disable)
+- Beacon defaults on (set `BEACON_LAT/LON` to place the dot, or disable with --no-beacon)
+- If TAILSCALE_MODE is enabled, Heartbeat will auto-refresh SERVER_IP to the current Tailscale IP
 
 ## Troubleshooting
 

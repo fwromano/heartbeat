@@ -14,19 +14,19 @@ install_system_deps() {
         sudo apt-get update -qq
         sudo apt-get install -y -qq \
             python3 python3-pip python3-venv \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2-dev libxslt1-dev gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd dnf; then
         sudo dnf install -y -q \
             python3 python3-pip \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2-devel libxslt-devel gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd pacman; then
         sudo pacman -Sy --noconfirm --needed \
             python python-pip \
-            zip unzip curl net-tools \
+            zip unzip curl net-tools qrencode \
             libxml2 libxslt gcc 2>/dev/null
         log_ok "System dependencies installed"
     else
@@ -145,11 +145,11 @@ System:
 Addresses:
   FTS_COT_PORT: ${COT_PORT}
   FTS_SSLCOT_PORT: ${SSL_COT_PORT}
-  FTS_DP_ADDRESS: "0.0.0.0"
-  FTS_USER_ADDRESS: "0.0.0.0"
+  FTS_DP_ADDRESS: "${SERVER_IP}"
+  FTS_USER_ADDRESS: "${SERVER_IP}"
   FTS_API_PORT: ${API_PORT}
   FTS_FED_PORT: 9000
-  FTS_API_ADDRESS: "0.0.0.0"
+  FTS_API_ADDRESS: "127.0.0.1"
 
 FileSystem:
   FTS_DB_PATH: "${fts_dir}/data"

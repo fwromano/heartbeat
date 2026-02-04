@@ -33,7 +33,7 @@ banner() {
     echo ' | __ | _| / _ \|   / | | | _ \ _| / _ \| |'
     echo ' |_||_|___/_/ \_\_|_\ |_| |___/___/_/ \_\_|'
     echo -e "${NC}"
-    echo -e " ${DIM}TAK Server Manager for Volunteer Teams${NC}"
+    echo -e " ${DIM}TAK Server Manager for Teams${NC}"
     echo ""
 }
 
@@ -47,10 +47,15 @@ PACKAGES_DIR="${HEARTBEAT_DIR}/packages"
 LIB_DIR="${HEARTBEAT_DIR}/lib"
 DATA_DIR="${HEARTBEAT_DIR}/data"
 DOCKER_DIR="${HEARTBEAT_DIR}/docker"
+WEBMAP_DIR="${DATA_DIR}/webmap"
 
 HEARTBEAT_CONF="${CONFIG_DIR}/heartbeat.conf"
 PID_FILE="${DATA_DIR}/fts.pid"
 LOG_FILE="${DATA_DIR}/fts.log"
+WEBMAP_PID_FILE="${DATA_DIR}/webmap.pid"
+WEBMAP_LOG_FILE="${DATA_DIR}/webmap.log"
+BEACON_PID_FILE="${DATA_DIR}/beacon.pid"
+BEACON_LOG_FILE="${DATA_DIR}/beacon.log"
 
 # ---------------------------------------------------------------------------
 # Config
@@ -59,6 +64,14 @@ load_config() {
     if [[ -f "$HEARTBEAT_CONF" ]]; then
         # shellcheck source=/dev/null
         source "$HEARTBEAT_CONF"
+        if [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
+            local ts_ip
+            ts_ip=$(detect_tailscale_ip || true)
+            if [[ -n "$ts_ip" && "$ts_ip" != "$SERVER_IP" ]]; then
+                SERVER_IP="$ts_ip"
+                set_config "SERVER_IP" "$ts_ip"
+            fi
+        fi
     else
         log_error "Config not found: $HEARTBEAT_CONF"
         log_error "Run ./setup.sh first."
@@ -91,16 +104,23 @@ detect_ip() {
     echo "$ip"
 }
 
-detect_public_ip() {
-    curl -s --max-time 5 https://ifconfig.me 2>/dev/null || echo ""
-}
-
 has_cmd() {
     command -v "$1" &>/dev/null
 }
 
 has_docker() {
     has_cmd docker && docker info &>/dev/null 2>&1
+}
+
+detect_tailscale_ip() {
+    if has_cmd tailscale; then
+        tailscale ip -4 2>/dev/null | head -1
+    fi
+}
+
+is_tailscale_ip() {
+    # Tailscale uses CGNAT range 100.64.0.0/10
+    [[ "$1" =~ ^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\. ]]
 }
 
 get_compose_cmd() {
@@ -130,6 +150,10 @@ gen_secret() {
     head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 32
 }
 
+gen_password() {
+    head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 12
+}
+
 ensure_dir() {
     mkdir -p "$1"
 }
@@ -138,6 +162,36 @@ ensure_dir() {
 port_listening() {
     local port="$1"
     ss -tlnp 2>/dev/null | grep -q ":${port} " || return 1
+}
+
+# Check if a TCP port is accepting connections
+port_accepting() {
+    local host="${1:-127.0.0.1}" port="$2" rc
+    if has_cmd python3; then
+        set +e
+        python3 - "$host" "$port" <<'PY'
+import socket, sys
+host = sys.argv[1]
+port = int(sys.argv[2])
+s = socket.socket()
+s.settimeout(1)
+try:
+    s.connect((host, port))
+except Exception:
+    sys.exit(1)
+finally:
+    s.close()
+sys.exit(0)
+PY
+        rc=$?
+        set -e
+        return $rc
+    fi
+    set +e
+    bash -c "exec 3<>/dev/tcp/${host}/${port}" >/dev/null 2>&1
+    rc=$?
+    set -e
+    return $rc
 }
 
 # Check if a port is available (not in use)

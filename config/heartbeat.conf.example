@@ -11,6 +11,7 @@ SERVER_IP=""
 
 # Deployment mode: "docker" or "native"
 DEPLOY_MODE="docker"
+TAILSCALE_MODE="false"
 
 # ---------------------------------------------------------------------------
 # Ports
@@ -25,6 +26,21 @@ DATAPACKAGE_PORT=8443    # Data package service
 # ---------------------------------------------------------------------------
 FTS_SECRET_KEY=""        # Generated during setup
 FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
+FTS_USERNAME="team"      # Default TAK username (generated during setup)
+FTS_PASSWORD=""           # Auto-generated random password (see setup output)
+
+# Web map (FreeTAKHub WebMap)
+WEBMAP_ENABLED="true"
+WEBMAP_PORT=8000
+WEBMAP_URL="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
+
+# Beacon (shows server/laptop as a map dot)
+BEACON_ENABLED="true"
+BEACON_NAME="Heartbeat Beacon"
+BEACON_INTERVAL=10
+BEACON_LAT=""
+BEACON_LON=""
+BEACON_ALT=0
 
 # ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)

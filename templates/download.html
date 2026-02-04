@@ -45,6 +45,24 @@
     border-radius: 0.5rem; font-size: 0.85rem; color: #64748b;
   }
   .info code { color: #38bdf8; }
+  .qr-section {
+    margin: 1.25rem 0; padding: 1rem;
+    background: #0f172a; border-radius: 0.75rem;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 1.25rem;
+  }
+  .qr-item {
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .qr-img {
+    width: 160px; height: 160px;
+    background: #fff; border-radius: 0.5rem; padding: 8px;
+  }
+  .qr-label {
+    margin-top: 0.6rem; font-size: 0.85rem; font-weight: 600; color: #cbd5e1;
+  }
+  .qr-hint {
+    margin-top: 0.2rem; font-size: 0.75rem; color: #64748b;
+  }
 </style>
 </head>
 <body>
@@ -56,6 +74,8 @@
     Download Connection Package
   </a>
 
+  {{QR_SECTION}}
+
   <div class="steps">
     <h2>Setup Instructions</h2>
     <div class="step">
@@ -64,21 +84,21 @@
     </div>
     <div class="step">
       <span class="step-num">2</span>
-      <span><b>iPhone:</b> Open with iTAK (tap the file, or use Share > iTAK)</span>
+      <span><b>iPhone (iTAK):</b> Open the .zip &rarr; Share &rarr; iTAK &rarr; Import</span>
     </div>
     <div class="step">
       <span class="step-num">3</span>
-      <span><b>Android:</b> Open with ATAK (Downloads > tap .zip > Open with ATAK)</span>
+      <span><b>Android (ATAK):</b> Downloads &rarr; tap .zip &rarr; Open with ATAK</span>
     </div>
     <div class="step">
       <span class="step-num">4</span>
-      <span>Your location appears on the team map automatically</span>
+      <span>If not auto-connected, go to Settings &rarr; Network &rarr; enable the server</span>
     </div>
   </div>
 
   <div class="info">
-    <strong>Manual setup:</strong><br>
-    Server: <code>{{SERVER_IP}}</code><br>
+    <strong>Manual connect (no certs):</strong><br>
+    Server: <code>{{SERVER_IP}}</code> &middot;
     Port: <code>{{COT_PORT}}</code> &middot; Protocol: <code>TCP</code>
   </div>
 </div>
