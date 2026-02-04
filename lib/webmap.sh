@@ -21,7 +21,7 @@ _webmap_fts_url() {
     if [[ -n "${WEBMAP_FTS_URL:-}" ]]; then
         echo "$WEBMAP_FTS_URL"
     else
-        echo "${SERVER_IP:-127.0.0.1}"
+        echo "127.0.0.1"
     fi
 }
 
@@ -98,17 +98,17 @@ webmap_start() {
         return 1
     fi
 
+    _webmap_write_config
+
     if [[ -f "$WEBMAP_PID_FILE" ]] && kill -0 "$(cat "$WEBMAP_PID_FILE")" 2>/dev/null; then
         return 0
     fi
 
     local i=0
-    while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 15 ]]; do
-        sleep 1
+    while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 60 ]]; do
+        sleep 2
         ((i++))
     done
-
-    _webmap_write_config
 
     local bin
     bin="$(_webmap_bin_path)"
@@ -120,6 +120,11 @@ webmap_start() {
     nohup "$bin" "${WEBMAP_DIR}/webMAP_config.json" >> "$WEBMAP_LOG_FILE" 2>&1 &
     echo $! > "$WEBMAP_PID_FILE"
     log_ok "WebMap started (port ${WEBMAP_PORT:-8000})"
+
+    # Auto-open in browser if graphical session available
+    if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && has_cmd xdg-open; then
+        (sleep 3 && xdg-open "http://localhost:${WEBMAP_PORT:-8000}/tak-map" 2>/dev/null) &
+    fi
 }
 
 webmap_stop() {

@@ -33,6 +33,7 @@ _patch_config() {
     sed -i "s|FTS_COT_PORT:.*|FTS_COT_PORT: $COT_PORT|" "$CONFIG_PATH"
     sed -i "s|FTS_SSLCOT_PORT:.*|FTS_SSLCOT_PORT: $SSL_COT_PORT|" "$CONFIG_PATH"
     sed -i "s|FTS_API_PORT:.*|FTS_API_PORT: $API_PORT|" "$CONFIG_PATH"
+    sed -i "s|FTS_DB_PATH:.*|FTS_DB_PATH: /opt/fts/data|" "$CONFIG_PATH"
     echo "[heartbeat] Patched config: IP=$SERVER_IP CoT=$COT_PORT SSL=$SSL_COT_PORT API=$API_PORT"
 }
 
@@ -67,6 +68,16 @@ _background_patch() {
 
 # Launch patcher in background
 _background_patch &
+
+# ---------------------------------------------------------------------------
+# Persist database to mounted volume
+# ---------------------------------------------------------------------------
+DB_VOLUME="/opt/fts/data/FTSDataBase.db"
+DB_DEFAULT="/opt/fts/FTSDataBase.db"
+if [ -f "$DB_DEFAULT" ] && [ ! -L "$DB_DEFAULT" ]; then
+    mv "$DB_DEFAULT" "$DB_VOLUME"
+fi
+ln -sf "$DB_VOLUME" "$DB_DEFAULT"
 
 # ---------------------------------------------------------------------------
 # Start FTS (foreground)

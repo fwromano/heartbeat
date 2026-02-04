@@ -16,6 +16,9 @@ server_start() {
         _native_start
     fi
 
+    source "${LIB_DIR}/beacon.sh"
+    beacon_start || true
+
     if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
         source "${LIB_DIR}/webmap.sh"
         webmap_start || true
@@ -36,7 +39,20 @@ _docker_start() {
     export COT_PORT SSL_COT_PORT API_PORT DATAPACKAGE_PORT
     export FTS_CONNECTION_MSG SERVER_IP
 
-    (cd "$DOCKER_DIR" && $compose_cmd up -d)
+    # Add localhost CoT binding for host-side services (WebMap, Beacon)
+    local override="${DOCKER_DIR}/docker-compose.override.yml"
+    if [[ "$SERVER_IP" != "127.0.0.1" ]]; then
+        cat > "$override" <<OVERRIDE
+services:
+  fts:
+    ports:
+      - "127.0.0.1:${COT_PORT:-8087}:${COT_PORT:-8087}"
+OVERRIDE
+    else
+        rm -f "$override"
+    fi
+
+    (cd "$DOCKER_DIR" && $compose_cmd up -d --build)
 
     # Wait for server to be ready
     _wait_for_server
@@ -87,10 +103,16 @@ server_stop() {
         _native_stop
     fi
 
+    source "${LIB_DIR}/beacon.sh"
+    beacon_stop || true
+
     if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
         source "${LIB_DIR}/webmap.sh"
         webmap_stop || true
     fi
+
+    # Clean up stale PID files
+    rm -f "$BEACON_PID_FILE" "$WEBMAP_PID_FILE" "$PID_FILE" 2>/dev/null
 }
 
 _docker_stop() {
@@ -103,6 +125,7 @@ _docker_stop() {
 
     log_step "Stopping TAK server"
     (cd "$DOCKER_DIR" && $compose_cmd down)
+    rm -f "${DOCKER_DIR}/docker-compose.override.yml" 2>/dev/null
     log_ok "Server stopped"
 }
 
@@ -215,6 +238,10 @@ server_status() {
     echo -e "  CoT:     ${CYAN}${SERVER_IP}:${COT_PORT}${NC} (TCP)"
     echo -e "  SSL CoT: ${CYAN}${SERVER_IP}:${SSL_COT_PORT}${NC}"
     echo -e "  API:     ${CYAN}${SERVER_IP}:${API_PORT}${NC}"
+    echo ""
+
+    source "${LIB_DIR}/beacon.sh"
+    beacon_status
     echo ""
 
     if $running; then
@@ -403,20 +430,46 @@ _show_recent_logs() {
 # Helpers - server lifecycle
 # ---------------------------------------------------------------------------
 _wait_for_server() {
-    log_info "Waiting for server to start..."
+    log_info "Waiting for server to accept connections..."
     local i=0
-    while ! port_listening "${COT_PORT}" && [[ $i -lt 30 ]]; do
-        sleep 1
-        ((i++))
-        printf "."
-    done
+
+    if [[ "$DEPLOY_MODE" == "docker" ]]; then
+        # Use Docker's in-container healthcheck (bypasses host network binding)
+        while [[ $i -lt 30 ]]; do
+            local health
+            health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+            if [[ "$health" == "healthy" ]]; then
+                break
+            fi
+            sleep 1
+            ((i++))
+            printf "."
+        done
+    else
+        while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 30 ]]; do
+            sleep 1
+            ((i++))
+            printf "."
+        done
+    fi
     echo ""
 
-    if port_listening "${COT_PORT}"; then
-        log_ok "Server is running"
+    if [[ "$DEPLOY_MODE" == "docker" ]]; then
+        local health
+        health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+        if [[ "$health" == "healthy" ]]; then
+            log_ok "Server is accepting connections"
+        else
+            log_warn "Server may still be starting (health: ${health})"
+            log_info "Check logs: ./heartbeat logs"
+        fi
     else
-        log_warn "Server may still be starting (port ${COT_PORT} not detected yet)"
-        log_info "Check logs: ./heartbeat logs"
+        if port_accepting "127.0.0.1" "${COT_PORT}"; then
+            log_ok "Server is accepting connections"
+        else
+            log_warn "Server may still be starting (port ${COT_PORT} not accepting yet)"
+            log_info "Check logs: ./heartbeat logs"
+        fi
     fi
 }
 

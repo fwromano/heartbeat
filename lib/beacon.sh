@@ -53,7 +53,7 @@ beacon_start() {
     local name="${BEACON_NAME:-Heartbeat Beacon}"
     local interval="${BEACON_INTERVAL:-10}"
     local alt="${BEACON_ALT:-0}"
-    local host="${BEACON_HOST:-127.0.0.1}"
+    local host="${BEACON_HOST:-$([ "${DEPLOY_MODE:-}" = "docker" ] && echo "127.0.0.1" || echo "$SERVER_IP")}"
     local port="${BEACON_PORT:-$COT_PORT}"
     local type="${BEACON_TYPE:-a-f-G-U-C}"
     local ce="${BEACON_CE:-5.0}"
@@ -182,7 +182,7 @@ beacon_cmd() {
         on|enable)
             set_config "BEACON_ENABLED" "true"
             log_ok "Beacon enabled"
-            if port_accepting "127.0.0.1" "${COT_PORT}"; then
+            if port_listening "${COT_PORT}"; then
                 beacon_start || true
             fi
             ;;
@@ -210,7 +210,7 @@ beacon_cmd() {
             if [[ -n "$interval" ]]; then set_config "BEACON_INTERVAL" "$interval"; fi
             set_config "BEACON_ENABLED" "true"
             log_ok "Beacon updated"
-            if port_accepting "127.0.0.1" "${COT_PORT}"; then
+            if port_listening "${COT_PORT}"; then
                 beacon_stop || true
                 beacon_start || true
             else
