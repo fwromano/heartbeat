@@ -23,6 +23,9 @@ server_start() {
         source "${LIB_DIR}/webmap.sh"
         webmap_start || true
     fi
+
+    _wait_for_server
+    _show_running_info
 }
 
 _docker_start() {
@@ -55,9 +58,6 @@ OVERRIDE
     (cd "$DOCKER_DIR" && $compose_cmd up -d --build)
 
     # Wait for server to be ready
-    _wait_for_server
-
-    _show_running_info
 }
 
 _native_start() {
@@ -86,9 +86,6 @@ _native_start() {
 
     log_info "PID: $(cat "$PID_FILE")"
 
-    _wait_for_server
-
-    _show_running_info
 }
 
 # ---------------------------------------------------------------------------
@@ -442,12 +439,13 @@ _show_recent_logs() {
 # Helpers - server lifecycle
 # ---------------------------------------------------------------------------
 _wait_for_server() {
+    local max_wait="${1:-5}"
     log_info "Waiting for server to accept connections..."
     local i=0
 
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
         # Use Docker's in-container healthcheck (bypasses host network binding)
-        while [[ $i -lt 30 ]]; do
+        while [[ $i -lt $max_wait ]]; do
             local health
             health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
             if [[ "$health" == "healthy" ]]; then
@@ -458,7 +456,7 @@ _wait_for_server() {
             printf "."
         done
     else
-        while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 30 ]]; do
+        while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt $max_wait ]]; do
             sleep 1
             ((i++))
             printf "."
@@ -483,6 +481,20 @@ _wait_for_server() {
             log_info "Check logs: ./heartbeat logs"
         fi
     fi
+}
+
+_server_ready() {
+    if [[ "$DEPLOY_MODE" == "docker" ]]; then
+        local health
+        health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+        if [[ "$health" == "healthy" ]]; then
+            return 0
+        fi
+        port_accepting "127.0.0.1" "${COT_PORT}" && return 0
+        return 1
+    fi
+
+    port_accepting "127.0.0.1" "${COT_PORT}"
 }
 
 _create_default_user() {
@@ -579,27 +591,51 @@ PY
 }
 
 _show_running_info() {
+    local ready="false"
+    if _server_ready; then
+        ready="true"
+    fi
+
     echo ""
-    echo -e "${BOLD}TAK Server is running${NC}"
+    if [[ "$ready" == "true" ]]; then
+        echo -e "${BOLD}TAK Server is running${NC}"
+    else
+        echo -e "${BOLD}TAK Server is starting${NC}"
+    fi
     echo -e "${DIM}──────────────────────────────────${NC}"
     echo -e "  ${BOLD}Connect from iTAK/ATAK:${NC}"
     echo -e "  Server:  ${CYAN}${SERVER_IP}${NC}"
     echo -e "  Port:    ${CYAN}${COT_PORT}${NC}"
     echo -e "  Proto:   TCP"
 
-    # Create default user and sync certificate package
-    local user_result
-    user_result=$(_create_default_user)
-    if [[ "$user_result" == "ok" ]]; then
-        log_ok "Default user created"
-    fi
+    if [[ "$ready" == "true" ]]; then
+        # Create default user and sync certificate package
+        local user_result
+        user_result=$(_create_default_user)
+        if [[ "$user_result" == "ok" ]]; then
+            log_ok "Default user created"
+        fi
 
-    # Sync FTS-generated package (with SSL certs) to packages dir
-    _sync_fts_package
+        # Sync FTS-generated package (with SSL certs) to packages dir
+        _sync_fts_package
 
-    # Show QR code
-    if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
-        show_qr_compact
+        # Show QR code
+        if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
+            show_qr_compact
+        fi
+    else
+        log_info "Server still starting. Run ./heartbeat info or ./heartbeat qr in a moment."
+        (
+            local i=0
+            while ! _server_ready && [[ $i -lt 60 ]]; do
+                sleep 2
+                ((i++))
+            done
+            if _server_ready; then
+                _create_default_user >/dev/null 2>&1 || true
+                _sync_fts_package >/dev/null 2>&1 || true
+            fi
+        ) &
     fi
 
     echo -e "  ${DIM}./heartbeat qr           show QR code again${NC}"

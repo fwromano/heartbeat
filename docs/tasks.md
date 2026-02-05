@@ -2,8 +2,8 @@
 
 ## In Progress
 
-- **[high] Persist FTS database + fix WebMap connectivity** — DB lost on container restart, WebMap can't reach FTS in Docker mode. Spec: `docs/persistence-webmap-spec.md`
-- **[high] Lifecycle-aware cleanup** — Runtime artifacts pile up on disk. Spec below.
+- **[high] CoTView — Replace FreeTAKHub WebMap** — Build a lightweight Python+Leaflet CoT viewer we control. Spec: `docs/cotview-spec.md`
+- **[high] Persist FTS database** — Code complete, needs end-to-end test after Docker image rebuild. Test: `docker rmi docker-fts:latest && ./heartbeat start`, verify `docker/data/FTSDataBase.db` exists. Spec: `docs/persistence-webmap-spec.md`
 
 ---
 
@@ -225,6 +225,7 @@ ls packages/*.zip 2>/dev/null            # nothing
 
 ## Done
 
+- ~~Lifecycle-aware cleanup~~ — WebMap cwd fix, stop cleanup, re-setup clean slate, `./heartbeat clean` command
 - ~~Scrap VM deployment code~~ — Removed `deploy_oracle_free_vm.sh`, `deploy_public_vm.sh`, oracle docs, `detect_public_ip()`
 - ~~iTAK connection QR on download page~~ — Second QR code for iTAK "Add Server > Scan QR" flow
 - ~~Beacon coordinate guard~~ — Skip beacon send when lat/lon empty instead of crashing

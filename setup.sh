@@ -280,8 +280,8 @@ main() {
     local beacon_enabled="true"
     local beacon_name="${team_name} Beacon"
     local beacon_interval="10"
-    local beacon_lat=""
-    local beacon_lon=""
+    local beacon_lat="30.63443"
+    local beacon_lon="-96.47834"
     local beacon_alt="0"
     if $DISABLE_BEACON; then
         beacon_enabled="false"
@@ -294,6 +294,12 @@ main() {
         beacon_lat=$(prompt_default "Latitude (e.g. 30.2672)" "$beacon_lat")
         beacon_lon=$(prompt_default "Longitude (e.g. -97.7431)" "$beacon_lon")
     fi
+
+    # ---- Web map default view ----
+    local webmap_view_lat="${beacon_lat}"
+    local webmap_view_lon="${beacon_lon}"
+    local webmap_view_zoom="15"
+    local webmap_view_layer="Esri Satellite"
 
     # ---- Default credentials ----
     local fts_user="team"
@@ -332,6 +338,10 @@ FTS_PASSWORD="${fts_pass}"
 WEBMAP_ENABLED="${webmap_enabled}"
 WEBMAP_PORT=${webmap_port}
 WEBMAP_URL="${webmap_url}"
+WEBMAP_VIEW_LAT="${webmap_view_lat}"
+WEBMAP_VIEW_LON="${webmap_view_lon}"
+WEBMAP_VIEW_ZOOM=${webmap_view_zoom}
+WEBMAP_VIEW_LAYER="${webmap_view_layer}"
 
 BEACON_ENABLED="${beacon_enabled}"
 BEACON_NAME="${beacon_name}"

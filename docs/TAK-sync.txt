@@ -1,0 +1,8 @@
+nfs training scenarios
+translating sim to real gps location tak
+tak matrix integration ???
+gps spoof/simulation node
+march 25/26 event 
+5g elevation vs helicopter 
+water point and authorized flight zone
+air enroachment data input too

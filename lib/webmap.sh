@@ -1,38 +1,54 @@
 #!/usr/bin/env bash
-# Heartbeat - Web map helper (FreeTAKHub WebMap)
+# Heartbeat - Web map helper (CoTView)
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-_webmap_supported() {
-    if [[ "$(uname -s)" != "Linux" ]]; then
-        return 1
+_cotview_launch() {
+    local host="${COTVIEW_FTS_HOST:-127.0.0.1}"
+    local port="${COTVIEW_FTS_PORT:-${COT_PORT:-8087}}"
+    local http_port="${WEBMAP_PORT:-8000}"
+    local center_lat="${WEBMAP_VIEW_LAT:-${BEACON_LAT:-0}}"
+    local center_lon="${WEBMAP_VIEW_LON:-${BEACON_LON:-0}}"
+    local center_zoom="${WEBMAP_VIEW_ZOOM:-15}"
+    local stale_seconds="${COTVIEW_STALE_SECONDS:-300}"
+
+    local verbose_flag=()
+    if [[ "${COTVIEW_VERBOSE:-false}" == "true" ]]; then
+        verbose_flag+=(--verbose)
     fi
-    case "$(uname -m)" in
-        x86_64|amd64) return 0 ;;
-        *) return 1 ;;
-    esac
+
+    (cd "$LIB_DIR" && nohup python3 cotview.py \
+        --host "$host" \
+        --port "$port" \
+        --http-port "$http_port" \
+        --center-lat "$center_lat" \
+        --center-lon "$center_lon" \
+        --center-zoom "$center_zoom" \
+        --stale-seconds "$stale_seconds" \
+        "${verbose_flag[@]}" \
+        >> "$WEBMAP_LOG_FILE" 2>&1) &
+    echo $! > "$WEBMAP_PID_FILE"
 }
 
-_webmap_bin_path() {
-    find "$WEBMAP_DIR" -maxdepth 1 -type f -name 'FTH-webmap-*' ! -name '*.json' 2>/dev/null | head -1
-}
-
-_webmap_fts_url() {
-    if [[ -n "${WEBMAP_FTS_URL:-}" ]]; then
-        echo "$WEBMAP_FTS_URL"
-    else
-        echo "127.0.0.1"
+_webmap_port_pids() {
+    local port="$1"
+    if ! has_cmd ss; then
+        return 0
     fi
+    ss -tlnp 2>/dev/null | grep -E "LISTEN\\s+.*:${port}\\b" | grep -o 'pid=[0-9]\+' | cut -d= -f2 | sort -u
 }
 
-_webmap_write_config() {
-    cat > "${WEBMAP_DIR}/webMAP_config.json" <<EOF
-{
-  "FTH_FTS_URL": "$(_webmap_fts_url)",
-  "FTH_FTS_TCP_Port": ${COT_PORT},
-  "FTH_FTS_UDP_Port": ${COT_PORT}
-}
-EOF
+_webmap_open_browser() {
+    if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && has_cmd xdg-open; then
+        local map_url="http://localhost:${WEBMAP_PORT:-8000}/"
+        if [[ -n "${SUDO_USER:-}" ]]; then
+            local xauth="${XAUTHORITY:-/home/${SUDO_USER}/.Xauthority}"
+            (sleep 3 && sudo -u "$SUDO_USER" DISPLAY="${DISPLAY:-}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-}" \
+                XAUTHORITY="$xauth" xdg-open "$map_url" >/dev/null 2>&1) &
+        else
+            (sleep 3 && xdg-open "$map_url" >/dev/null 2>&1) &
+        fi
+    fi
 }
 
 webmap_install() {
@@ -42,49 +58,22 @@ webmap_install() {
         return 0
     fi
 
-    if ! _webmap_supported; then
-        log_warn "WebMap supported on Linux x86_64 only. Skipping."
+    if ! has_cmd python3; then
+        log_error "CoTView requires python3."
         return 1
     fi
 
-    if [[ -z "${WEBMAP_URL:-}" ]]; then
-        log_error "WEBMAP_URL is not set."
-        return 1
-    fi
-
-    if ! has_cmd curl || ! has_cmd unzip; then
-        log_error "WebMap requires curl and unzip."
-        return 1
-    fi
-
-    ensure_dir "$WEBMAP_DIR"
-
-    local zip_path="${WEBMAP_DIR}/webmap.zip"
-    if [[ ! -f "$zip_path" ]]; then
-        log_info "Downloading WebMap..."
-        if ! curl -fsSL "$WEBMAP_URL" -o "$zip_path"; then
-            log_error "Failed to download WebMap."
+    if ! python3 -c "import websockets" 2>/dev/null; then
+        log_info "Installing websockets for CoTView..."
+        if has_cmd pip3; then
+            pip3 install --quiet websockets
+        elif python3 -m pip --version >/dev/null 2>&1; then
+            python3 -m pip install --quiet websockets
+        else
+            log_error "pip3 is required to install websockets."
             return 1
         fi
     fi
-
-    if [[ -z "$(_webmap_bin_path)" ]]; then
-        log_info "Extracting WebMap..."
-        if ! unzip -o -q "$zip_path" -d "$WEBMAP_DIR"; then
-            log_error "Failed to extract WebMap."
-            return 1
-        fi
-    fi
-
-    local bin
-    bin="$(_webmap_bin_path)"
-    if [[ -z "$bin" ]]; then
-        log_error "WebMap binary not found after extract."
-        return 1
-    fi
-    chmod +x "$bin" 2>/dev/null || true
-
-    _webmap_write_config
 }
 
 webmap_start() {
@@ -98,45 +87,57 @@ webmap_start() {
         return 1
     fi
 
-    _webmap_write_config
+    local port="${WEBMAP_PORT:-8000}"
+    local running_pids=()
+    while read -r pid; do
+        [[ -n "$pid" ]] && running_pids+=("$pid")
+    done < <(_webmap_port_pids "$port")
 
-    if [[ -f "$WEBMAP_PID_FILE" ]] && kill -0 "$(cat "$WEBMAP_PID_FILE")" 2>/dev/null; then
+    if [[ ${#running_pids[@]} -gt 0 ]]; then
+        echo "${running_pids[0]}" > "$WEBMAP_PID_FILE"
+        log_ok "WebMap already running (port ${port})"
+        _webmap_open_browser
         return 0
     fi
 
-    local i=0
-    while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt 60 ]]; do
-        sleep 2
-        ((i++))
-    done
+    if [[ -f "$WEBMAP_PID_FILE" ]] && kill -0 "$(cat "$WEBMAP_PID_FILE")" 2>/dev/null; then
+        log_ok "WebMap already running (port ${port})"
+        _webmap_open_browser
+        return 0
+    fi
 
-    local bin
-    bin="$(_webmap_bin_path)"
-    if [[ -z "$bin" ]]; then
-        log_error "WebMap binary not found."
+    if ! _cotview_launch; then
         return 1
     fi
-
-    (cd "$WEBMAP_DIR" && nohup "$bin" "webMAP_config.json" >> "$WEBMAP_LOG_FILE" 2>&1) &
-    echo $! > "$WEBMAP_PID_FILE"
-    log_ok "WebMap started (port ${WEBMAP_PORT:-8000})"
-
-    # Auto-open in browser if graphical session available
-    if [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && has_cmd xdg-open; then
-        (sleep 3 && xdg-open "http://localhost:${WEBMAP_PORT:-8000}/tak-map" 2>/dev/null) &
-    fi
+    log_ok "WebMap started (port ${port})"
+    _webmap_open_browser
 }
 
 webmap_stop() {
+    local port="${WEBMAP_PORT:-8000}"
+    local -a pids=()
+    local -A seen=()
     if [[ -f "$WEBMAP_PID_FILE" ]]; then
         local pid
         pid=$(cat "$WEBMAP_PID_FILE")
-        if kill "$pid" 2>/dev/null; then
-            log_ok "WebMap stopped"
-        fi
-        rm -f "$WEBMAP_PID_FILE"
+        [[ -n "$pid" ]] && pids+=("$pid")
     fi
-    # Clean Node-RED runtime artifacts
+    while read -r pid; do
+        [[ -n "$pid" ]] && pids+=("$pid")
+    done < <(_webmap_port_pids "$port")
+
+    if [[ ${#pids[@]} -gt 0 ]]; then
+        for pid in "${pids[@]}"; do
+            if [[ -n "${seen[$pid]:-}" ]]; then
+                continue
+            fi
+            seen[$pid]=1
+            if kill "$pid" 2>/dev/null; then
+                log_ok "WebMap stopped"
+            fi
+        done
+    fi
+    rm -f "$WEBMAP_PID_FILE"
     rm -f "${WEBMAP_DIR}/.config.nodes.json" "${WEBMAP_DIR}/.config.runtime.json" \
           "${WEBMAP_DIR}/package.json" 2>/dev/null
     rm -rf "${WEBMAP_DIR}/JsonDB" 2>/dev/null
