@@ -2,7 +2,7 @@
 
 ## In Progress
 
-None.
+- **[high] CoT recording + GeoPackage export** — Recorder daemon, SQLite storage, raw + GCM export
 
 ## Backlog
 
@@ -10,7 +10,6 @@ None.
 - **[med] DataPackage port conflicts** — Warn + disable or remap when port is already in use
 - **[med] OpenTAK backend** — Add OpenTAK Server as alternative backend with built-in WebTAK
 - **[low] TAK Server backend** — Add official TAK Server (tak.gov) support
-- **[med] GeoPackage export** — Export CoT data (points, lines, polygons) to GPKG
 - **[low] Federation support** — Connect multiple Heartbeat instances
 - **[low] Add LICENSE file** — Document "free for humanity" philosophy
 

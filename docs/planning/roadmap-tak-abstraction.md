@@ -256,6 +256,29 @@ Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 
 ---
 
+### Phase 5: CoT Recording and GeoPackage Export (ACTIVE)
+
+**Goal:** Capture CoT events and export to GIS-friendly GeoPackage
+
+**Why:**
+- Demonstrates Heartbeat as more than a TAK installer
+- Enables GIS workflows and data analysis
+- Critical for March demo
+
+#### 5.1 Recording Pipeline
+
+- Recorder connects as a CoT client and records all events
+- SQLite storage in WAL mode for concurrent export
+- Manual `record start/stop/status` commands
+
+#### 5.2 Export Pipeline
+
+- Raw export to 4-layer GeoPackage (positions, markers, routes, areas)
+- GCM export with YAML-based mapping and exclusions
+- No GDAL dependency, shapely only
+
+---
+
 ## Architecture Evolution
 
 ### Current State (Pre-Headless)
@@ -306,6 +329,7 @@ heartbeat
 | 2. Abstraction Layer | **HIGH** | Medium | Enables multi-backend support |
 | 3. OpenTAK Backend | **MEDIUM** | Medium | Built-in map, growing community |
 | 4. TAK Server Backend | **LOW** | High | Niche audience, complex setup |
+| 5. CoT Export Engine | **HIGH** | Medium | Demo-critical, GIS workflows |
 
 ---
 
@@ -335,6 +359,13 @@ heartbeat
 - [ ] Federation configuration support
 - [ ] Documentation for government users
 
+### Phase 5 (CoT Export)
+- [ ] CoT recorder daemon with reconnect and WAL storage
+- [ ] Raw GeoPackage export (positions, markers, routes, areas)
+- [ ] GCM export with YAML mapping
+- [ ] CLI commands: `record` and `export`
+- [ ] Documentation and verification steps
+
 ---
 
 ## Open Questions
@@ -351,10 +382,9 @@ heartbeat
 
 ## Next Steps
 
-1. **Complete Phase 1** - Execute the headless cleanup per `docs/headless-cleanup-spec.md`
-2. **Design Interface** - Draft the backend interface specification
-3. **Prototype Abstraction** - Refactor FreeTAK code behind the interface
-4. **Research OpenTAK** - Document OpenTAK's API and integration points
+1. **Implement CoT Export** - Recorder + GeoPackage writer + CLI commands
+2. **Stabilize OpenTAK** - Verify image, confirm WebTAK behavior
+3. **Define TAK Server** - Draft tak.gov backend setup flow
 
 ---
 

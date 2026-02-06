@@ -15,6 +15,7 @@ Strategic vision and implementation roadmaps.
 | [Platform Vision](planning/vision-heartbeat-platform.md) | Big picture: tiered backends, federation, export, ALIAS integration |
 | [TAK Abstraction Roadmap](planning/roadmap-tak-abstraction.md) | Backend abstraction: FreeTAK → OpenTAK → TAK Server |
 | [Headless Cleanup Spec](planning/headless-cleanup-spec.md) | Phase 1: Remove beacon/webmap, clean foundation |
+| [CoT Export Spec](planning/cot-export-spec.md) | CoT recording and GeoPackage export pipeline |
 
 ---
 
