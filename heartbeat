@@ -50,17 +50,16 @@ show_help() {
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
     echo ""
     echo -e "${BOLD}Recording & Export:${NC}"
-    echo "  record start         Start recording CoT events from the server"
-    echo "  record stop          Stop the CoT recorder"
     echo "  record status        Check recorder status and event count"
+    echo "  record start|stop    Manually control recorder (auto-starts with server)"
     echo "  export [-o file]     Export recorded events to GeoPackage (.gpkg)"
     echo "  export --gcm [-o f]  Export GCM (tactical geometry) only"
     echo ""
     echo -e "${BOLD}System:${NC}"
     echo "  info                 Show server connection details"
-    echo "  update               Update FreeTAKServer to latest version"
+    echo "  update               Update the active TAK backend"
     echo "  systemd              Install systemd service (native mode, requires sudo)"
-    echo "  uninstall            Remove FreeTAKServer and optionally data"
+    echo "  uninstall            Remove active TAK backend and optionally data"
     echo "  clean                Remove all generated artifacts (packages, certs, logs)"
     echo "  help                 Show this help"
     echo ""
@@ -84,9 +83,13 @@ cmd_info() {
     echo ""
     echo -e "  Team:        ${TEAM_NAME}"
     echo -e "  Server IP:   ${CYAN}${SERVER_IP}${NC}"
+    echo -e "  Backend:     ${TAK_BACKEND:-freetak}"
     echo -e "  CoT Port:    ${CYAN}${COT_PORT}${NC} (TCP)"
     echo -e "  SSL Port:    ${SSL_COT_PORT}"
     echo -e "  API Port:    ${API_PORT}"
+    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        echo -e "  WebTAK:      ${CYAN}https://${SERVER_IP}:${WEBTAK_PORT:-8443}/${NC}"
+    fi
     echo -e "  Mode:        ${DEPLOY_MODE}"
     echo ""
     echo -e "  ${BOLD}Manual connection in iTAK/ATAK:${NC}"
@@ -161,19 +164,36 @@ fi
 case "$cmd" in
     start)
         source "${LIB_DIR}/server.sh"
-        server_start
+        server_start || true
+        # Auto-start recorder so CoT events are always captured
+        source "${LIB_DIR}/record.sh"
+        record_start
         ;;
     stop)
+        # Stop recorder and auto-export before shutting down server
+        source "${LIB_DIR}/record.sh"
+        record_stop 2>/dev/null || true
+        # Auto-export recorded data if there's a database
+        if [[ -f "${DATA_DIR}/cot_records.db" ]]; then
+            source "${LIB_DIR}/export.sh"
+            cmd_export -o "${DATA_DIR}/cot_export_$(date +%Y%m%d_%H%M%S).gpkg" 2>/dev/null || true
+        fi
         source "${LIB_DIR}/server.sh"
         server_stop
         ;;
     restart)
+        source "${LIB_DIR}/record.sh"
+        record_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         server_restart
+        source "${LIB_DIR}/record.sh"
+        record_start
         ;;
     status)
         source "${LIB_DIR}/server.sh"
         server_status
+        source "${LIB_DIR}/record.sh"
+        record_status
         ;;
     listen)
         source "${LIB_DIR}/server.sh"
@@ -219,13 +239,17 @@ case "$cmd" in
         source "${LIB_DIR}/server.sh"
         server_stop 2>/dev/null || true
         load_config
+        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+            source "${LIB_DIR}/backends/opentak.sh"
+            backend_uninstall
+        fi
         log_step "Cleaning all generated artifacts"
         rm -f "${PACKAGES_DIR}"/*.zip "${PACKAGES_DIR}"/*.png "${PACKAGES_DIR}"/index.html 2>/dev/null
         rm -f "${DATA_DIR}"/*.log "${DATA_DIR}"/*.pid "${DATA_DIR}"/cot_records.db 2>/dev/null
         rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
               "${HEARTBEAT_DIR}/package.json" 2>/dev/null
         rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
-        if has_docker; then
+        if [[ "${TAK_BACKEND:-freetak}" != "opentak" ]] && has_docker; then
             compose_cmd=$(get_compose_cmd)
             if [[ -n "$compose_cmd" ]]; then
                 (cd "$DOCKER_DIR" && $compose_cmd down -v 2>/dev/null) || true

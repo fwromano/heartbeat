@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 # OpenTAK Server Backend (Standard tier)
-# Built-in WebTAK, SSL support, user management via WebTAK UI
+# Native systemd + nginx + rabbitmq + postgres install
 
 source "$(dirname "${BASH_SOURCE[0]}")/../common.sh"
-
-OPENTAK_DIR="${DOCKER_DIR}/opentak"
-OPENTAK_COMPOSE="${OPENTAK_DIR}/docker-compose.yml"
 
 backend_name() {
     echo "OpenTAK Server"
@@ -14,134 +11,114 @@ backend_name() {
 backend_supports() {
     local cap="$1"
     case "$cap" in
-        ssl) return 0 ;;           # Yes - SSL supported
-        users) return 0 ;;         # Yes - via WebTAK UI
-        webmap) return 0 ;;        # Yes - built-in WebTAK
-        federation) return 1 ;;    # Limited
+        ssl|users|webmap) return 0 ;;
+        federation) return 1 ;;
         *) return 1 ;;
     esac
 }
 
 backend_get_ports() {
     load_config
-    echo "COT:${COT_PORT:-8087} SSL:${SSL_COT_PORT:-8089} WebTAK:${WEBTAK_PORT:-8080} API:${API_PORT:-8443}"
+    echo "COT:${COT_PORT:-8087} SSL:${SSL_COT_PORT:-8089} WebTAK:${WEBTAK_PORT:-8443} API:${API_PORT:-8443}"
 }
 
 backend_start() {
     load_config
 
-    if ! has_docker; then
-        log_error "OpenTAK backend requires Docker."
-        return 1
-    fi
-
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
+    if [[ ! -f /etc/systemd/system/opentakserver.service ]]; then
+        log_error "OpenTAK systemd service not found."
+        log_error "Run: ./setup.sh --backend opentak"
         return 1
     fi
 
     log_step "Starting TAK server (OpenTAK)"
-
-    # Export config vars for docker-compose
-    export COT_PORT SSL_COT_PORT API_PORT SERVER_IP
-    export WEBTAK_PORT="${WEBTAK_PORT:-8080}"
-
-    # Ensure data dirs exist
-    ensure_dir "${OPENTAK_DIR}/data"
-    ensure_dir "${OPENTAK_DIR}/certs"
-
-    (cd "$OPENTAK_DIR" && $compose_cmd up -d)
-
+    sudo systemctl start opentakserver.service
     log_ok "OpenTAK started"
-    log_info "WebTAK available at: http://${SERVER_IP}:${WEBTAK_PORT}/"
+    log_info "WebTAK: https://${SERVER_IP}:${WEBTAK_PORT:-8443}/"
 }
 
 backend_stop() {
-    load_config
-
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
-        return 1
-    fi
-
     log_step "Stopping TAK server (OpenTAK)"
-    (cd "$OPENTAK_DIR" && $compose_cmd down)
+    sudo systemctl stop opentakserver.service cot_parser.service eud_handler.service eud_handler_ssl.service 2>/dev/null || true
     log_ok "Server stopped"
 }
 
 backend_status() {
-    load_config
-
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    [[ -z "$compose_cmd" ]] && return 1
-
-    local state
-    state=$(cd "$OPENTAK_DIR" && $compose_cmd ps --format '{{.State}}' 2>/dev/null | head -1)
-    [[ "$state" == "running" ]]
+    systemctl is-active --quiet opentakserver.service
 }
 
 backend_logs() {
-    load_config
     local follow="${1:-}"
+    local ots_log="${DATA_DIR}/opentak/logs/opentakserver.log"
 
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
-        return 1
+    if [[ -f "$ots_log" ]]; then
+        if [[ "$follow" == "-f" || "$follow" == "--follow" ]]; then
+            tail -f "$ots_log"
+        else
+            tail -50 "$ots_log"
+        fi
+        return 0
     fi
 
     if [[ "$follow" == "-f" || "$follow" == "--follow" ]]; then
-        (cd "$OPENTAK_DIR" && $compose_cmd logs -f --tail=100)
+        sudo journalctl -u opentakserver.service -f -n 100
     else
-        (cd "$OPENTAK_DIR" && $compose_cmd logs --tail=50)
+        sudo journalctl -u opentakserver.service -n 50 --no-pager
     fi
 }
 
 backend_update() {
-    load_config
-
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
+    local ots_venv="${DATA_DIR}/opentak/venv"
+    if [[ ! -x "${ots_venv}/bin/pip" ]]; then
+        log_error "OpenTAK venv not found. Run setup first."
         return 1
     fi
 
-    log_step "Updating OpenTAK image"
-    (cd "$OPENTAK_DIR" && $compose_cmd pull)
-    log_ok "Image updated. Restart with: ./heartbeat restart"
+    log_step "Updating OpenTAK package"
+    "${ots_venv}/bin/pip" install --quiet --upgrade opentakserver
+    log_ok "OpenTAK updated. Restart with: ./heartbeat restart"
 }
 
 backend_install() {
-    # Docker pull happens on first start
     :
 }
 
 backend_uninstall() {
-    load_config
+    local ots_dir="${DATA_DIR}/opentak"
 
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -n "$compose_cmd" ]]; then
-        (cd "$OPENTAK_DIR" && $compose_cmd down -v 2>/dev/null) || true
+    sudo systemctl stop opentakserver.service cot_parser.service eud_handler.service eud_handler_ssl.service 2>/dev/null || true
+    sudo systemctl disable opentakserver.service cot_parser.service eud_handler.service eud_handler_ssl.service 2>/dev/null || true
+
+    sudo rm -f /etc/systemd/system/opentakserver.service
+    sudo rm -f /etc/systemd/system/cot_parser.service
+    sudo rm -f /etc/systemd/system/eud_handler.service
+    sudo rm -f /etc/systemd/system/eud_handler_ssl.service
+    sudo systemctl daemon-reload
+
+    sudo rm -f /etc/nginx/sites-enabled/ots_http
+    sudo rm -f /etc/nginx/sites-enabled/ots_https
+    sudo rm -f /etc/nginx/sites-enabled/ots_certificate_enrollment
+    sudo rm -f /etc/nginx/sites-available/ots_http
+    sudo rm -f /etc/nginx/sites-available/ots_https
+    sudo rm -f /etc/nginx/sites-available/ots_certificate_enrollment
+    sudo rm -f /etc/nginx/streams-enabled/rabbitmq
+    sudo rm -f /etc/nginx/streams-available/rabbitmq
+    sudo nginx -s reload 2>/dev/null || true
+
+    if prompt_yn "Remove OpenTAK data (venv, certs, config)?" "y"; then
+        rm -rf "${ots_dir}"
+        log_ok "OpenTAK data removed"
     fi
 
-    if prompt_yn "Remove OpenTAK data?" "n"; then
-        rm -rf "${OPENTAK_DIR}/data" "${OPENTAK_DIR}/certs"
-        log_ok "Data removed"
+    if prompt_yn "Drop PostgreSQL database 'ots'?" "n"; then
+        sudo -u postgres psql -c "DROP DATABASE IF EXISTS ots;"
+        sudo -u postgres psql -c "DROP ROLE IF EXISTS ots;"
+        log_ok "PostgreSQL database and role removed"
     fi
 }
 
 backend_get_package() {
     local name="$1"
-    # OpenTAK generates packages via WebTAK UI or API
-    # For now, generate a basic TCP package like FreeTAK
     source "${LIB_DIR}/package.sh"
     generate_package "$name"
 }

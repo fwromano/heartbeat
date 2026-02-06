@@ -10,6 +10,7 @@
 #   ./setup.sh --interactive   Ask questions during setup
 #   ./setup.sh --docker     Force Docker mode
 #   ./setup.sh --native     Force native mode
+#   ./setup.sh --backend opentak   Select OpenTAK backend
 #   ./setup.sh --team "My Team"   Set team name
 # ==========================================================================
 
@@ -25,6 +26,7 @@ FORCE_MODE=""
 INTERACTIVE=false
 ARG_TEAM=""
 ARG_SERVER_IP=""
+ARG_BACKEND=""
 FORCE_TAILSCALE=false
 DISABLE_TAILSCALE=false
 while [[ $# -gt 0 ]]; do
@@ -35,6 +37,7 @@ while [[ $# -gt 0 ]]; do
         -i)             INTERACTIVE=true; shift ;;
         --team)         ARG_TEAM="$2"; shift 2 ;;
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
+        --backend)      ARG_BACKEND="$2"; shift 2 ;;
         --tailscale)    FORCE_TAILSCALE=true; shift ;;
         --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
         --help|-h)
@@ -44,6 +47,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --interactive    Ask questions during setup"
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
+            echo "  --backend NAME   TAK backend: freetak (default), opentak"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --tailscale      Force Tailscale IP for clients"
@@ -87,6 +91,21 @@ auto_ports() {
 # ---------------------------------------------------------------------------
 main() {
     banner
+    local backend="${ARG_BACKEND:-freetak}"
+    local webtak_port=8080
+
+    case "$backend" in
+        freetak|opentak) ;;
+        *)
+            log_error "Unknown backend: ${backend}"
+            log_error "Supported backends: freetak, opentak"
+            exit 1
+            ;;
+    esac
+
+    if [[ "$backend" == "opentak" ]]; then
+        webtak_port=8443
+    fi
 
     # Check for existing config
     if [[ -f "$HEARTBEAT_CONF" ]]; then
@@ -153,7 +172,11 @@ main() {
 
     # ---- Deployment mode ----
     local mode="$FORCE_MODE"
-    if [[ -z "$mode" ]]; then
+    if [[ "$backend" == "opentak" ]]; then
+        # OpenTAK uses native host services (systemd/nginx/rabbitmq/postgres)
+        mode="native"
+        log_info "Backend '${backend}' selected -- forcing native deployment mode"
+    elif [[ -z "$mode" ]]; then
         if has_docker; then
             mode="docker"
             log_ok "Docker detected -- using Docker deployment"
@@ -226,6 +249,13 @@ main() {
     ports=$(auto_ports)
     local cot_port ssl_cot_port api_port dp_port
     read -r cot_port ssl_cot_port api_port dp_port <<< "$ports"
+
+    if [[ "$backend" == "opentak" ]]; then
+        # OpenTAK exposes WebTAK/Marti on 8443.
+        api_port=8443
+        dp_port=8443
+    fi
+
     log_ok "Ports: CoT=${cot_port} SSL=${ssl_cot_port} API=${api_port} DP=${dp_port}"
 
     if $INTERACTIVE; then
@@ -234,8 +264,17 @@ main() {
             cot_port=$(prompt_default "CoT port" "$cot_port")
             ssl_cot_port=$(prompt_default "SSL CoT port" "$ssl_cot_port")
             api_port=$(prompt_default "REST API port" "$api_port")
-            echo -e "${DIM}DataPackage port stays at 8443 (FreeTAKServer default).${NC}"
+            if [[ "$backend" == "opentak" ]]; then
+                echo -e "${DIM}OpenTAK keeps WebTAK/Marti on 8443 by default.${NC}"
+            else
+                echo -e "${DIM}DataPackage port stays at 8443 (FreeTAKServer default).${NC}"
+            fi
         fi
+    fi
+
+    if [[ "$backend" == "opentak" ]]; then
+        api_port=8443
+        dp_port=8443
     fi
 
     # ---- Connection message ----
@@ -274,6 +313,8 @@ DATAPACKAGE_PORT=${dp_port}
 FTS_SECRET_KEY=""
 FTS_CONNECTION_MSG="${conn_msg}"
 FTS_DATA_DIR="${DATA_DIR}/fts"
+TAK_BACKEND="${backend}"
+WEBTAK_PORT=${webtak_port}
 
 FTS_USERNAME="${fts_user}"
 FTS_PASSWORD="${fts_pass}"
@@ -285,10 +326,17 @@ EOF
     # ---- Run mode-specific install ----
     source "${LIB_DIR}/install.sh"
 
-    if [[ "$mode" == "docker" ]]; then
-        install_docker_mode
-    else
-        install_native_mode
+    if [[ "$backend" == "freetak" ]]; then
+        if [[ "$mode" == "docker" ]]; then
+            install_docker_mode
+        else
+            install_native_mode
+        fi
+    fi
+
+    # ---- Run backend-specific install ----
+    if [[ "$backend" == "opentak" ]]; then
+        install_opentak
     fi
 
     # ---- Generate connection package for current user ----
@@ -335,11 +383,19 @@ EOF
         echo -e "    3. Download the .zip and open it with iTAK/ATAK"
     fi
     echo ""
-    echo -e "  ${BOLD}Default credentials:${NC}"
-    echo ""
-    echo -e "    Username: ${CYAN}${fts_user}${NC}"
-    echo -e "    Password: ${CYAN}${fts_pass}${NC}"
-    echo ""
+    if [[ "$backend" == "freetak" ]]; then
+        echo -e "  ${BOLD}Default credentials:${NC}"
+        echo ""
+        echo -e "    Username: ${CYAN}${fts_user}${NC}"
+        echo -e "    Password: ${CYAN}${fts_pass}${NC}"
+        echo ""
+    else
+        echo -e "  ${BOLD}OpenTAK Web UI:${NC}"
+        echo ""
+        echo -e "    URL:      ${CYAN}https://${server_ip}:${webtak_port}/${NC}"
+        echo -e "    ${DIM}(accept the self-signed certificate on first load)${NC}"
+        echo ""
+    fi
     echo -e "  ${BOLD}Or connect manually in iTAK/ATAK:${NC}"
     echo ""
     echo -e "    Server:  ${CYAN}${server_ip}${NC}"

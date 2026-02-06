@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Heartbeat - Installation logic
-# Handles both Docker and native FreeTAKServer installation
+# Handles FreeTAKServer and OpenTAK backend installation
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
@@ -15,23 +15,70 @@ install_system_deps() {
         sudo apt-get install -y -qq \
             python3 python3-pip python3-venv \
             zip unzip curl net-tools qrencode \
-            libxml2-dev libxslt1-dev gcc 2>/dev/null
+            libxml2-dev libxslt1-dev libgeos-dev gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd dnf; then
         sudo dnf install -y -q \
             python3 python3-pip \
             zip unzip curl net-tools qrencode \
-            libxml2-devel libxslt-devel gcc 2>/dev/null
+            libxml2-devel libxslt-devel geos-devel gcc 2>/dev/null
         log_ok "System dependencies installed"
     elif has_cmd pacman; then
         sudo pacman -Sy --noconfirm --needed \
             python python-pip \
             zip unzip curl net-tools qrencode \
-            libxml2 libxslt gcc 2>/dev/null
+            libxml2 libxslt geos gcc 2>/dev/null
         log_ok "System dependencies installed"
     else
         log_warn "Could not detect package manager."
         log_warn "Ensure python3, pip, zip, and curl are installed."
+    fi
+
+    # Install Python packages needed for recording and export tools
+    install_python_deps
+}
+
+# ---------------------------------------------------------------------------
+# Ensure host has python3 + pip (needed for recording/export even in Docker mode)
+# ---------------------------------------------------------------------------
+ensure_host_python() {
+    if has_cmd python3 && has_cmd pip3; then
+        return 0
+    fi
+
+    log_step "Installing Python3 and pip (needed for CoT tools)"
+    if has_cmd apt-get; then
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq python3 python3-pip libgeos-dev 2>/dev/null
+    elif has_cmd dnf; then
+        sudo dnf install -y -q python3 python3-pip geos-devel 2>/dev/null
+    elif has_cmd pacman; then
+        sudo pacman -Sy --noconfirm --needed python python-pip geos 2>/dev/null
+    else
+        log_warn "Could not install python3/pip automatically."
+        log_warn "Install python3 and pip manually, then re-run setup."
+        return 1
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Install Python packages for recording & export tools
+# ---------------------------------------------------------------------------
+install_python_deps() {
+    local req="${HEARTBEAT_DIR}/tools/requirements.txt"
+    if [[ ! -f "$req" ]]; then
+        return 0
+    fi
+
+    ensure_host_python || return 0
+
+    log_step "Installing Python dependencies for CoT tools"
+    if pip3 install --quiet -r "$req" 2>/dev/null || \
+       python3 -m pip install --quiet -r "$req" 2>/dev/null; then
+        log_ok "Python dependencies installed (shapely, pyyaml)"
+    else
+        log_warn "Could not install Python dependencies automatically."
+        log_warn "Install manually: pip install -r tools/requirements.txt"
     fi
 }
 
@@ -94,6 +141,9 @@ YAML
     # Build the image
     log_info "Building FreeTAKServer Docker image..."
     (cd "$DOCKER_DIR" && $compose_cmd build --quiet)
+
+    # Install Python deps for recording/export (runs on host, not in container)
+    install_python_deps
 
     log_ok "Docker deployment ready"
 }
@@ -165,6 +215,420 @@ YAML
 
     log_ok "Native deployment ready"
     log_info "Start with: ./heartbeat start"
+}
+
+# ---------------------------------------------------------------------------
+# OpenTAK native installation (contained in data/opentak)
+# ---------------------------------------------------------------------------
+install_opentak() {
+    load_config
+
+    log_step "Installing OpenTAK Server (Standard tier)"
+
+    local ots_dir="${DATA_DIR}/opentak"
+    local ots_venv="${ots_dir}/venv"
+    local pkg_dir
+
+    install_opentak_system_deps
+
+    ensure_dir "${ots_dir}"
+    ensure_dir "${ots_dir}/logs"
+    ensure_dir "${ots_dir}/ca"
+
+    log_info "Creating OpenTAK virtual environment..."
+    python3 -m venv --system-site-packages "${ots_venv}"
+    "${ots_venv}/bin/pip" install --quiet --upgrade pip setuptools wheel
+    "${ots_venv}/bin/pip" install --quiet opentakserver
+    log_ok "OpenTAK package installed"
+
+    pkg_dir=$(_opentak_package_dir "${ots_venv}")
+    if [[ -z "$pkg_dir" || ! -d "$pkg_dir" ]]; then
+        log_error "Could not locate installed opentakserver package"
+        return 1
+    fi
+
+    log_info "Generating OpenTAK config"
+    (
+        cd "$pkg_dir"
+        OTS_DATA_FOLDER="${ots_dir}" \
+        OTS_CONFIG_PATH="${ots_dir}/config.yml" \
+        OTS_CONFIG_FILE="${ots_dir}/config.yml" \
+        FLASK_APP=wsgi.py \
+        "${ots_venv}/bin/flask" ots generate-config
+    )
+
+    setup_opentak_postgres "${ots_dir}"
+    patch_opentak_config "${ots_dir}" "${ots_venv}"
+
+    log_info "Running OpenTAK database migrations"
+    (
+        cd "$pkg_dir"
+        OTS_DATA_FOLDER="${ots_dir}" \
+        OTS_CONFIG_PATH="${ots_dir}/config.yml" \
+        OTS_CONFIG_FILE="${ots_dir}/config.yml" \
+        FLASK_APP=wsgi.py \
+        "${ots_venv}/bin/flask" db upgrade
+    )
+
+    log_info "Generating OpenTAK CA certificates"
+    (
+        cd "$pkg_dir"
+        OTS_DATA_FOLDER="${ots_dir}" \
+        OTS_CONFIG_PATH="${ots_dir}/config.yml" \
+        OTS_CONFIG_FILE="${ots_dir}/config.yml" \
+        FLASK_APP=wsgi.py \
+        "${ots_venv}/bin/flask" ots create-ca
+    )
+
+    setup_opentak_nginx "${ots_dir}"
+    setup_opentak_rabbitmq
+    create_opentak_services "${ots_dir}" "${ots_venv}"
+    install_webtak_ui
+
+    # Recording/export tooling still runs on host python.
+    install_python_deps
+
+    log_ok "OpenTAK Server installed and ready"
+}
+
+install_opentak_system_deps() {
+    if ! has_cmd apt-get; then
+        log_error "OpenTAK backend currently supports apt-based systems only."
+        return 1
+    fi
+
+    log_step "Installing OpenTAK system dependencies"
+    sudo apt-get update -qq
+    sudo NEEDRESTART_MODE=a apt-get install -y -qq \
+        python3 python3-pip python3-venv python3-dev \
+        postgresql postgresql-postgis \
+        rabbitmq-server \
+        nginx libnginx-mod-stream \
+        openssl curl unzip 2>/dev/null
+
+    sudo systemctl enable --now postgresql 2>/dev/null || true
+    sudo systemctl enable --now rabbitmq-server 2>/dev/null || true
+    sudo systemctl enable --now nginx 2>/dev/null || true
+    log_ok "OpenTAK dependencies installed"
+}
+
+_opentak_package_dir() {
+    local ots_venv="$1"
+    "${ots_venv}/bin/python3" -c "import os, opentakserver; print(os.path.dirname(opentakserver.__file__))" 2>/dev/null || true
+}
+
+setup_opentak_postgres() {
+    local ots_dir="$1"
+    local db_pass
+    db_pass=$(gen_password)
+
+    echo "$db_pass" > "${ots_dir}/db_password"
+    chmod 600 "${ots_dir}/db_password"
+
+    local user_exists
+    user_exists=$(sudo -u postgres psql -tXAc "SELECT 1 FROM pg_roles WHERE rolname='ots'" 2>/dev/null || true)
+    if [[ "$user_exists" != "1" ]]; then
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE ROLE ots WITH LOGIN PASSWORD '${db_pass}';"
+    else
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "ALTER ROLE ots WITH PASSWORD '${db_pass}';"
+    fi
+
+    local db_exists
+    db_exists=$(sudo -u postgres psql -tXAc "SELECT 1 FROM pg_database WHERE datname='ots'" 2>/dev/null || true)
+    if [[ "$db_exists" != "1" ]]; then
+        sudo -u postgres psql -v ON_ERROR_STOP=1 -c "CREATE DATABASE ots OWNER ots;"
+    fi
+
+    sudo -u postgres psql -v ON_ERROR_STOP=1 -c "GRANT ALL PRIVILEGES ON DATABASE ots TO ots;"
+    sudo -u postgres psql -v ON_ERROR_STOP=1 -d ots -c "GRANT ALL ON SCHEMA public TO ots;"
+    log_ok "PostgreSQL configured for OpenTAK"
+}
+
+patch_opentak_config() {
+    local ots_dir="$1"
+    local ots_venv="$2"
+    local config="${ots_dir}/config.yml"
+
+    if [[ ! -f "$config" ]]; then
+        log_error "OpenTAK config not found: ${config}"
+        return 1
+    fi
+
+    local db_pass
+    db_pass=$(cat "${ots_dir}/db_password")
+
+    # Replace installer placeholder in generated config.
+    sed -i "s/POSTGRESQL_PASSWORD/${db_pass}/g" "$config"
+
+    "${ots_venv}/bin/python3" - "$config" "$ots_dir" "${SERVER_IP}" "${COT_PORT}" "${SSL_COT_PORT}" <<'PY'
+import yaml
+import sys
+
+config_path, ots_dir, server_ip, cot_port, ssl_port = sys.argv[1:]
+
+with open(config_path, "r", encoding="utf-8") as fh:
+    cfg = yaml.safe_load(fh) or {}
+
+def deep_set(obj, key, value):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if k == key:
+                obj[k] = value
+            else:
+                deep_set(v, key, value)
+    elif isinstance(obj, list):
+        for item in obj:
+            deep_set(item, key, value)
+
+cfg["OTS_DATA_FOLDER"] = ots_dir
+cfg["OTS_CA_FOLDER"] = f"{ots_dir}/ca"
+
+# Update known keys if present in this OpenTAK release.
+for key, value in {
+    "OTS_SERVER_ADDRESS": server_ip,
+    "OTS_WEBSERVER_PORT": 8081,
+    "OTS_COT_PORT": int(cot_port),
+    "OTS_SSL_COT_PORT": int(ssl_port),
+}.items():
+    if key in cfg:
+        cfg[key] = value
+    deep_set(cfg, key, value)
+
+with open(config_path, "w", encoding="utf-8") as fh:
+    yaml.safe_dump(cfg, fh, sort_keys=False)
+PY
+
+    log_ok "OpenTAK config patched"
+}
+
+_ensure_nginx_stream_include() {
+    if sudo grep -q "include /etc/nginx/streams-enabled/\\*;" /etc/nginx/nginx.conf 2>/dev/null; then
+        return 0
+    fi
+
+    sudo sed -i '/^http {/i stream {\n    include \/etc\/nginx\/streams-enabled\/*;\n}\n' /etc/nginx/nginx.conf
+}
+
+setup_opentak_nginx() {
+    local ots_dir="$1"
+
+    _ensure_nginx_stream_include
+
+    sudo tee /etc/nginx/sites-available/ots_http >/dev/null <<EOF
+server {
+    listen 8080;
+    server_name _;
+    root /var/www/html/opentakserver;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /Marti/ {
+        proxy_pass http://127.0.0.1:8081/Marti/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    location /SocketIO/ {
+        proxy_pass http://127.0.0.1:8081/SocketIO/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+}
+EOF
+
+    sudo tee /etc/nginx/sites-available/ots_https >/dev/null <<EOF
+server {
+    listen 8443 ssl;
+    server_name _;
+    root /var/www/html/opentakserver;
+    index index.html;
+
+    ssl_certificate ${ots_dir}/ca/certs/opentakserver/opentakserver.pem;
+    ssl_certificate_key ${ots_dir}/ca/certs/opentakserver/opentakserver.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    location /Marti/ {
+        proxy_pass http://127.0.0.1:8081/Marti/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    }
+
+    location /SocketIO/ {
+        proxy_pass http://127.0.0.1:8081/SocketIO/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+    }
+}
+EOF
+
+    sudo mkdir -p /etc/nginx/streams-available /etc/nginx/streams-enabled
+    sudo tee /etc/nginx/streams-available/rabbitmq >/dev/null <<EOF
+server {
+    listen 8883 ssl;
+    proxy_pass 127.0.0.1:1883;
+    ssl_certificate ${ots_dir}/ca/certs/opentakserver/opentakserver.pem;
+    ssl_certificate_key ${ots_dir}/ca/certs/opentakserver/opentakserver.key;
+}
+EOF
+
+    sudo ln -sf /etc/nginx/sites-available/ots_http /etc/nginx/sites-enabled/ots_http
+    sudo ln -sf /etc/nginx/sites-available/ots_https /etc/nginx/sites-enabled/ots_https
+    sudo ln -sf /etc/nginx/streams-available/rabbitmq /etc/nginx/streams-enabled/rabbitmq
+
+    sudo nginx -t
+    sudo systemctl reload nginx
+    log_ok "Nginx configured for OpenTAK"
+}
+
+setup_opentak_rabbitmq() {
+    sudo curl -fsSL \
+        https://raw.githubusercontent.com/brian7704/OpenTAKServer-Installer/master/rabbitmq.conf \
+        -o /etc/rabbitmq/rabbitmq.conf
+
+    sudo rabbitmq-plugins enable rabbitmq_mqtt rabbitmq_auth_backend_http >/dev/null 2>&1 || true
+    sudo systemctl restart rabbitmq-server
+    log_ok "RabbitMQ configured"
+}
+
+create_opentak_services() {
+    local ots_dir="$1"
+    local ots_venv="$2"
+    local user
+    user=$(whoami)
+
+    sudo tee /etc/systemd/system/opentakserver.service >/dev/null <<EOF
+[Unit]
+Description=OpenTAK Server
+Wants=network.target rabbitmq-server.service postgresql.service
+After=network.target rabbitmq-server.service postgresql.service
+Requires=cot_parser.service eud_handler.service eud_handler_ssl.service
+
+[Service]
+Type=simple
+User=${user}
+WorkingDirectory=${ots_dir}
+Environment=OTS_DATA_FOLDER=${ots_dir}
+Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
+Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
+ExecStart=${ots_venv}/bin/opentakserver
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:${ots_dir}/logs/opentakserver.log
+StandardError=append:${ots_dir}/logs/opentakserver.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo tee /etc/systemd/system/cot_parser.service >/dev/null <<EOF
+[Unit]
+Description=OpenTAK CoT Parser
+Wants=network.target rabbitmq-server.service
+After=network.target rabbitmq-server.service
+PartOf=opentakserver.service
+
+[Service]
+Type=simple
+User=${user}
+WorkingDirectory=${ots_dir}
+Environment=OTS_DATA_FOLDER=${ots_dir}
+Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
+Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
+ExecStart=${ots_venv}/bin/cot_parser
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:${ots_dir}/logs/opentakserver.log
+StandardError=append:${ots_dir}/logs/opentakserver.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo tee /etc/systemd/system/eud_handler.service >/dev/null <<EOF
+[Unit]
+Description=OpenTAK EUD Handler (TCP)
+Wants=network.target rabbitmq-server.service
+After=network.target rabbitmq-server.service
+PartOf=opentakserver.service
+
+[Service]
+Type=simple
+User=${user}
+WorkingDirectory=${ots_dir}
+Environment=OTS_DATA_FOLDER=${ots_dir}
+Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
+Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
+ExecStart=${ots_venv}/bin/eud_handler
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:${ots_dir}/logs/opentakserver.log
+StandardError=append:${ots_dir}/logs/opentakserver.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo tee /etc/systemd/system/eud_handler_ssl.service >/dev/null <<EOF
+[Unit]
+Description=OpenTAK EUD Handler (SSL)
+Wants=network.target rabbitmq-server.service
+After=network.target rabbitmq-server.service
+PartOf=opentakserver.service
+
+[Service]
+Type=simple
+User=${user}
+WorkingDirectory=${ots_dir}
+Environment=OTS_DATA_FOLDER=${ots_dir}
+Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
+Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
+ExecStart=${ots_venv}/bin/eud_handler --ssl
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:${ots_dir}/logs/opentakserver.log
+StandardError=append:${ots_dir}/logs/opentakserver.log
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable opentakserver.service cot_parser.service eud_handler.service eud_handler_ssl.service
+    log_ok "OpenTAK systemd services installed"
+}
+
+install_webtak_ui() {
+    local ui_dir="/var/www/html/opentakserver"
+    local ui_url
+    ui_url=$(curl -fsSL https://api.github.com/repos/brian7704/OpenTAKServer-UI/releases/latest \
+        | python3 -c "import json,sys; d=json.load(sys.stdin); a=d.get('assets', []); print(a[0]['browser_download_url'] if a else '')" \
+        2>/dev/null || true)
+
+    if [[ -z "$ui_url" ]]; then
+        log_warn "Could not determine latest OpenTAK UI release URL"
+        return 0
+    fi
+
+    local tmp="/tmp/opentak-ui.zip"
+    curl -fsSL "$ui_url" -o "$tmp"
+    sudo mkdir -p "$ui_dir"
+    sudo unzip -qo "$tmp" -d "$ui_dir"
+    rm -f "$tmp"
+    log_ok "WebTAK UI installed to ${ui_dir}"
 }
 
 # ---------------------------------------------------------------------------

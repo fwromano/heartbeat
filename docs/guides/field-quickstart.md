@@ -6,9 +6,11 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 
 ## 1) Start the server
 ```bash
-./setup.sh --docker --interactive
+./setup.sh --interactive
 ./heartbeat start
 ```
+
+> **Docker not required for Lite tier.** FreeTAKServer is a pure Python package — `./setup.sh` will auto-detect Docker and use it if available, but native mode (`./setup.sh --native`) works just as well and avoids installing Docker on lightweight field machines. Docker becomes more useful for the Standard (OpenTAK) and Enterprise (TAK Server) tiers where the server infrastructure is heavier.
 
 ## 2) Get the server address
 ```bash

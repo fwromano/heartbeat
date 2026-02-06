@@ -251,8 +251,11 @@ Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 | REST API | Yes | Yes | Yes |
 | Resource Usage | Low | Medium | Higher |
 | Setup Complexity | Easy | Easy | Medium |
+| **Recommended Deploy** | **Native (pip)** | **Docker** | **Docker** |
 
 *TAK Server is free but requires tak.gov registration
+
+> **Note:** FreeTAK (Lite) is a pure Python package — Docker is supported but not required. Native pip install in a venv is lighter and simpler for field laptops. Docker becomes the preferred deployment for OpenTAK and TAK Server where the infrastructure (PostgreSQL, WebTAK, certs) benefits from containerization.
 
 ---
 

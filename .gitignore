@@ -3,7 +3,8 @@ packages/*.zip
 packages/*.tar.gz
 
 # Runtime data
-data/
+data/*
+!data/.gitignore
 *.pid
 *.log
 

@@ -66,13 +66,14 @@ record_start() {
     ensure_dir "$DATA_DIR"
 
     local cot_port="${COT_PORT:-8087}"
+    local cot_host="${SERVER_IP:-127.0.0.1}"
 
     log_step "Starting CoT recorder"
-    log_info "Server: 127.0.0.1:${cot_port}"
+    log_info "Server: ${cot_host}:${cot_port}"
     log_info "Database: ${RECORDER_DB}"
 
     nohup python3 "$RECORDER_SCRIPT" \
-        --host 127.0.0.1 \
+        --host "${cot_host}" \
         --port "${cot_port}" \
         --db "$RECORDER_DB" \
         --log "$RECORDER_LOG" \

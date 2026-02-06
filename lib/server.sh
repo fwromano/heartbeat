@@ -18,6 +18,11 @@ _load_backend() {
         exit 1
     fi
 
+    if [[ "$backend" == "opentak" ]]; then
+        # OpenTAK is managed by native system services even if a stale config says docker.
+        DEPLOY_MODE="native"
+    fi
+
     source "$backend_file"
 }
 
@@ -121,7 +126,11 @@ server_status() {
         if $backend_running; then
             running=true
             echo -e "  State:   ${GREEN}● running${NC} (native)"
-            echo -e "  PID:     $(cat "$PID_FILE")"
+            if [[ "${TAK_BACKEND:-freetak}" == "freetak" && -f "$PID_FILE" ]]; then
+                echo -e "  PID:     $(cat "$PID_FILE")"
+            else
+                echo -e "  Service: opentakserver.service"
+            fi
         else
             echo -e "  State:   ${RED}● stopped${NC}"
         fi
@@ -296,8 +305,12 @@ _show_recent_logs() {
             fi
         fi
     else
-        if [[ -f "$LOG_FILE" ]]; then
-            tail -5 "$LOG_FILE" | while IFS= read -r line; do
+        local native_log="$LOG_FILE"
+        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+            native_log="${DATA_DIR}/opentak/logs/opentakserver.log"
+        fi
+        if [[ -f "$native_log" ]]; then
+            tail -5 "$native_log" | while IFS= read -r line; do
                 echo -e "    ${DIM}${line}${NC}"
             done
         else
@@ -583,7 +596,7 @@ os.replace(tmp, src)
 # Live monitor - follows server activity with highlighted events
 # ---------------------------------------------------------------------------
 server_listen() {
-    load_config
+    _load_backend
 
     local compose_cmd
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
@@ -604,7 +617,7 @@ server_listen() {
     local state="stopped"
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
         state=$(cd "$DOCKER_DIR" && $compose_cmd ps --format '{{.State}}' 2>/dev/null | head -1)
-    elif [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    elif backend_status; then
         state="running"
     fi
 
@@ -626,11 +639,15 @@ server_listen() {
         (cd "$DOCKER_DIR" && $compose_cmd logs -f --tail=20 --no-log-prefix 2>/dev/null) \
             | _highlight_log_stream
     else
-        if [[ ! -f "$LOG_FILE" ]]; then
+        local native_log="$LOG_FILE"
+        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+            native_log="${DATA_DIR}/opentak/logs/opentakserver.log"
+        fi
+        if [[ ! -f "$native_log" ]]; then
             log_info "No log file yet."
             return 0
         fi
-        tail -f "$LOG_FILE" | _highlight_log_stream
+        tail -f "$native_log" | _highlight_log_stream
     fi
 }
 
