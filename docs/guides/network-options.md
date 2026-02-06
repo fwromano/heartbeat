@@ -7,6 +7,8 @@ This doc lays out the practical network permutations for running Heartbeat
 
 If there is no IP path, TAK will not connect.
 
+> **Lite tier (default):** TCP only, no authentication. Phones connect directly - no usernames, passwords, or certificates required. This doc covers TCP connectivity.
+
 ## Glossary (quick)
 - Server: the machine running Heartbeat + FreeTAKServer
 - Client: iTAK/ATAK on a phone/tablet

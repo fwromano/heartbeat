@@ -2,6 +2,8 @@
 
 Goal: get everyone's phone sharing live location on the same map, fast.
 
+> **No logins required.** Heartbeat uses TCP connections - just scan the QR and connect. No usernames, no passwords, no friction.
+
 ## 1) Start the server
 ```bash
 ./setup.sh --docker --interactive
