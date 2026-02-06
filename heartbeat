@@ -96,28 +96,9 @@ cmd_info() {
 # Update command
 # ---------------------------------------------------------------------------
 cmd_update() {
-    load_config
-
-    if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        log_step "Updating Docker image"
-        local compose_cmd
-        compose_cmd=$(get_compose_cmd)
-        if [[ -z "$compose_cmd" ]]; then
-            log_error "Docker Compose not available."
-            return 1
-        fi
-        (cd "$DOCKER_DIR" && $compose_cmd build --no-cache --quiet)
-        log_ok "Image rebuilt. Restart with: ./heartbeat restart"
-    else
-        log_step "Updating FreeTAKServer"
-        local venv_dir="${DATA_DIR}/venv"
-        if [[ ! -d "$venv_dir" ]]; then
-            log_error "Virtualenv not found. Run ./setup.sh first."
-            return 1
-        fi
-        "${venv_dir}/bin/pip" install --quiet --upgrade FreeTAKServer
-        log_ok "Updated. Restart with: ./heartbeat restart"
-    fi
+    source "${LIB_DIR}/server.sh"
+    _load_backend
+    backend_update
 }
 
 # ---------------------------------------------------------------------------
@@ -258,8 +239,9 @@ case "$cmd" in
         install_systemd_service
         ;;
     uninstall)
-        source "${LIB_DIR}/install.sh"
-        uninstall
+        source "${LIB_DIR}/server.sh"
+        _load_backend
+        backend_uninstall
         ;;
     help)
         show_help

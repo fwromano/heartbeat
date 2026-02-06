@@ -5,79 +5,38 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ---------------------------------------------------------------------------
+# Backend loading
+# ---------------------------------------------------------------------------
+_load_backend() {
+    load_config
+    local backend="${TAK_BACKEND:-freetak}"
+    local backend_file="${LIB_DIR}/backends/${backend}.sh"
+
+    if [[ ! -f "$backend_file" ]]; then
+        log_error "Unknown backend: ${backend}"
+        log_error "Available: freetak"
+        exit 1
+    fi
+
+    source "$backend_file"
+}
+
+# ---------------------------------------------------------------------------
 # Start the server
 # ---------------------------------------------------------------------------
 server_start() {
-    load_config
-
-    if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        _docker_start
-    else
-        _native_start
-    fi
-
+    _load_backend
+    backend_start
     _wait_for_server
     _show_running_info
-}
-
-_docker_start() {
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
-        return 1
-    fi
-
-    log_step "Starting TAK server (Docker)"
-
-    # Export all config vars for docker-compose env substitution
-    export COT_PORT SSL_COT_PORT API_PORT DATAPACKAGE_PORT
-    export FTS_CONNECTION_MSG SERVER_IP
-
-    (cd "$DOCKER_DIR" && $compose_cmd up -d --build)
-
-    # Wait for server to be ready
-}
-
-_native_start() {
-    local venv_dir="${DATA_DIR}/venv"
-    local fts_dir="${DATA_DIR}/fts"
-
-    if [[ ! -d "$venv_dir" ]]; then
-        log_error "FreeTAKServer not installed. Run ./setup.sh first."
-        return 1
-    fi
-
-    if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-        log_warn "Server already running (PID $(cat "$PID_FILE"))"
-        return 0
-    fi
-
-    log_step "Starting TAK server (native)"
-
-    ensure_dir "$(dirname "$LOG_FILE")"
-
-    export FTS_CONFIG_PATH="${fts_dir}/FTSConfig.yaml"
-
-    nohup "${venv_dir}/bin/python3" -m FreeTAKServer.controllers.services.FTS \
-        >> "$LOG_FILE" 2>&1 &
-    echo $! > "$PID_FILE"
-
-    log_info "PID: $(cat "$PID_FILE")"
-
 }
 
 # ---------------------------------------------------------------------------
 # Stop the server
 # ---------------------------------------------------------------------------
 server_stop() {
-    load_config
-
-    if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        _docker_stop
-    else
-        _native_stop
-    fi
+    _load_backend
+    backend_stop
     # Clean up stale PID file
     rm -f "$PID_FILE" 2>/dev/null
 
@@ -85,50 +44,6 @@ server_stop() {
     rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
           "${HEARTBEAT_DIR}/package.json" 2>/dev/null
     rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
-}
-
-_docker_stop() {
-    local compose_cmd
-    compose_cmd=$(get_compose_cmd)
-    if [[ -z "$compose_cmd" ]]; then
-        log_error "Docker Compose not available."
-        return 1
-    fi
-
-    log_step "Stopping TAK server"
-    (cd "$DOCKER_DIR" && $compose_cmd down)
-    rm -f "${DOCKER_DIR}/docker-compose.override.yml" 2>/dev/null
-    log_ok "Server stopped"
-}
-
-_native_stop() {
-    if [[ ! -f "$PID_FILE" ]]; then
-        log_warn "No PID file found. Server may not be running."
-        return 0
-    fi
-
-    local pid
-    pid=$(cat "$PID_FILE")
-
-    log_step "Stopping TAK server (PID ${pid})"
-
-    if kill "$pid" 2>/dev/null; then
-        # Wait for graceful shutdown
-        local i=0
-        while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
-            sleep 1
-            ((i++))
-        done
-        if kill -0 "$pid" 2>/dev/null; then
-            log_warn "Graceful shutdown timed out, forcing..."
-            kill -9 "$pid" 2>/dev/null || true
-        fi
-        log_ok "Server stopped"
-    else
-        log_warn "Process $pid not found (already stopped?)"
-    fi
-
-    rm -f "$PID_FILE"
 }
 
 # ---------------------------------------------------------------------------
@@ -144,54 +59,52 @@ server_restart() {
 # Status
 # ---------------------------------------------------------------------------
 server_status() {
-    load_config
+    _load_backend
 
     echo ""
     echo -e "${BOLD}Heartbeat TAK Server Status${NC}"
     echo -e "${DIM}══════════════════════════════════════════════${NC}"
 
     local running=false
+    local backend_running=false
+    if backend_status; then
+        backend_running=true
+    fi
 
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        local compose_cmd
-        compose_cmd=$(get_compose_cmd)
-        if [[ -n "$compose_cmd" ]]; then
-            local state
-            state=$(cd "$DOCKER_DIR" && $compose_cmd ps --format '{{.State}}' 2>/dev/null | head -1)
-            if [[ "$state" == "running" ]]; then
-                running=true
-                echo -e "  State:     ${GREEN}● running${NC} (Docker)"
+        if $backend_running; then
+            running=true
+            echo -e "  State:     ${GREEN}● running${NC} (Docker)"
 
-                # Container uptime
-                local uptime_str
-                uptime_str=$(_format_container_uptime)
-                if [[ -n "$uptime_str" ]]; then
-                    echo -e "  Uptime:    ${uptime_str}"
-                fi
-
-                # Resource usage
-                local stats
-                stats=$(docker stats --no-stream --format '{{.CPUPerc}}\t{{.MemUsage}}' heartbeat-fts 2>/dev/null)
-                if [[ -n "$stats" ]]; then
-                    local cpu mem
-                    cpu=$(echo "$stats" | cut -f1)
-                    mem=$(echo "$stats" | cut -f2)
-                    echo -e "  CPU:       ${cpu}"
-                    echo -e "  Memory:    ${mem}"
-                fi
-
-                # Restart count
-                local restarts
-                restarts=$(docker inspect --format '{{.RestartCount}}' heartbeat-fts 2>/dev/null)
-                if [[ -n "$restarts" && "$restarts" != "0" ]]; then
-                    echo -e "  Restarts:  ${YELLOW}${restarts}${NC}"
-                fi
-            else
-                echo -e "  State:     ${RED}● stopped${NC}"
+            # Container uptime
+            local uptime_str
+            uptime_str=$(_format_container_uptime)
+            if [[ -n "$uptime_str" ]]; then
+                echo -e "  Uptime:    ${uptime_str}"
             fi
+
+            # Resource usage
+            local stats
+            stats=$(docker stats --no-stream --format '{{.CPUPerc}}\t{{.MemUsage}}' heartbeat-fts 2>/dev/null)
+            if [[ -n "$stats" ]]; then
+                local cpu mem
+                cpu=$(echo "$stats" | cut -f1)
+                mem=$(echo "$stats" | cut -f2)
+                echo -e "  CPU:       ${cpu}"
+                echo -e "  Memory:    ${mem}"
+            fi
+
+            # Restart count
+            local restarts
+            restarts=$(docker inspect --format '{{.RestartCount}}' heartbeat-fts 2>/dev/null)
+            if [[ -n "$restarts" && "$restarts" != "0" ]]; then
+                echo -e "  Restarts:  ${YELLOW}${restarts}${NC}"
+            fi
+        else
+            echo -e "  State:     ${RED}● stopped${NC}"
         fi
     else
-        if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+        if $backend_running; then
             running=true
             echo -e "  State:   ${GREEN}● running${NC} (native)"
             echo -e "  PID:     $(cat "$PID_FILE")"
@@ -248,33 +161,8 @@ server_status() {
 # Logs
 # ---------------------------------------------------------------------------
 server_logs() {
-    load_config
-
-    local follow="${1:-}"
-
-    if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        local compose_cmd
-        compose_cmd=$(get_compose_cmd)
-        if [[ -z "$compose_cmd" ]]; then
-            log_error "Docker Compose not available."
-            return 1
-        fi
-        if [[ "$follow" == "-f" || "$follow" == "--follow" ]]; then
-            (cd "$DOCKER_DIR" && $compose_cmd logs -f --tail=100)
-        else
-            (cd "$DOCKER_DIR" && $compose_cmd logs --tail=50)
-        fi
-    else
-        if [[ ! -f "$LOG_FILE" ]]; then
-            log_info "No log file yet. Start the server first."
-            return 0
-        fi
-        if [[ "$follow" == "-f" || "$follow" == "--follow" ]]; then
-            tail -f "$LOG_FILE"
-        else
-            tail -50 "$LOG_FILE"
-        fi
-    fi
+    _load_backend
+    backend_logs "${1:-}"
 }
 
 # ---------------------------------------------------------------------------
