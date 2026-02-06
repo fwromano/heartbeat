@@ -44,8 +44,6 @@ show_help() {
     echo ""
     echo -e "${BOLD}Team:${NC}"
     echo "  qr                   Show QR code to scan from iTAK/ATAK"
-    echo "  adduser <name> [pw]  Create a TAK server login for a team member"
-    echo "  addusers <file>      Create users from a list (one name per line)"
     echo "  tailscale            Set SERVER_IP to the Tailscale IP"
     echo "  package <name>       Generate a connection package for a member"
     echo "  packages             List all generated packages"
@@ -65,65 +63,6 @@ show_help() {
     echo "  ./heartbeat serve"
     echo "  ./heartbeat status"
     echo ""
-}
-
-# ---------------------------------------------------------------------------
-# User creation helper (config must be loaded)
-# ---------------------------------------------------------------------------
-create_user() {
-    local name="$1"
-    local pass="$2"
-
-    if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        docker exec heartbeat-fts python3 -c "
-import urllib.request, json, sys, os
-port = os.environ.get('API_PORT', '19023')
-body = json.dumps({
-    'systemUsers': [{
-        'Name': sys.argv[1],
-        'Token': sys.argv[2],
-        'Password': sys.argv[2],
-        'Group': '__ANON__',
-        'DeviceType': 'mobile',
-        'Certs': 'true'
-    }]
-}).encode()
-req = urllib.request.Request(
-    'http://127.0.0.1:' + port + '/ManageSystemUser/postSystemUser',
-    data=body,
-    headers={'Content-Type': 'application/json'}
-)
-r = urllib.request.urlopen(req, timeout=5)
-print(r.read().decode())
-" "$name" "$pass" 2>&1
-        return $?
-    fi
-
-    if ! has_cmd python3; then
-        log_error "python3 is required for native adduser."
-        return 1
-    fi
-
-    python3 - "$name" "$pass" "$API_PORT" <<'PY' 2>&1
-import urllib.request, urllib.error, json, sys
-name, pw, port = sys.argv[1], sys.argv[2], sys.argv[3]
-body = json.dumps({
-    'systemUsers': [{
-        'Name': name,
-        'Token': pw,
-        'Password': pw,
-        'Group': '__ANON__',
-        'DeviceType': 'mobile',
-        'Certs': 'true'
-    }]
-}).encode()
-req = urllib.request.Request(
-    f'http://127.0.0.1:{port}/ManageSystemUser/postSystemUser',
-    data=body,
-    headers={'Content-Type': 'application/json'}
-)
-urllib.request.urlopen(req, timeout=5).read()
-PY
 }
 
 # ---------------------------------------------------------------------------
@@ -185,7 +124,7 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart status listen logs qr adduser addusers tailscale package packages serve clean info update systemd uninstall help)
+COMMANDS=(start stop restart status listen logs qr tailscale package packages serve clean info update systemd uninstall help)
 
 resolve_cmd() {
     local input="$1"
@@ -257,56 +196,6 @@ case "$cmd" in
     qr)
         source "${LIB_DIR}/qr.sh"
         show_qr
-        ;;
-    adduser)
-        if [[ $# -lt 1 ]]; then
-            log_error "Usage: ./heartbeat adduser <username> [password]"
-            exit 1
-        fi
-        load_config
-        au_name="$1"
-        au_pass="${2:-$au_name}"
-        log_info "Creating user '${au_name}'..."
-        if create_user "$au_name" "$au_pass"; then
-            log_ok "User created: ${au_name} / ${au_pass}"
-        else
-            log_error "Failed to create user. Is the server running?"
-            exit 1
-        fi
-        ;;
-    addusers)
-        if [[ $# -lt 1 ]]; then
-            log_error "Usage: ./heartbeat addusers <file>"
-            exit 1
-        fi
-        load_config
-        list_file="$1"
-        if [[ ! -f "$list_file" ]]; then
-            log_error "File not found: ${list_file}"
-            exit 1
-        fi
-        total=0
-        ok=0
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            # Trim leading/trailing whitespace
-            line="${line#"${line%%[![:space:]]*}"}"
-            line="${line%"${line##*[![:space:]]}"}"
-            [[ -z "$line" ]] && continue
-            [[ "${line:0:1}" == "#" ]] && continue
-            total=$((total + 1))
-            log_info "Creating user '${line}'..."
-            if create_user "$line" "$line"; then
-                ok=$((ok + 1))
-                log_ok "User created: ${line} / ${line}"
-            else
-                log_error "Failed to create user: ${line}"
-            fi
-        done < "$list_file"
-        echo ""
-        log_info "Done: ${ok}/${total} users created"
-        if [[ "$ok" -ne "$total" ]]; then
-            exit 1
-        fi
         ;;
     tailscale)
         load_config

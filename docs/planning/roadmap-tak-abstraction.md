@@ -28,7 +28,7 @@ Transform Heartbeat from a FreeTAKServer-specific tool into a **universal TAK se
 
 ## Roadmap Phases
 
-### Phase 1: Headless Core (Current Sprint)
+### Phase 1: Headless Core (COMPLETE)
 
 **Goal:** Strip Heartbeat to its essential server management functions
 
@@ -36,14 +36,16 @@ Transform Heartbeat from a FreeTAKServer-specific tool into a **universal TAK se
 
 **Deliverables:**
 - [x] Create headless branch
-- [x] Document cleanup spec (`docs/headless-cleanup-spec.md`)
-- [ ] Remove beacon component
-- [ ] Remove webmap/CoTView component
-- [ ] Clean configuration templates
-- [ ] Update documentation
+- [x] Document cleanup spec (`docs/planning/headless-cleanup-spec.md`)
+- [x] Remove beacon component
+- [x] Remove webmap/CoTView component
+- [x] Clean configuration templates
+- [x] Update documentation
 - [ ] Test core functionality
 
 **Outcome:** A minimal, focused CLI that manages FreeTAKServer lifecycle without bundled visualization tools.
+
+**Target:** Ready for March 25-26 demo (~March 11)
 
 ---
 
@@ -60,7 +62,7 @@ Create a standardized interface that all TAK server backends must implement:
 ```bash
 # Proposed: lib/backends/interface.sh
 
-# Lifecycle
+# Lifecycle (required - all backends)
 backend_install()      # Install/setup the TAK server
 backend_start()        # Start the server
 backend_stop()         # Stop the server
@@ -69,20 +71,32 @@ backend_logs()         # Stream/show logs
 backend_update()       # Update to latest version
 backend_uninstall()    # Remove the server
 
-# User Management
+# Package Generation (required - all backends)
+backend_get_package()  # Get connection package (TCP or SSL)
+backend_get_ports()    # Required ports
+
+# Capabilities (query what backend supports)
+backend_supports()     # Check capability: "ssl", "users", "webmap", "federation"
+
+# Optional - only if backend_supports("users") returns true
 backend_create_user()  # Create a TAK user
 backend_delete_user()  # Remove a TAK user
 backend_list_users()   # List all users
 
-# Package Generation
-backend_get_package()  # Get connection package for user
-backend_supports_ssl() # Whether backend supports SSL certs
-
-# Capabilities
-backend_has_webmap()   # Built-in map viewer?
-backend_has_api()      # REST API available?
-backend_get_ports()    # Required ports
+# Optional - only if backend_supports("ssl") returns true
+backend_get_ssl_package()  # Get SSL cert enrollment package
 ```
+
+**Capability Matrix:**
+
+| Capability | FreeTAK (Lite) | OpenTAK (Standard) | TAK Server (Enterprise) |
+|------------|----------------|--------------------|-----------------------|
+| `ssl` | No | Yes | Yes |
+| `users` | No* | Yes (via WebTAK) | Yes (via Admin UI) |
+| `webmap` | No | Yes (built-in) | Yes (built-in) |
+| `federation` | No | Limited | Yes |
+
+*FreeTAK Lite is TCP-only, zero-auth for maximum simplicity
 
 #### 2.2 Refactor FreeTAK as First Backend
 
@@ -182,7 +196,15 @@ lib/backends/
 | **Requirements** | PostgreSQL database, more resources |
 | **Target Users** | Government agencies, military, large organizations |
 
-#### 4.2 Implementation Approach
+#### 4.2 TAK Server Integration Points
+
+| Feature | TAK Server Approach |
+|---------|---------------------|
+| User Management | Admin UI or REST API |
+| Data Packages | Enrollment package generation |
+| SSL Certificates | Server-managed certs |
+
+#### 4.3 Implementation Approach
 
 ```
 lib/backends/
@@ -193,7 +215,7 @@ lib/backends/
     └── config-templates/  # Configuration templates
 ```
 
-#### 4.3 Guided Setup Flow
+#### 4.4 Guided Setup Flow
 
 Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 
@@ -213,7 +235,7 @@ Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 # [Press Enter when ready...]
 ```
 
-#### 4.4 Feature Matrix
+#### 4.5 Feature Matrix
 
 | Feature | FreeTAK | OpenTAK | TAK Server |
 |---------|---------|---------|------------|
@@ -222,6 +244,7 @@ Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 | Docker Support | Yes | Yes | Yes |
 | Native Install | Yes | Yes | Yes |
 | Built-in WebTAK | No | Yes | Yes |
+| User Management | Yes | Yes | Yes |
 | SSL/Certs | Basic | Good | Full |
 | Federation | No | Limited | Full |
 | Data Sync | Basic | Good | Full |

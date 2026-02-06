@@ -2,6 +2,8 @@
 
 > TAK Server Manager for the ALIAS Ecosystem
 
+[← Back to main README](../README.md)
+
 ---
 
 ## Planning

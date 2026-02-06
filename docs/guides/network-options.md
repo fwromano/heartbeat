@@ -167,10 +167,6 @@ F2) Local server + satellite backhaul for command post
 - Serve packages: `./heartbeat serve`
 - On phone: open `http://SERVER_IP:9000`
 
-### Bulk user creation
-- `./heartbeat addusers names.txt` (one full name per line)
-- Default password = name (lowest friction)
-
 ## Connectivity checklist (fast triage)
 
 1) Can a phone reach the server IP?

@@ -3,6 +3,7 @@
 > **Branch:** `headless`
 > **Purpose:** Remove beacon and webmap components to create a minimal, headless TAK server deployment
 > **Created:** 2026-02-05
+> **Status:** COMPLETE
 
 ---
 
@@ -65,7 +66,7 @@ This document specifies the complete removal of the **Beacon** and **WebMap (CoT
 COMMANDS=(start stop restart status listen logs qr adduser addusers tailscale beacon package packages serve clean info update systemd uninstall help)
 
 # AFTER:
-COMMANDS=(start stop restart status listen logs qr adduser addusers tailscale package packages serve clean info update systemd uninstall help)
+COMMANDS=(start stop restart status listen logs qr tailscale package packages serve clean info update systemd uninstall help)
 ```
 
 **B. Remove beacon from help text (line ~50):**
@@ -226,25 +227,25 @@ Review and remove any beacon/webmap initialization logic, including:
 ## Cleanup Tasks Checklist
 
 ### Phase 1: Delete Files
-- [ ] Delete `lib/beacon.sh`
-- [ ] Delete `lib/webmap.sh`
-- [ ] Delete `lib/cotview.py`
-- [ ] Delete `lib/cotview.html`
-- [ ] Delete `docs/cotview-spec.md`
-- [ ] Delete `docs/persistence-webmap-spec.md`
-- [ ] Delete `data/webmap/` directory (if exists)
+- [x] Delete `lib/beacon.sh`
+- [x] Delete `lib/webmap.sh`
+- [x] Delete `lib/cotview.py`
+- [x] Delete `lib/cotview.html`
+- [x] Delete `docs/cotview-spec.md`
+- [x] Delete `docs/persistence-webmap-spec.md`
+- [x] Delete `data/webmap/` directory (if exists)
 
 ### Phase 2: Modify Core Files
-- [ ] Edit `heartbeat` - remove beacon command and help text
-- [ ] Edit `lib/server.sh` - remove beacon/webmap lifecycle calls
-- [ ] Edit `lib/common.sh` - remove beacon/webmap path variables
-- [ ] Edit `config/heartbeat.conf.example` - remove beacon/webmap config sections
+- [x] Edit `heartbeat` - remove beacon command and help text
+- [x] Edit `lib/server.sh` - remove beacon/webmap lifecycle calls
+- [x] Edit `lib/common.sh` - remove beacon/webmap path variables, fix sed portability
+- [x] Edit `config/heartbeat.conf.example` - remove beacon/webmap config sections
 
 ### Phase 3: Update Documentation
-- [ ] Edit `README.md` - remove beacon/webmap feature descriptions
-- [ ] Review `docs/field-quickstart.md` for beacon/webmap references
-- [ ] Review `docs/network-options.md` for beacon/webmap references
-- [ ] Review `docs/tasks.md` for outdated task references
+- [x] Edit `README.md` - remove beacon/webmap feature descriptions
+- [x] Review `docs/field-quickstart.md` for beacon/webmap references (clean)
+- [x] Review `docs/network-options.md` for beacon/webmap references (clean)
+- [x] Review `docs/tasks.md` for outdated task references
 
 ### Phase 4: Testing
 - [ ] Verify `./heartbeat start` works without errors
@@ -257,7 +258,7 @@ Review and remove any beacon/webmap initialization logic, including:
 ### Phase 5: Cleanup
 - [ ] Run `./heartbeat clean` to remove any leftover artifacts
 - [ ] Verify no orphaned references in codebase with grep
-- [ ] Commit changes with descriptive message
+- [x] Commit changes with descriptive message
 
 ---
 
@@ -340,10 +341,8 @@ heartbeat/
 | `listen` | Live monitor - follow connections and events |
 | `logs [-f]` | View server logs |
 | `qr` | Show QR code for iTAK/ATAK |
-| `adduser <name>` | Create a TAK server login |
-| `addusers <file>` | Bulk create users from file |
 | `tailscale` | Set SERVER_IP to Tailscale IP |
-| `package <name>` | Generate connection package |
+| `package <name>` | Generate connection package (TCP-based) |
 | `packages` | List generated packages |
 | `serve [port]` | HTTP serve packages for download |
 | `clean` | Remove generated artifacts |
@@ -353,14 +352,58 @@ heartbeat/
 | `uninstall` | Remove FreeTAKServer |
 | `help` | Show help |
 
+**Removed commands:**
+- `beacon` - removed (was server map dot)
+- `adduser` - removed (SSL/user auth not needed for TCP-only Lite tier)
+- `addusers` - removed (same reason)
+
+---
+
+## Additional Cleanup: Remove User Management
+
+The Lite tier is TCP-only, no authentication needed. Remove `adduser`/`addusers`:
+
+### Files to Modify
+
+**`heartbeat` (main CLI):**
+```bash
+# Remove from COMMANDS array:
+adduser addusers
+
+# Remove from help text (~lines 47-48):
+echo "  adduser <name> [pw]  Create a TAK server login for a team member"
+echo "  addusers <file>      Create users from a list (one name per line)"
+
+# Remove command routing (~lines 262-311):
+# The entire adduser) and addusers) case blocks
+
+# Remove create_user() function (~lines 74-128)
+```
+
+**`README.md`:**
+- Remove `adduser` and `addusers` from command list
+- Remove notes about passwords and user creation
+
+### Rationale
+
+```
+LITE (FreeTAK headless)     STANDARD (OpenTAK)         ENTERPRISE (TAK Server)
+─────────────────────────   ─────────────────────────  ─────────────────────────
+TCP only                    SSL/certs available        Full cert management
+No auth required            User mgmt via WebTAK UI    User mgmt via Admin UI
+Zero friction               ↑ features added here      ↑ more features here
+```
+
+User management returns in OpenTAK tier, but via the built-in WebTAK interface - Heartbeat doesn't need to wrap it.
+
 ---
 
 ## Notes
 
-1. **Backward Compatibility:** Existing `heartbeat.conf` files with BEACON_* and WEBMAP_* variables will still work - they'll simply be ignored. No migration script needed.
+1. **Backward Compatibility:** Existing `heartbeat.conf` files with BEACON_*, WEBMAP_*, FTS_USERNAME, FTS_PASSWORD variables will still work - they'll simply be ignored. No migration script needed.
 
-2. **Data Cleanup:** The `./heartbeat clean` command should be run after the changes to remove any leftover beacon/webmap artifacts from previous runs.
+2. **Data Cleanup:** The `./heartbeat clean` command should be run after the changes to remove any leftover artifacts from previous runs.
 
 3. **Docker Compose Override:** The docker-compose.override.yml file that adds localhost binding for WebMap connectivity can be removed or simplified since WebMap no longer needs it.
 
-4. **Future Considerations:** If map visualization is needed in the future, consider integrating with external TAK visualization tools rather than bundling CoTView.
+4. **Future Considerations:** User management and SSL/certs will be reintroduced with the OpenTAK backend, handled via WebTAK UI rather than CLI commands.

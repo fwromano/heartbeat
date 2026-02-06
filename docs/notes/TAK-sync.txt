@@ -2,7 +2,46 @@ nfs training scenarios
 translating sim to real gps location tak
 tak matrix integration ???
 gps spoof/simulation node
-march 25/26 event 
-5g elevation vs helicopter 
+march 25/26 event
+5g elevation vs helicopter
 water point and authorized flight zone
 air enroachment data input too
+
+================================================================================
+INTERPRETATION (Claude, 2026-02-05)
+================================================================================
+
+## Priority
+- Real-world firefighter deployment is FIRST CLASS
+- Simulation/training is secondary (but needed for demos)
+
+## Deadline
+- "march 25/26 event" = in-person demo
+- Target: ready 1-2 weeks before (~March 11)
+
+## Simulation / Training
+- "nfs training scenarios" = National Forest Service training scenarios
+- "tak matrix integration" = Matrix is the simulation system
+- "gps spoof/simulation node" = translate sim positions to TAK client locations
+- "translating sim to real gps location tak" = same concept
+- See docs/planning/vision-heartbeat-platform.md for GPS spoofing approaches
+
+## Connectivity Considerations
+- "5g elevation vs helicopter" = 5G coverage has altitude ceiling (~300-500m AGL)
+- If heli flies above 5G coverage = connectivity failure
+- Fallback: Silvus MANET radios or similar mesh network
+
+## Data Layers for TAK
+- "water point" = display water sources on map, use for path planning
+- "authorized flight zone" = display airspace boundaries, use for route planning
+- Both should be exportable to GeoPackage AND usable for navigation
+
+## External Data Inputs
+- "air enroachment data input" = ADS-B receiver integration
+- Aircraft transponder data shows nearby aircraft in TAK
+- Used for airspace deconfliction during helicopter ops
+
+## Repo Structure (TBD)
+- Discussed: may go "up a layer" with ALIAS as parent
+- Options: monorepo vs heartbeat as submodule
+- Decision deferred

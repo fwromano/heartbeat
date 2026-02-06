@@ -14,14 +14,7 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 ```
 Use the **Server IP** shown.
 
-## 3) Create users (fast)
-```bash
-./heartbeat addusers names.txt
-```
-- `names.txt` = one full name per line
-- Password defaults to the full name (lowest friction)
-
-## 4) Distribute connection
+## 3) Distribute connection
 Option A (recommended):
 ```bash
 ./heartbeat serve
@@ -33,7 +26,7 @@ Option B (manual):
 - Port: `8087`
 - Protocol: TCP
 
-## 5) Confirm it's working
+## 4) Confirm it's working
 ```bash
 ./heartbeat listen
 ```

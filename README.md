@@ -50,8 +50,6 @@ Server:
 
 Team:
   qr                   Show QR code to scan from iTAK/ATAK
-  adduser <name> [pw]  Create a TAK server login for a team member
-  addusers <file>      Create users from a list (one name per line)
   tailscale            Set SERVER_IP to the Tailscale IP
   package <name>       Generate a connection package for a member
   packages             List all generated packages
@@ -64,8 +62,6 @@ System:
   uninstall            Remove FreeTAKServer and optionally data
 
 Notes:
-- If you omit `[pw]` in `adduser`, the password defaults to the name.
-- `addusers` ignores blank lines and `#` comments.
 - Packages embed the server IP; if the IP changes, regenerate packages.
 ```
 
@@ -117,28 +113,32 @@ Same two options as iTAK. ATAK can also import data packages from:
 
 ```
 heartbeat/
-  setup.sh              Setup installer
-  heartbeat             Main CLI tool
-  lib/
-    common.sh           Shared utilities
-    install.sh          Installation logic
-    server.sh           Server management
-    package.sh          Data package generation
-  config/
-    heartbeat.conf.example
-  docker/
-    Dockerfile
-    docker-compose.yml
-    FTSConfig.yaml.example
-    certs/              Generated TLS certs (gitignored)
-  templates/
-    manifest.xml        Data package manifest template
-    server.pref         Connection preferences template
-  docs/
-    field-quickstart.md
-    network-options.md
-  packages/             Generated .zip packages (gitignored)
-  data/                 Runtime data (gitignored)
+├── setup.sh                    Setup installer
+├── heartbeat                   Main CLI tool
+├── lib/
+│   ├── common.sh               Shared utilities
+│   ├── install.sh              Installation logic
+│   ├── server.sh               Server management
+│   ├── package.sh              Data package generation
+│   └── qr.sh                   QR code generation
+├── config/
+│   └── heartbeat.conf.example  Configuration template
+├── docker/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── FTSConfig.yaml.example
+│   └── certs/                  Generated TLS certs (gitignored)
+├── templates/
+│   ├── manifest.xml            Data package manifest template
+│   └── server.pref             Connection preferences template
+├── docs/
+│   ├── README.md               Documentation index
+│   ├── planning/               Vision, roadmaps, specs
+│   ├── guides/                 User documentation
+│   ├── architecture/           Technical diagrams
+│   └── notes/                  Working notes
+├── packages/                   Generated .zip packages (gitignored)
+└── data/                       Runtime data (gitignored)
 ```
 
 ## Field Quick Start

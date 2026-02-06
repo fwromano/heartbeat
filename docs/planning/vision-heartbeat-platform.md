@@ -4,6 +4,9 @@
 > **Project:** ALIAS / Heartbeat
 > **Created:** 2026-02-05
 > **Status:** Vision Draft
+> **Target Demo:** March 25-26, 2026 (ready by ~March 11)
+
+**Priority:** Real-world firefighter deployment is FIRST CLASS. Simulation/training supports this but is secondary.
 
 ---
 
@@ -77,11 +80,28 @@ Heartbeat evolves from a single-server TAK deployment tool into a **robust TAK s
 
 Different missions need different capabilities. Heartbeat provides a unified interface across three TAK server tiers:
 
-| Tier | Backend | Best For | Key Features |
-|------|---------|----------|--------------|
-| **Lite** | FreeTAKServer | Small teams, training, low resources | Open source, minimal footprint, easy setup |
-| **Standard** | OpenTAK Server | Field operations, built-in visualization | WebTAK map, modern API, active development |
-| **Enterprise** | TAK Server (tak.gov) | Government, military, large orgs | Full federation, data sync, certified |
+**Feature Pyramid:**
+```
+                    ┌─────────────────────┐
+                    │     ENTERPRISE      │  TAK Server (tak.gov)
+                    │  Federation, certs, │  Full admin UI
+                    │  data sync, groups  │
+                    ├─────────────────────┤
+                    │      STANDARD       │  OpenTAK
+                    │  WebTAK, SSL/certs, │  User mgmt via WebUI
+                    │  user management    │
+                    ├─────────────────────┤
+                    │        LITE         │  FreeTAKServer
+                    │   TCP only, no auth │  Zero friction
+                    │   start/stop/qr     │  March demo target
+                    └─────────────────────┘
+```
+
+| Tier | Backend | Target User | Key Traits |
+|------|---------|-------------|------------|
+| **Lite** | FreeTAKServer | Field teams, training, demos | TCP only, no auth, zero friction, 5-min setup |
+| **Standard** | OpenTAK Server | Sustained ops, built-in viz | WebTAK map, SSL/certs, user mgmt (via WebUI) |
+| **Enterprise** | TAK Server (tak.gov) | Govt, military, large orgs | Federation, data sync, full admin, certified |
 
 **User Experience:**
 ```bash
@@ -624,10 +644,16 @@ Make clients appear where the simulation says they are:
 └──────────────┘              └──────────────┘              └──────────────┘
 ```
 
-**Implementation approaches:**
-1. **Mock GPS app** on device that reads sim coordinates via VPN
-2. **CoT injection** - sim sends position CoT directly to server (bypasses client GPS)
-3. **Client plugin** - ATAK plugin that accepts external position updates
+**Implementation approaches (decision TBD):**
+
+| Approach | How It Works | Pros | Cons |
+|----------|--------------|------|------|
+| **1. Mock GPS App** | Android app that provides fake GPS to the system. Sim sends coordinates via VPN, app feeds them to OS location services. | Clean - ATAK thinks it's real GPS. Works with any TAK client. | Requires device control (install app). Android only (iOS locked down). May need developer mode. |
+| **2. CoT Injection** | Sim sends CoT position events directly to TAK server, bypassing the client entirely. Client's real GPS is ignored for that UID. | No client modification. Works with any device. Server-side control. | Client still shows its real position locally. Two "selves" issue. Requires UID coordination. |
+| **3. ATAK Plugin** | Custom ATAK plugin listens for sim position updates (UDP/TCP) and overrides self-location reporting. | Integrated experience. Plugin can show "sim mode" indicator. | ATAK only (no iTAK). Plugin development required. Must distribute plugin to devices. |
+| **4. Hybrid** | CoT injection for observer view + mock GPS for immersive training on select devices. | Best of both worlds. | More complexity. |
+
+**Recommendation:** Start with **CoT Injection** (Approach 2) for the March demo - it's server-side only, no client changes needed. Evaluate Mock GPS (Approach 1) for immersive training later.
 
 #### Sim-to-TAK Bridge
 
@@ -663,6 +689,29 @@ User draws on map          Heartbeat exports           Other systems consume
   (blue line)              - name: "Evac Route"
 ```
 
+### External Data Inputs (Future)
+
+Beyond simulation, TAK can ingest real-world data feeds:
+
+| Data Source | Protocol | TAK Display | Use Case |
+|-------------|----------|-------------|----------|
+| **ADS-B Receiver** | dump1090 / Beast | Aircraft icons with callsign, altitude, heading | Airspace deconfliction for helicopter ops |
+| **APRS Gateway** | APRS-IS | HAM radio operator positions | Mutual aid, SAR coordination |
+| **AVL/GPS Trackers** | Varies | Vehicle positions | Fleet tracking without TAK on every device |
+| **Weather Stations** | METAR/TAF | Weather markers | Ops planning |
+
+**ADS-B Integration (air encroachment):**
+```
+┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
+│   ADS-B         │      │   Heartbeat     │      │   TAK Clients   │
+│   Receiver      │─────►│   Bridge        │─────►│   (iTAK/ATAK)   │
+│   (dump1090)    │ JSON │   (adsb2cot)    │ CoT  │                 │
+└─────────────────┘      └─────────────────┘      └─────────────────┘
+
+Aircraft within X nm of ops area appear on map
+Altitude + heading shown for deconfliction
+```
+
 ### Deployment Options
 
 Heartbeat runs wherever you need it:
@@ -683,3 +732,25 @@ ssh user@cloud-vm
 git clone ... && cd heartbeat
 ./setup.sh --tier standard
 ```
+
+### Connectivity Considerations
+
+**5G/LTE Limitations:**
+- Cellular coverage has altitude limits (~300-500m AGL typical)
+- Helicopters operating above this altitude lose connectivity
+- Ground units in canyons/dense forest may have dead zones
+
+**Fallback Options:**
+
+| Scenario | Primary | Fallback |
+|----------|---------|----------|
+| Ground ops, good cell coverage | 5G/LTE | - |
+| Ground ops, poor cell coverage | 5G/LTE | Silvus MANET radios |
+| Helicopter ops | Silvus MANET | Satellite (high latency) |
+| Remote wilderness | Silvus MANET mesh | Store-and-forward |
+
+**MANET Integration:**
+- Silvus radios provide IP mesh network
+- TAK clients connect to local Heartbeat server
+- Server federates upstream when connectivity available
+- See `docs/guides/network-options.md` for detailed configs
