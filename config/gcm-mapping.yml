@@ -1,0 +1,52 @@
+# Heartbeat GCM (Graphic Control Measures) Export Mapping
+#
+# Defines how CoT event types are sorted into tactical GIS layers.
+# Matching is PREFIX-BASED: "b-m-p" matches any type starting with "b-m-p".
+#
+# Override with: ./heartbeat export --gcm --mapping custom.yml -o out.gpkg
+
+layers:
+  control_points:
+    description: "Named control points, markers, waypoints, POIs"
+    geometry: Point
+    cot_types:
+      - "b-m-p"            # All point markers (waypoints, POIs, contacts, etc.)
+    attributes:
+      - uid
+      - callsign
+      - cot_type
+      - time
+      - remarks
+
+  boundaries:
+    description: "Area boundaries, search areas, hazard zones"
+    geometry: Polygon
+    cot_types:
+      - "u-d-f"            # Freeform drawn shapes (polygons)
+    attributes:
+      - uid
+      - callsign
+      - cot_type
+      - time
+      - remarks
+
+  routes:
+    description: "Routes, axes of advance, patrol routes"
+    geometry: LineString
+    cot_types:
+      - "b-m-r"            # Routes
+      - "u-d-r"            # User-drawn routes/lines
+    attributes:
+      - uid
+      - callsign
+      - cot_type
+      - time
+
+settings:
+  # CoT type prefixes to ALWAYS exclude from GCM export
+  exclude_types:
+    - "a-"                  # Position tracks (SA atoms) -- NOT tactical geometry
+    - "t-"                  # Tasking
+
+  # Keep only the latest event per UID (dedup moving/updated objects)
+  deduplicate_by_uid: true

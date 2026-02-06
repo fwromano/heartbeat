@@ -2,8 +2,6 @@
 
 ## In Progress
 
-- **[high] CoT recording + GeoPackage export** — Recorder daemon, SQLite storage, raw + GCM export
-
 ## Backlog
 
 - **[med] Rethink iTAK server QR** — What should the iTAK "Add Server > Scan QR" code contain for TCP-only? Currently `TEAM_NAME,SERVER_IP,COT_PORT,TCP`. Decide if this belongs in `./heartbeat qr` output only, or somewhere else.
@@ -15,6 +13,7 @@
 
 ## Done
 
+- ~~CoT recording + GeoPackage export~~ — Recorder daemon, SQLite storage, raw + GCM export
 - ~~Headless cleanup~~ — Removed beacon/webmap components, cleaned foundation for backend abstraction
 - ~~Remove adduser/addusers~~ — TCP-only Lite tier doesn't need auth
 - ~~Remove iTAK QR from download page~~ — Keep only URL QR for sharing

@@ -49,6 +49,13 @@ show_help() {
     echo "  packages             List all generated packages"
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
     echo ""
+    echo -e "${BOLD}Recording & Export:${NC}"
+    echo "  record start         Start recording CoT events from the server"
+    echo "  record stop          Stop the CoT recorder"
+    echo "  record status        Check recorder status and event count"
+    echo "  export [-o file]     Export recorded events to GeoPackage (.gpkg)"
+    echo "  export --gcm [-o f]  Export GCM (tactical geometry) only"
+    echo ""
     echo -e "${BOLD}System:${NC}"
     echo "  info                 Show server connection details"
     echo "  update               Update FreeTAKServer to latest version"
@@ -105,7 +112,7 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart status listen logs qr tailscale package packages serve clean info update systemd uninstall help)
+COMMANDS=(start stop restart status listen logs qr tailscale package packages serve clean info update systemd uninstall record export help)
 
 resolve_cmd() {
     local input="$1"
@@ -116,6 +123,8 @@ resolve_cmd() {
         pkgs|list) echo "packages"; return ;;
         upgrade) echo "update"; return ;;
         remove) echo "uninstall"; return ;;
+        rec) echo "record"; return ;;
+        exp) echo "export"; return ;;
         --help|-h) echo "help"; return ;;
     esac
     # Prefix match
@@ -212,7 +221,7 @@ case "$cmd" in
         load_config
         log_step "Cleaning all generated artifacts"
         rm -f "${PACKAGES_DIR}"/*.zip "${PACKAGES_DIR}"/*.png "${PACKAGES_DIR}"/index.html 2>/dev/null
-        rm -f "${DATA_DIR}"/*.log "${DATA_DIR}"/*.pid 2>/dev/null
+        rm -f "${DATA_DIR}"/*.log "${DATA_DIR}"/*.pid "${DATA_DIR}"/cot_records.db 2>/dev/null
         rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
               "${HEARTBEAT_DIR}/package.json" 2>/dev/null
         rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
@@ -242,6 +251,14 @@ case "$cmd" in
         source "${LIB_DIR}/server.sh"
         _load_backend
         backend_uninstall
+        ;;
+    record)
+        source "${LIB_DIR}/record.sh"
+        cmd_record "$@"
+        ;;
+    export)
+        source "${LIB_DIR}/export.sh"
+        cmd_export "$@"
         ;;
     help)
         show_help
