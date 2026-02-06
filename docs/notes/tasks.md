@@ -6,6 +6,8 @@ None.
 
 ## Backlog
 
+- **[high] Remove iTAK QR from download page** — Remove the "Connect in iTAK" QR code from `lib/package.sh` serve_packages(). Keep the URL QR (for sharing the page link). See lines 247-248.
+- **[med] Rethink iTAK server QR** — What should the iTAK "Add Server > Scan QR" code contain for TCP-only? Currently `TEAM_NAME,SERVER_IP,COT_PORT,TCP`. Decide if this belongs in `./heartbeat qr` output only, or somewhere else.
 - **[high] Update architecture diagram** — Remove beacon/webmap from `docs/architecture/architecture-v2.drawio` (manual edit in draw.io)
 - **[med] DataPackage port conflicts** — Warn + disable or remap when port is already in use
 - **[high] Backend abstraction** — Refactor FreeTAK-specific code behind interface (see `docs/planning/roadmap-tak-abstraction.md`)

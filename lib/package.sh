@@ -237,18 +237,13 @@ serve_packages() {
     local qr_section=""
     if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
         local qr_url_png="${PACKAGES_DIR}/heartbeat_qr.png"
-        local qr_itak_png="${PACKAGES_DIR}/heartbeat_itak_qr.png"
         local serve_url="http://${SERVER_IP}:${port}"
-        local itak_qr_data="${TEAM_NAME},${SERVER_IP},${COT_PORT},TCP"
-        local url_img="" itak_img=""
+        local url_img=""
         if save_qr_png "$serve_url" "$qr_url_png" 2>/dev/null && [[ -s "$qr_url_png" ]]; then
             url_img='<div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="URL QR code"><p class="qr-label">Open download page</p><p class="qr-hint">Scan with phone camera</p></div>'
         fi
-        if save_qr_png "$itak_qr_data" "$qr_itak_png" 2>/dev/null && [[ -s "$qr_itak_png" ]]; then
-            itak_img='<div class="qr-item"><img class="qr-img" src="heartbeat_itak_qr.png" alt="iTAK QR code"><p class="qr-label">Connect in iTAK</p><p class="qr-hint">iTAK &rarr; Add Server &rarr; Scan QR</p></div>'
-        fi
-        if [[ -n "$url_img" || -n "$itak_img" ]]; then
-            qr_section="<div class=\"qr-section\">${url_img}${itak_img}</div>"
+        if [[ -n "$url_img" ]]; then
+            qr_section="<div class=\"qr-section\">${url_img}</div>"
         fi
     fi
 
