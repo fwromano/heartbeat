@@ -1,0 +1,20 @@
+services:
+  opentakserver:
+    image: opentakserver/opentakserver:latest
+    container_name: heartbeat-opentak
+    restart: unless-stopped
+    ports:
+      - "${COT_PORT:-8087}:8087"           # CoT TCP
+      - "${SSL_COT_PORT:-8089}:8089"       # CoT SSL
+      - "${WEBTAK_PORT:-8080}:8080"        # WebTAK UI
+      - "${API_PORT:-8443}:8443"           # API/DataPackage
+    volumes:
+      - ./data:/opt/opentakserver/data
+      - ./certs:/opt/opentakserver/certs
+    environment:
+      - OTS_SERVER_ADDRESS=${SERVER_IP:-0.0.0.0}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3

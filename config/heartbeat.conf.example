@@ -16,7 +16,10 @@ TAILSCALE_MODE="false"
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-TAK_BACKEND="freetak"   # Options: freetak (opentak and takserver coming soon)
+TAK_BACKEND="freetak"   # Options: freetak, opentak (takserver coming soon)
+
+# OpenTAK-specific (only used when TAK_BACKEND=opentak)
+WEBTAK_PORT=8080        # WebTAK web interface port
 
 # ---------------------------------------------------------------------------
 # Ports

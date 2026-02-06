@@ -14,11 +14,25 @@ _load_backend() {
 
     if [[ ! -f "$backend_file" ]]; then
         log_error "Unknown backend: ${backend}"
-        log_error "Available: freetak"
+        log_error "Available: freetak, opentak"
         exit 1
     fi
 
     source "$backend_file"
+}
+
+_backend_compose_dir() {
+    case "${TAK_BACKEND:-freetak}" in
+        opentak) echo "${DOCKER_DIR}/opentak" ;;
+        *) echo "${DOCKER_DIR}" ;;
+    esac
+}
+
+_backend_container_name() {
+    case "${TAK_BACKEND:-freetak}" in
+        opentak) echo "heartbeat-opentak" ;;
+        *) echo "heartbeat-fts" ;;
+    esac
 }
 
 # ---------------------------------------------------------------------------
@@ -85,7 +99,7 @@ server_status() {
 
             # Resource usage
             local stats
-            stats=$(docker stats --no-stream --format '{{.CPUPerc}}\t{{.MemUsage}}' heartbeat-fts 2>/dev/null)
+            stats=$(docker stats --no-stream --format '{{.CPUPerc}}\t{{.MemUsage}}' "$(_backend_container_name)" 2>/dev/null)
             if [[ -n "$stats" ]]; then
                 local cpu mem
                 cpu=$(echo "$stats" | cut -f1)
@@ -96,7 +110,7 @@ server_status() {
 
             # Restart count
             local restarts
-            restarts=$(docker inspect --format '{{.RestartCount}}' heartbeat-fts 2>/dev/null)
+            restarts=$(docker inspect --format '{{.RestartCount}}' "$(_backend_container_name)" 2>/dev/null)
             if [[ -n "$restarts" && "$restarts" != "0" ]]; then
                 echo -e "  Restarts:  ${YELLOW}${restarts}${NC}"
             fi
@@ -170,7 +184,7 @@ server_logs() {
 # ---------------------------------------------------------------------------
 _format_container_uptime() {
     local started_at
-    started_at=$(docker inspect --format '{{.State.StartedAt}}' heartbeat-fts 2>/dev/null) || return
+    started_at=$(docker inspect --format '{{.State.StartedAt}}' "$(_backend_container_name)" 2>/dev/null) || return
     [[ -z "$started_at" ]] && return
 
     local start_epoch now_epoch diff
@@ -196,11 +210,12 @@ _show_api_health() {
     echo -e "  ${DIM}──────────────────────────────────${NC}"
 
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        # Query FTS REST API from inside container
-        # Note: 401 means the API is up (requires auth); only connection
-        # errors mean the API is truly down.
-        local api_result
-        api_result=$(docker exec heartbeat-fts python3 -c "
+        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+            # Query FTS REST API from inside container
+            # Note: 401 means the API is up (requires auth); only connection
+            # errors mean the API is truly down.
+            local api_result
+            api_result=$(docker exec "$(_backend_container_name)" python3 -c "
 import urllib.request, urllib.error, json, sys, os
 port = os.environ.get('API_PORT', '19023')
 result = {}
@@ -218,23 +233,30 @@ except Exception as e:
     result['api'] = 'down'
     result['users'] = -1
 print(json.dumps(result))
-" 2>/dev/null)
+" 2>/dev/null || true)
 
-        if [[ -n "$api_result" ]]; then
-            local api_state user_count
-            api_state=$(echo "$api_result" | python3 -c "import sys,json; print(json.load(sys.stdin).get('api','?'))" 2>/dev/null)
-            user_count=$(echo "$api_result" | python3 -c "import sys,json; print(json.load(sys.stdin).get('users',-1))" 2>/dev/null)
+            if [[ -n "$api_result" ]]; then
+                local api_state user_count
+                api_state=$(echo "$api_result" | python3 -c "import sys,json; print(json.load(sys.stdin).get('api','?'))" 2>/dev/null)
+                user_count=$(echo "$api_result" | python3 -c "import sys,json; print(json.load(sys.stdin).get('users',-1))" 2>/dev/null)
 
-            if [[ "$api_state" == "up" ]]; then
-                echo -e "    API:     ${GREEN}● healthy${NC}"
-                if [[ "$user_count" -ge 0 ]]; then
-                    echo -e "    Users:   ${user_count} registered"
+                if [[ "$api_state" == "up" ]]; then
+                    echo -e "    API:     ${GREEN}● healthy${NC}"
+                    if [[ "$user_count" -ge 0 ]]; then
+                        echo -e "    Users:   ${user_count} registered"
+                    fi
+                else
+                    echo -e "    API:     ${YELLOW}○ starting...${NC}"
                 fi
             else
-                echo -e "    API:     ${YELLOW}○ starting...${NC}"
+                echo -e "    API:     ${YELLOW}○ not responding${NC}"
             fi
         else
-            echo -e "    API:     ${YELLOW}○ not responding${NC}"
+            if port_listening "$API_PORT"; then
+                echo -e "    API:     ${GREEN}● healthy${NC}"
+            else
+                echo -e "    API:     ${YELLOW}○ not detected${NC}"
+            fi
         fi
     else
         # Native mode: check if API port is responding
@@ -255,9 +277,11 @@ _show_recent_logs() {
         local compose_cmd
         compose_cmd=$(get_compose_cmd)
         if [[ -n "$compose_cmd" ]]; then
+            local compose_dir
+            compose_dir=$(_backend_compose_dir)
             local logs
             # Filter out health-check noise and empty lines
-            logs=$(cd "$DOCKER_DIR" && $compose_cmd logs --tail=20 --no-log-prefix 2>/dev/null \
+            logs=$(cd "$compose_dir" && $compose_cmd logs --tail=20 --no-log-prefix 2>/dev/null \
                 | grep -v '^\s*$' \
                 | grep -v 'empty data$' \
                 | grep -v '^\[heartbeat\]' \
@@ -294,7 +318,7 @@ _wait_for_server() {
         # Use Docker's in-container healthcheck (bypasses host network binding)
         while [[ $i -lt $max_wait ]]; do
             local health
-            health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+            health=$(docker inspect --format '{{.State.Health.Status}}' "$(_backend_container_name)" 2>/dev/null || echo "none")
             if [[ "$health" == "healthy" ]]; then
                 break
             fi
@@ -313,7 +337,7 @@ _wait_for_server() {
 
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
         local health
-        health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+        health=$(docker inspect --format '{{.State.Health.Status}}' "$(_backend_container_name)" 2>/dev/null || echo "none")
         if [[ "$health" == "healthy" ]]; then
             log_ok "Server is accepting connections"
         else
@@ -333,7 +357,7 @@ _wait_for_server() {
 _server_ready() {
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
         local health
-        health=$(docker inspect --format '{{.State.Health.Status}}' heartbeat-fts 2>/dev/null || echo "none")
+        health=$(docker inspect --format '{{.State.Health.Status}}' "$(_backend_container_name)" 2>/dev/null || echo "none")
         if [[ "$health" == "healthy" ]]; then
             return 0
         fi
@@ -456,15 +480,17 @@ _show_running_info() {
     echo -e "  Proto:   TCP"
 
     if [[ "$ready" == "true" ]]; then
-        # Create default user and sync certificate package
-        local user_result
-        user_result=$(_create_default_user)
-        if [[ "$user_result" == "ok" ]]; then
-            log_ok "Default user created"
-        fi
+        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+            # Create default user and sync certificate package
+            local user_result
+            user_result=$(_create_default_user)
+            if [[ "$user_result" == "ok" ]]; then
+                log_ok "Default user created"
+            fi
 
-        # Sync FTS-generated package (with SSL certs) to packages dir
-        _sync_fts_package
+            # Sync FTS-generated package (with SSL certs) to packages dir
+            _sync_fts_package
+        fi
 
         # Show QR code
         if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
@@ -478,7 +504,7 @@ _show_running_info() {
                 sleep 2
                 ((i++))
             done
-            if _server_ready; then
+            if _server_ready && [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
                 _create_default_user >/dev/null 2>&1 || true
                 _sync_fts_package >/dev/null 2>&1 || true
             fi
@@ -486,13 +512,13 @@ _show_running_info() {
     fi
 
     echo -e "  ${DIM}./heartbeat qr           show QR code again${NC}"
-    echo -e "  ${DIM}./heartbeat adduser NAME  add another team member${NC}"
     echo -e "  ${DIM}./heartbeat listen        live server monitor${NC}"
     echo ""
 }
 
 # Sync the default user's FTS certificate package to the packages dir
 _sync_fts_package() {
+    [[ "${TAK_BACKEND:-freetak}" != "freetak" ]] && return 0
     [[ "$DEPLOY_MODE" != "docker" ]] && return 0
 
     local username="${FTS_USERNAME:-team}"
