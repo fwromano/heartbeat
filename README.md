@@ -34,7 +34,6 @@ or in `config/heartbeat.conf`.
 **Clients** (team members' phones):
 - iPhone: [iTAK](https://apps.apple.com/us/app/itak/id1561656396) (free)
 - Android: [ATAK-CIV](https://play.google.com/store/apps/details?id=com.atakmap.app.civ) (free)
-- Browser: WebTAK (if running FreeTAKServer with WebTAK enabled)
 
 ## Commands
 
@@ -142,27 +141,6 @@ heartbeat/
   data/                 Runtime data (gitignored)
 ```
 
-## Browser Map (WebMap)
-
-Heartbeat can auto-launch the FreeTAKHub WebMap (browser map) on startup.
-Enable it during setup with `./setup.sh --webmap` or set `WEBMAP_ENABLED="true"`
-in `config/heartbeat.conf`. WebMap will run locally and be accessible at:
-
-```
-http://SERVER_IP:8000/tak-map
-```
-
-## Server Beacon (Map Dot)
-
-Heartbeat can send a simple CoT beacon so the server/laptop appears on the map.
-Set coordinates once and it will auto-start on `./heartbeat start`:
-
-```
-./heartbeat beacon set --lat 34.0500 --lon -118.2500 --name "HQ"
-```
-
-Disable with `--no-beacon` during setup or `BEACON_ENABLED="false"` in config.
-
 ## Field Quick Start
 
 See `docs/field-quickstart.md` for a one-page, non-technical runbook.
@@ -173,8 +151,6 @@ See `docs/field-quickstart.md` for a one-page, non-technical runbook.
 - Default CoT port is **8087 TCP** - ensure your firewall allows it
 - DataPackage port is **8443** (FreeTAKServer default)
 - If Tailscale is installed, setup defaults to the Tailscale IP (use --no-tailscale to force LAN)
-- WebMap defaults on (use --no-webmap to disable)
-- Beacon defaults on (set `BEACON_LAT/LON` to place the dot, or disable with --no-beacon)
 - If TAILSCALE_MODE is enabled, Heartbeat will auto-refresh SERVER_IP to the current Tailscale IP
 
 ## Troubleshooting

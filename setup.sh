@@ -27,10 +27,6 @@ ARG_TEAM=""
 ARG_SERVER_IP=""
 FORCE_TAILSCALE=false
 DISABLE_TAILSCALE=false
-USE_WEBMAP=false
-DISABLE_WEBMAP=false
-USE_BEACON=false
-DISABLE_BEACON=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --docker)       FORCE_MODE="docker"; shift ;;
@@ -41,10 +37,6 @@ while [[ $# -gt 0 ]]; do
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
         --tailscale)    FORCE_TAILSCALE=true; shift ;;
         --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
-        --webmap)       USE_WEBMAP=true; shift ;;
-        --no-webmap)    DISABLE_WEBMAP=true; shift ;;
-        --beacon)       USE_BEACON=true; shift ;;
-        --no-beacon)    DISABLE_BEACON=true; shift ;;
         --help|-h)
             echo "Usage: ./setup.sh [options]"
             echo ""
@@ -56,10 +48,6 @@ while [[ $# -gt 0 ]]; do
             echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --tailscale      Force Tailscale IP for clients"
             echo "  --no-tailscale   Do not use Tailscale (LAN IP only)"
-            echo "  --webmap         Enable the browser map (WebMap)"
-            echo "  --no-webmap      Disable the browser map (WebMap)"
-            echo "  --beacon         Enable server beacon (map dot)"
-            echo "  --no-beacon      Disable server beacon"
             echo "  --help           Show this help"
             exit 0
             ;;
@@ -256,51 +244,6 @@ main() {
         conn_msg=$(prompt_default "Connection welcome message" "$conn_msg")
     fi
 
-    # ---- Web map (optional) ----
-    local webmap_enabled="true"
-    local webmap_url="https://github.com/FreeTAKTeam/FreeTAKHub/releases/download/v0.2.5/FTH-webmap-linux-0.2.5.zip"
-    local webmap_port="8000"
-    if $DISABLE_WEBMAP; then
-        webmap_enabled="false"
-    elif $USE_WEBMAP; then
-        webmap_enabled="true"
-    fi
-    if [[ "$webmap_enabled" == "true" ]]; then
-        if [[ "$(uname -s)" != "Linux" ]]; then
-            log_warn "WebMap supported on Linux x86_64 only. Disabling."
-            webmap_enabled="false"
-        fi
-        case "$(uname -m)" in
-            x86_64|amd64) ;;
-            *) log_warn "WebMap supported on Linux x86_64 only. Disabling."; webmap_enabled="false" ;;
-        esac
-    fi
-
-    # ---- Beacon (optional) ----
-    local beacon_enabled="true"
-    local beacon_name="${team_name} Beacon"
-    local beacon_interval="10"
-    local beacon_lat="30.63443"
-    local beacon_lon="-96.47834"
-    local beacon_alt="0"
-    if $DISABLE_BEACON; then
-        beacon_enabled="false"
-    elif $USE_BEACON; then
-        beacon_enabled="true"
-    fi
-    if [[ "$beacon_enabled" == "true" ]] && $INTERACTIVE; then
-        echo ""
-        echo -e "${BOLD}Beacon location (so your server shows on the map):${NC}"
-        beacon_lat=$(prompt_default "Latitude (e.g. 30.2672)" "$beacon_lat")
-        beacon_lon=$(prompt_default "Longitude (e.g. -97.7431)" "$beacon_lon")
-    fi
-
-    # ---- Web map default view ----
-    local webmap_view_lat="${beacon_lat}"
-    local webmap_view_lon="${beacon_lon}"
-    local webmap_view_zoom="15"
-    local webmap_view_layer="Esri Satellite"
-
     # ---- Default credentials ----
     local fts_user="team"
     local fts_pass
@@ -335,20 +278,6 @@ FTS_DATA_DIR="${DATA_DIR}/fts"
 FTS_USERNAME="${fts_user}"
 FTS_PASSWORD="${fts_pass}"
 
-WEBMAP_ENABLED="${webmap_enabled}"
-WEBMAP_PORT=${webmap_port}
-WEBMAP_URL="${webmap_url}"
-WEBMAP_VIEW_LAT="${webmap_view_lat}"
-WEBMAP_VIEW_LON="${webmap_view_lon}"
-WEBMAP_VIEW_ZOOM=${webmap_view_zoom}
-WEBMAP_VIEW_LAYER="${webmap_view_layer}"
-
-BEACON_ENABLED="${beacon_enabled}"
-BEACON_NAME="${beacon_name}"
-BEACON_INTERVAL=${beacon_interval}
-BEACON_LAT="${beacon_lat}"
-BEACON_LON="${beacon_lon}"
-BEACON_ALT=${beacon_alt}
 EOF
 
     log_ok "Config: ${HEARTBEAT_CONF}"

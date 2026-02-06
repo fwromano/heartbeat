@@ -16,14 +16,6 @@ server_start() {
         _native_start
     fi
 
-    source "${LIB_DIR}/beacon.sh"
-    beacon_start || true
-
-    if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
-        source "${LIB_DIR}/webmap.sh"
-        webmap_start || true
-    fi
-
     _wait_for_server
     _show_running_info
 }
@@ -41,19 +33,6 @@ _docker_start() {
     # Export all config vars for docker-compose env substitution
     export COT_PORT SSL_COT_PORT API_PORT DATAPACKAGE_PORT
     export FTS_CONNECTION_MSG SERVER_IP
-
-    # Add localhost CoT binding for host-side services (WebMap, Beacon)
-    local override="${DOCKER_DIR}/docker-compose.override.yml"
-    if [[ "$SERVER_IP" != "127.0.0.1" ]]; then
-        cat > "$override" <<OVERRIDE
-services:
-  fts:
-    ports:
-      - "127.0.0.1:${COT_PORT:-8087}:${COT_PORT:-8087}"
-OVERRIDE
-    else
-        rm -f "$override"
-    fi
 
     (cd "$DOCKER_DIR" && $compose_cmd up -d --build)
 
@@ -99,24 +78,8 @@ server_stop() {
     else
         _native_stop
     fi
-
-    source "${LIB_DIR}/beacon.sh"
-    beacon_stop || true
-
-    if [[ "${WEBMAP_ENABLED:-false}" == "true" ]]; then
-        source "${LIB_DIR}/webmap.sh"
-        webmap_stop || true
-    fi
-
-    # Clean up stale PID files
-    rm -f "$BEACON_PID_FILE" "$WEBMAP_PID_FILE" "$PID_FILE" 2>/dev/null
-
-    # Truncate logs (keep last 200 lines for debugging)
-    for lf in "$BEACON_LOG_FILE" "$WEBMAP_LOG_FILE"; do
-        if [[ -f "$lf" ]]; then
-            tail -200 "$lf" > "${lf}.tmp" && mv "${lf}.tmp" "$lf"
-        fi
-    done
+    # Clean up stale PID file
+    rm -f "$PID_FILE" 2>/dev/null
 
     # Clean Node-RED junk that may have leaked to repo root (pre-cwd-fix runs)
     rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
@@ -247,10 +210,6 @@ server_status() {
     echo -e "  CoT:     ${CYAN}${SERVER_IP}:${COT_PORT}${NC} (TCP)"
     echo -e "  SSL CoT: ${CYAN}${SERVER_IP}:${SSL_COT_PORT}${NC}"
     echo -e "  API:     ${CYAN}${SERVER_IP}:${API_PORT}${NC}"
-    echo ""
-
-    source "${LIB_DIR}/beacon.sh"
-    beacon_status
     echo ""
 
     if $running; then
@@ -415,7 +374,7 @@ _show_recent_logs() {
                 | grep -v 'empty data$' \
                 | grep -v '^\[heartbeat\]' \
                 | grep -v '^[0-9]*$' \
-                | tail -5)
+                | tail -5 || true)
             if [[ -n "$logs" ]]; then
                 while IFS= read -r line; do
                     echo -e "    ${DIM}${line}${NC}"

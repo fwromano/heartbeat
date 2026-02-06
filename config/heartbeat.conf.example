@@ -27,26 +27,7 @@ DATAPACKAGE_PORT=8443    # Data package service
 FTS_SECRET_KEY=""        # Generated during setup
 FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
 FTS_USERNAME="team"      # Default TAK username (generated during setup)
-FTS_PASSWORD=""           # Auto-generated random password (see setup output)
-
-# Web map (CoTView)
-WEBMAP_ENABLED="true"
-WEBMAP_PORT=8000
-WEBMAP_VIEW_LAT="30.63443"
-WEBMAP_VIEW_LON="-96.47834"
-WEBMAP_VIEW_ZOOM=15
-# Optional CoTView settings
-# COTVIEW_FTS_HOST="127.0.0.1"
-# COTVIEW_FTS_PORT=8087
-# COTVIEW_STALE_SECONDS=300
-
-# Beacon (shows server/laptop as a map dot)
-BEACON_ENABLED="true"
-BEACON_NAME="Heartbeat Beacon"
-BEACON_INTERVAL=10
-BEACON_LAT="30.63443"
-BEACON_LON="-96.47834"
-BEACON_ALT=0
+FTS_PASSWORD=""          # Auto-generated random password (see setup output)
 
 # ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)
