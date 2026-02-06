@@ -248,17 +248,18 @@ Review and remove any beacon/webmap initialization logic, including:
 - [x] Review `docs/tasks.md` for outdated task references
 
 ### Phase 4: Testing
-- [ ] Verify `./heartbeat start` works without errors
-- [ ] Verify `./heartbeat stop` works without errors
-- [ ] Verify `./heartbeat status` displays correctly
-- [ ] Verify `./heartbeat package "Test"` generates package
-- [ ] Verify `./heartbeat qr` displays QR code
-- [ ] Verify `./heartbeat help` shows updated commands
+- [x] Verify `./heartbeat start` works without errors
+- [x] Verify `./heartbeat stop` works without errors
+- [x] Verify `./heartbeat status` displays correctly
+- [x] Verify `./heartbeat package "Test"` generates package
+- [x] Verify `./heartbeat qr` displays QR code
+- [x] Verify `./heartbeat help` shows updated commands
 
 ### Phase 5: Cleanup
-- [ ] Run `./heartbeat clean` to remove any leftover artifacts
-- [ ] Verify no orphaned references in codebase with grep
+- [x] Run `./heartbeat clean` to remove any leftover artifacts
+- [x] Verify no orphaned references in codebase with grep
 - [x] Commit changes with descriptive message
+- [x] Update architecture diagram (removed beacon/webmap)
 
 ---
 

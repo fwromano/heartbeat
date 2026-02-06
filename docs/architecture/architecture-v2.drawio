@@ -19,35 +19,11 @@
         <mxCell id="fts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="FreeTAKServer&lt;br&gt;&lt;span style=&quot;font-size: 9px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;CoT routing - user mgmt - :8087 :8089&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="60" y="124" as="geometry" />
         </mxCell>
-        <mxCell id="beacon" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Beacon&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;Server map dot&lt;/font&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="60" width="95" x="60" y="208" as="geometry" />
-        </mxCell>
-        <mxCell id="webmap" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="WebMap&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;Browser COP :8000&lt;/font&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="60" width="95" x="165" y="208" as="geometry" />
-        </mxCell>
         <mxCell id="cfg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Config + Data&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;heartbeat.conf - certs - logs&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="60" y="292" as="geometry" />
         </mxCell>
         <mxCell id="dl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Download Page&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;URL QR + iTAK QR + .zip packages&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="60" y="376" as="geometry" />
-        </mxCell>
-        <mxCell id="beacon_flow" edge="1" parent="1" style="endArrow=block;strokeColor=#f97316;strokeWidth=2;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="108" y="208" as="sourcePoint" />
-            <mxPoint x="108" y="184" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="webmap_flow" edge="1" parent="1" style="endArrow=block;strokeColor=#06b6d4;strokeWidth=2;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="212" y="184" as="sourcePoint" />
-            <mxPoint x="212" y="208" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="beacon_label" value="Beacon &amp;#8594; FTS" style="text;html=1;align=left;verticalAlign=middle;fontSize=7;fontStyle=1;fontColor=#f97316;" vertex="1" parent="1">
-          <mxGeometry x="128" y="191" width="70" height="12" as="geometry" />
-        </mxCell>
-        <mxCell id="webmap_label" value="FTS &amp;#8594; WebMap" style="text;html=1;align=left;verticalAlign=middle;fontSize=7;fontStyle=1;fontColor=#06b6d4;" vertex="1" parent="1">
-          <mxGeometry x="228" y="191" width="80" height="12" as="geometry" />
         </mxCell>
         <mxCell id="srv_pkgs" edge="1" parent="1" style="endArrow=block;strokeColor=#22c55e;strokeWidth=1;dashed=1;dashPattern=4 3;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
           <mxGeometry relative="1" as="geometry">

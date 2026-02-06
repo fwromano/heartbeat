@@ -6,9 +6,7 @@ None.
 
 ## Backlog
 
-- **[high] Remove iTAK QR from download page** — Remove the "Connect in iTAK" QR code from `lib/package.sh` serve_packages(). Keep the URL QR (for sharing the page link). See lines 247-248.
 - **[med] Rethink iTAK server QR** — What should the iTAK "Add Server > Scan QR" code contain for TCP-only? Currently `TEAM_NAME,SERVER_IP,COT_PORT,TCP`. Decide if this belongs in `./heartbeat qr` output only, or somewhere else.
-- **[high] Update architecture diagram** — Remove beacon/webmap from `docs/architecture/architecture-v2.drawio` (manual edit in draw.io)
 - **[med] DataPackage port conflicts** — Warn + disable or remap when port is already in use
 - **[high] Backend abstraction** — Refactor FreeTAK-specific code behind interface (see `docs/planning/roadmap-tak-abstraction.md`)
 - **[med] OpenTAK backend** — Add OpenTAK Server as alternative backend with built-in WebTAK
@@ -20,6 +18,9 @@ None.
 ## Done
 
 - ~~Headless cleanup~~ — Removed beacon/webmap components, cleaned foundation for backend abstraction
+- ~~Remove adduser/addusers~~ — TCP-only Lite tier doesn't need auth
+- ~~Remove iTAK QR from download page~~ — Keep only URL QR for sharing
+- ~~Update architecture diagram~~ — Removed beacon/webmap boxes
 - ~~Docs reorganization~~ — Structured docs into planning/, guides/, architecture/, notes/
 - ~~Scrap VM deployment code~~ — Removed `deploy_oracle_free_vm.sh`, `deploy_public_vm.sh`, oracle docs, `detect_public_ip()`
 - ~~iTAK connection QR on download page~~ — Second QR code for iTAK "Add Server > Scan QR" flow
