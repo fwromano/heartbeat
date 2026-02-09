@@ -21,6 +21,11 @@ generate_package() {
 
     ensure_dir "$PACKAGES_DIR"
 
+    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        _generate_opentak_package "$member_name" "$safe_name" "$pkg_path"
+        return $?
+    fi
+
     # Try FTS-generated package with SSL certs (Docker mode, server running)
     if [[ "$DEPLOY_MODE" == "docker" ]] \
        && docker ps -q --filter name=heartbeat-fts 2>/dev/null | grep -q .; then
@@ -32,6 +37,203 @@ generate_package() {
 
     # Fallback: TCP-only package (no certs needed)
     _generate_tcp_package "$member_name" "$safe_name" "$pkg_path"
+}
+
+# Generate an SSL certificate package via OpenTAK API.
+_generate_opentak_package() {
+    local member_name="$1"
+    local safe_name="$2"
+    local pkg_path="$3"
+    local ots_dir="${DATA_DIR}/opentak"
+    local ots_venv="${ots_dir}/venv"
+    local webtak_port="${WEBTAK_PORT:-8443}"
+    local local_api_port=8081
+    local user_password="$safe_name"
+    local admin_user="administrator"
+    local admin_password="password"
+    local cert_user="$safe_name"
+    local auth_user="$safe_name"
+    local auth_password="$user_password"
+    local api_resp=""
+
+    if [[ "$safe_name" == "${FTS_USERNAME:-}" && -n "${FTS_PASSWORD:-}" ]]; then
+        user_password="${FTS_PASSWORD}"
+    fi
+    if [[ ${#user_password} -lt 8 ]]; then
+        if [[ "$safe_name" == "${FTS_USERNAME:-}" ]]; then
+            log_error "Configured OpenTAK password for '${safe_name}' is shorter than 8 characters."
+            log_error "Re-run setup with a longer password, then retry package generation."
+            return 1
+        fi
+        user_password="${safe_name}1234"
+    fi
+    auth_password="${user_password}"
+
+    if [[ ! -x "${ots_venv}/bin/flask" ]]; then
+        log_error "OpenTAK venv not found. Run ./setup.sh --backend opentak first."
+        return 1
+    fi
+
+    if ! port_listening "${webtak_port}" && ! port_listening "${local_api_port}"; then
+        log_error "OpenTAK API is not reachable on :${webtak_port} or :${local_api_port}. Start server first: ./heartbeat start"
+        return 1
+    fi
+
+    if ! (
+        cd "${ots_dir}"
+        export OTS_DATA_FOLDER="${ots_dir}"
+        export OTS_CONFIG_PATH="${ots_dir}/config.yml"
+        export OTS_CONFIG_FILE="${ots_dir}/config.yml"
+        export FLASK_APP=opentakserver.app
+
+        if ! "${ots_venv}/bin/flask" users create --username "${safe_name}" --password "${user_password}" --active >/dev/null 2>&1; then
+            "${ots_venv}/bin/flask" users activate "${safe_name}" >/dev/null 2>&1 || true
+            "${ots_venv}/bin/flask" users change_password "${safe_name}" --password "${user_password}" >/dev/null 2>&1 || exit 1
+        fi
+    ); then
+        log_warn "Could not provision OpenTAK user '${safe_name}' via local CLI; trying API fallback."
+    fi
+
+    local uid payload api_url user_add_payload activate_payload pw_reset_payload
+    uid=$(gen_uuid)
+    payload="{\"username\":\"${cert_user}\",\"uid\":\"${uid}\"}"
+    for api_url in \
+        "https://127.0.0.1:${webtak_port}/api/certificate" \
+        "http://127.0.0.1:${local_api_port}/api/certificate"
+    do
+        api_resp=$(curl -ksS \
+            -u "${auth_user}:${auth_password}" \
+            -H "Content-Type: application/json" \
+            -d "${payload}" \
+            "${api_url}" 2>/dev/null || true)
+        if [[ "$api_resp" == *"\"success\":true"* || "$api_resp" == *"\"success\": true"* ]]; then
+            break
+        fi
+    done
+
+    if [[ "$api_resp" != *"\"success\":true"* && "$api_resp" != *"\"success\": true"* ]]; then
+        # Try creating/updating the requested user via administrator API.
+        user_add_payload="{\"username\":\"${safe_name}\",\"password\":\"${user_password}\",\"confirm_password\":\"${user_password}\",\"roles\":[\"user\"]}"
+        activate_payload="{\"username\":\"${safe_name}\"}"
+        pw_reset_payload="{\"username\":\"${safe_name}\",\"new_password\":\"${user_password}\"}"
+
+        for api_url in \
+            "https://127.0.0.1:${webtak_port}" \
+            "http://127.0.0.1:${local_api_port}"
+        do
+            curl -ksS -u "${admin_user}:${admin_password}" -H "Content-Type: application/json" \
+                -d "${user_add_payload}" "${api_url}/api/user/add" >/dev/null 2>&1 || true
+            curl -ksS -u "${admin_user}:${admin_password}" -H "Content-Type: application/json" \
+                -d "${activate_payload}" "${api_url}/api/user/activate" >/dev/null 2>&1 || true
+            curl -ksS -u "${admin_user}:${admin_password}" -H "Content-Type: application/json" \
+                -d "${pw_reset_payload}" "${api_url}/api/user/password/reset" >/dev/null 2>&1 || true
+        done
+
+        # Retry certificate request as requested user after admin-side create/reset.
+        cert_user="${safe_name}"
+        auth_user="${safe_name}"
+        auth_password="${user_password}"
+        uid=$(gen_uuid)
+        payload="{\"username\":\"${cert_user}\",\"uid\":\"${uid}\"}"
+        for api_url in \
+            "https://127.0.0.1:${webtak_port}/api/certificate" \
+            "http://127.0.0.1:${local_api_port}/api/certificate"
+        do
+            api_resp=$(curl -ksS \
+                -u "${auth_user}:${auth_password}" \
+                -H "Content-Type: application/json" \
+                -d "${payload}" \
+                "${api_url}" 2>/dev/null || true)
+            if [[ "$api_resp" == *"\"success\":true"* || "$api_resp" == *"\"success\": true"* ]]; then
+                break
+            fi
+        done
+    fi
+
+    if [[ "$api_resp" != *"\"success\":true"* && "$api_resp" != *"\"success\": true"* ]]; then
+        # Final fallback: use built-in OpenTAK admin user.
+        cert_user="${admin_user}"
+        auth_user="${admin_user}"
+        auth_password="${admin_password}"
+        uid=$(gen_uuid)
+        payload="{\"username\":\"${cert_user}\",\"uid\":\"${uid}\"}"
+        for api_url in \
+            "https://127.0.0.1:${webtak_port}/api/certificate" \
+            "http://127.0.0.1:${local_api_port}/api/certificate"
+        do
+            api_resp=$(curl -ksS \
+                -u "${auth_user}:${auth_password}" \
+                -H "Content-Type: application/json" \
+                -d "${payload}" \
+                "${api_url}" 2>/dev/null || true)
+            if [[ "$api_resp" == *"\"success\":true"* || "$api_resp" == *"\"success\": true"* ]]; then
+                log_warn "Falling back to OpenTAK default user '${admin_user}' for package generation."
+                break
+            fi
+        done
+    fi
+
+    if [[ "$api_resp" != *"\"success\":true"* && "$api_resp" != *"\"success\": true"* ]]; then
+        # Last resort: issue cert/package directly from local CA without API.
+        # Use the built-in OpenTAK admin account because it is always present.
+        cert_user="${admin_user}"
+        auth_user="${admin_user}"
+        auth_password="${admin_password}"
+        if (
+            cd "${ots_dir}"
+            OTS_DATA_FOLDER="${ots_dir}" \
+            OTS_CONFIG_PATH="${ots_dir}/config.yml" \
+            OTS_CONFIG_FILE="${ots_dir}/config.yml" \
+            "${ots_venv}/bin/python3" - "${cert_user}" "${SERVER_IP}" "${webtak_port}" <<'PY'
+import logging
+import sys
+import yaml
+from flask import Flask
+from opentakserver.certificate_authority import CertificateAuthority
+
+username, server_ip, webtak_port = sys.argv[1:]
+cfg = yaml.safe_load(open("config.yml", "r", encoding="utf-8")) or {}
+app = Flask(__name__)
+app.config.update(cfg)
+logger = logging.getLogger("heartbeat-opentak-ca")
+logger.addHandler(logging.NullHandler())
+ca = CertificateAuthority(logger, app)
+with app.test_request_context("/", base_url=f"https://{server_ip}:{webtak_port}/"):
+    ca.issue_certificate(username, False)
+PY
+        ); then
+            api_resp='{"success": true, "fallback": "local_ca"}'
+            log_warn "Used local OpenTAK CA fallback with '${admin_user}' credentials."
+        fi
+    fi
+
+    if [[ "$api_resp" != *"\"success\":true"* && "$api_resp" != *"\"success\": true"* ]]; then
+        log_error "OpenTAK certificate package request failed for '${safe_name}'."
+        [[ -n "$api_resp" ]] && log_error "API response: ${api_resp}"
+        return 1
+    fi
+
+    local src_pkg="${ots_dir}/ca/certs/${cert_user}/${cert_user}_CONFIG_iTAK.zip"
+    if [[ ! -f "$src_pkg" ]]; then
+        src_pkg="${ots_dir}/ca/certs/${cert_user}/${cert_user}_CONFIG.zip"
+    fi
+    if [[ ! -f "$src_pkg" ]]; then
+        log_error "OpenTAK generated no package file for '${cert_user}'."
+        return 1
+    fi
+
+    cp -f "$src_pkg" "$pkg_path"
+
+    log_ok "Package created: ${pkg_path}"
+    echo ""
+    echo -e "  ${BOLD}Member:${NC}   ${member_name}"
+    echo -e "  ${BOLD}Server:${NC}   ${CYAN}${SERVER_IP}:${SSL_COT_PORT}${NC} (SSL)"
+    echo -e "  ${BOLD}Login:${NC}    ${auth_user} / ${auth_password}"
+    echo -e "  ${BOLD}File:${NC}     ${pkg_path}"
+    echo -e "  ${DIM}OpenTAK iTAK/ATAK SSL package${NC}"
+    echo ""
+
+    return 0
 }
 
 # Generate a package via the FTS API (includes SSL certificates)
@@ -214,14 +416,31 @@ list_packages() {
 serve_packages() {
     load_config
     local port="${1:-9000}"
+    local bind_host="${HEARTBEAT_SERVE_HOST:-0.0.0.0}"
+    local preferred_member=""
 
     ensure_dir "$PACKAGES_DIR"
 
+    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        preferred_member="${FTS_USERNAME:-administrator}"
+    else
+        preferred_member="$(whoami)"
+    fi
+
     # Prefer a fresh connection package when in Tailscale mode
     local pkg_file=""
-    if [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
-        generate_package "Connection"
-        pkg_file="Connection_connection.zip"
+    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if generate_package "${preferred_member}"; then
+            pkg_file="${preferred_member// /_}_connection.zip"
+        else
+            log_warn "Could not generate a fresh OpenTAK package; using latest existing package."
+        fi
+    elif [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
+        if generate_package "Connection"; then
+            pkg_file="Connection_connection.zip"
+        else
+            log_warn "Could not generate a fresh package; using latest existing package."
+        fi
     else
         # Use the most recently modified package
         pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%T@ %f\n' 2>/dev/null \
@@ -229,7 +448,11 @@ serve_packages() {
     fi
     if [[ -z "$pkg_file" ]]; then
         log_info "No package found, generating one..."
-        generate_package "$(whoami)"
+        if ! generate_package "${preferred_member}"; then
+            log_error "Could not generate a package automatically."
+            log_error "Try: ./heartbeat package \"${preferred_member}\""
+            return 1
+        fi
         pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%f\n' 2>/dev/null | head -1)
     fi
 
@@ -259,6 +482,7 @@ serve_packages() {
     echo -e "${BOLD}Serving connection packages:${NC}"
     echo ""
     echo -e "  ${CYAN}http://${SERVER_IP}:${port}/${NC}"
+    echo -e "  ${DIM}(bind ${bind_host})${NC}"
     echo ""
     echo -e "  Scan the QR code or open this URL on any phone."
     echo -e "  ${DIM}Press Ctrl+C to stop.${NC}"
@@ -271,5 +495,5 @@ serve_packages() {
     fi
 
     cd "$PACKAGES_DIR"
-    python3 -m http.server "$port" --bind "${SERVER_IP}" 2>/dev/null
+    python3 -m http.server "$port" --bind "${bind_host}" 2>/dev/null
 }

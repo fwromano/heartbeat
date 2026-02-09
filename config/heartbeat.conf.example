@@ -16,7 +16,7 @@ TAILSCALE_MODE="false"
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-TAK_BACKEND="freetak"   # Options: freetak, opentak (takserver coming soon)
+TAK_BACKEND="opentak"   # Options: opentak (default), freetak
 
 # OpenTAK-specific (only used when TAK_BACKEND=opentak)
 WEBTAK_PORT=8443        # WebTAK HTTPS interface
@@ -26,16 +26,16 @@ WEBTAK_PORT=8443        # WebTAK HTTPS interface
 # ---------------------------------------------------------------------------
 COT_PORT=8087            # Main Cursor-on-Target streaming (TCP)
 SSL_COT_PORT=8089        # SSL CoT port
-API_PORT=19023           # FreeTAKServer REST API
+API_PORT=8443            # WebTAK / OpenTAK API
 DATAPACKAGE_PORT=8443    # Data package service
 
 # ---------------------------------------------------------------------------
-# FreeTAKServer settings
+# Auth settings (used by OpenTAK and FreeTAK workflows)
 # ---------------------------------------------------------------------------
 FTS_SECRET_KEY=""        # Generated during setup
 FTS_CONNECTION_MSG="Welcome to Heartbeat TAK"
-FTS_USERNAME="team"      # Default TAK username (generated during setup)
-FTS_PASSWORD=""          # Auto-generated random password (see setup output)
+FTS_USERNAME="franky"    # Default TAK/WebTAK username
+FTS_PASSWORD="romano123" # Default TAK/WebTAK password
 
 # ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)

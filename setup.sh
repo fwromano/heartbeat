@@ -10,7 +10,8 @@
 #   ./setup.sh --interactive   Ask questions during setup
 #   ./setup.sh --docker     Force Docker mode
 #   ./setup.sh --native     Force native mode
-#   ./setup.sh --backend opentak   Select OpenTAK backend
+#   ./setup.sh --backend opentak   Select OpenTAK backend (default)
+#   ./setup.sh --username team --password secret
 #   ./setup.sh --team "My Team"   Set team name
 # ==========================================================================
 
@@ -27,6 +28,8 @@ INTERACTIVE=false
 ARG_TEAM=""
 ARG_SERVER_IP=""
 ARG_BACKEND=""
+ARG_USERNAME=""
+ARG_PASSWORD=""
 FORCE_TAILSCALE=false
 DISABLE_TAILSCALE=false
 while [[ $# -gt 0 ]]; do
@@ -38,6 +41,8 @@ while [[ $# -gt 0 ]]; do
         --team)         ARG_TEAM="$2"; shift 2 ;;
         --server-ip)    ARG_SERVER_IP="$2"; shift 2 ;;
         --backend)      ARG_BACKEND="$2"; shift 2 ;;
+        --username)     ARG_USERNAME="$2"; shift 2 ;;
+        --password)     ARG_PASSWORD="$2"; shift 2 ;;
         --tailscale)    FORCE_TAILSCALE=true; shift ;;
         --no-tailscale) DISABLE_TAILSCALE=true; shift ;;
         --help|-h)
@@ -47,9 +52,11 @@ while [[ $# -gt 0 ]]; do
             echo "  --interactive    Ask questions during setup"
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
-            echo "  --backend NAME   TAK backend: freetak (default), opentak"
+            echo "  --backend NAME   TAK backend: opentak (default), freetak"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
+            echo "  --username NAME  Default TAK/WebTAK username"
+            echo "  --password PASS  Default TAK/WebTAK password"
             echo "  --tailscale      Force Tailscale IP for clients"
             echo "  --no-tailscale   Do not use Tailscale (LAN IP only)"
             echo "  --help           Show this help"
@@ -91,8 +98,16 @@ auto_ports() {
 # ---------------------------------------------------------------------------
 main() {
     banner
-    local backend="${ARG_BACKEND:-freetak}"
+    local backend="${ARG_BACKEND:-}"
     local webtak_port=8080
+    local prev_user=""
+    local prev_pass=""
+    local prev_backend=""
+
+    # Default backend for fresh installs: OpenTAK.
+    if [[ -z "$backend" ]]; then
+        backend="opentak"
+    fi
 
     case "$backend" in
         freetak|opentak) ;;
@@ -109,6 +124,13 @@ main() {
 
     # Check for existing config
     if [[ -f "$HEARTBEAT_CONF" ]]; then
+        prev_backend=$(awk -F'"' '/^TAK_BACKEND=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_user=$(awk -F'"' '/^FTS_USERNAME=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_pass=$(awk -F'"' '/^FTS_PASSWORD=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
+            backend="$prev_backend"
+        fi
+
         if $INTERACTIVE; then
             log_warn "Existing configuration found: $HEARTBEAT_CONF"
             if ! prompt_yn "Overwrite and re-run setup?" "n"; then
@@ -119,6 +141,16 @@ main() {
             log_info "Re-running setup (overwriting existing config)"
         fi
     fi
+
+    # Validate again in case backend came from existing config.
+    case "$backend" in
+        freetak|opentak) ;;
+        *)
+            log_error "Unknown backend in config: ${backend}"
+            log_error "Supported backends: freetak, opentak"
+            exit 1
+            ;;
+    esac
 
     # ---- Clean previous installation artifacts ----
     if [[ -f "$HEARTBEAT_CONF" ]]; then
@@ -284,13 +316,35 @@ main() {
     fi
 
     # ---- Default credentials ----
-    local fts_user="team"
+    local default_user="team"
+    local default_pass=""
+    if [[ "$backend" == "opentak" ]]; then
+        default_user="franky"
+        default_pass="romano123"
+    fi
+
+    local fts_user="${ARG_USERNAME:-${prev_user:-$default_user}}"
     local fts_pass
-    fts_pass=$(gen_password)
+    if [[ -n "${ARG_PASSWORD:-}" ]]; then
+        fts_pass="${ARG_PASSWORD}"
+    elif [[ -n "${prev_pass:-}" ]]; then
+        fts_pass="${prev_pass}"
+    else
+        if [[ -n "$default_pass" ]]; then
+            fts_pass="$default_pass"
+        else
+            fts_pass=$(gen_password)
+        fi
+    fi
     if $INTERACTIVE; then
         echo ""
         fts_user=$(prompt_default "Default TAK username" "$fts_user")
         fts_pass=$(prompt_default "Default TAK password" "$fts_pass")
+    fi
+    if [[ "$backend" == "opentak" && ${#fts_pass} -lt 8 ]]; then
+        log_error "OpenTAK password must be at least 8 characters."
+        log_error "Re-run with a longer password via --password (example: romano123)."
+        exit 1
     fi
 
     # ---- Write config ----
@@ -340,24 +394,26 @@ EOF
     fi
 
     # ---- Generate connection package for current user ----
-    local callsign
-    callsign="$(whoami)"
-    if $INTERACTIVE; then
-        echo ""
-        if prompt_yn "Generate a connection package now?" "y"; then
-            callsign=$(prompt_default "Your name / callsign" "$callsign")
+    if [[ "$backend" == "freetak" ]]; then
+        local callsign
+        callsign="$(whoami)"
+        if $INTERACTIVE; then
+            echo ""
+            if prompt_yn "Generate a connection package now?" "y"; then
+                callsign=$(prompt_default "Your name / callsign" "$callsign")
+            fi
         fi
-    fi
 
-    source "${LIB_DIR}/package.sh"
-    generate_package "$callsign"
+        source "${LIB_DIR}/package.sh"
+        generate_package "$callsign"
 
-    # ---- Generate QR code (uses qrencode inside Docker) ----
-    source "${LIB_DIR}/qr.sh"
-    local qr_url="http://${server_ip}:9000"
-    local png_path="${PACKAGES_DIR}/heartbeat_qr.png"
-    if save_qr_png "$qr_url" "$png_path" 2>/dev/null && [[ -s "$png_path" ]]; then
-        log_ok "QR image saved: ${png_path}"
+        # ---- Generate QR code (uses qrencode inside Docker) ----
+        source "${LIB_DIR}/qr.sh"
+        local qr_url="http://${server_ip}:9000"
+        local png_path="${PACKAGES_DIR}/heartbeat_qr.png"
+        if save_qr_png "$qr_url" "$png_path" 2>/dev/null && [[ -s "$png_path" ]]; then
+            log_ok "QR image saved: ${png_path}"
+        fi
     fi
 
     # ---- Done ----
@@ -369,18 +425,28 @@ EOF
     echo -e "  ${BOLD}Next steps:${NC}"
     echo ""
     echo -e "    ${CYAN}./heartbeat start${NC}       Start the TAK server"
-    echo -e "    ${CYAN}./heartbeat serve${NC}        Serve download page (run in 2nd terminal)"
-    echo ""
-    echo -e "  ${BOLD}Then on your phone:${NC}"
-    echo ""
-    if is_tailscale_ip "$server_ip"; then
-        echo -e "    1. Connect to Tailscale on your phone"
-        echo -e "    2. Scan the QR code with your phone camera"
-        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+    if [[ "$backend" == "freetak" ]]; then
+        echo -e "    ${CYAN}./heartbeat serve${NC}        Serve download page (run in 2nd terminal)"
+        echo ""
+        echo -e "  ${BOLD}Then on your phone:${NC}"
+        echo ""
+        if is_tailscale_ip "$server_ip"; then
+            echo -e "    1. Connect to Tailscale on your phone"
+            echo -e "    2. Scan the QR code with your phone camera"
+            echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+        else
+            echo -e "    1. Connect to the same WiFi as this machine"
+            echo -e "    2. Scan the QR code with your phone camera"
+            echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+        fi
     else
-        echo -e "    1. Connect to the same WiFi as this machine"
-        echo -e "    2. Scan the QR code with your phone camera"
-        echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+        echo -e "    ${CYAN}./heartbeat package \"${fts_user}\"${NC}    Generate SSL package for iTAK/ATAK"
+        echo -e "    ${CYAN}./heartbeat serve${NC}                  Serve package download page"
+        echo ""
+        echo -e "  ${BOLD}Then on your phone:${NC}"
+        echo ""
+        echo -e "    1. Download and import the generated _connection.zip"
+        echo -e "    2. Use WebTAK credentials when prompted: ${CYAN}${fts_user}${NC} / ${CYAN}${fts_pass}${NC}"
     fi
     echo ""
     if [[ "$backend" == "freetak" ]]; then
@@ -393,6 +459,8 @@ EOF
         echo -e "  ${BOLD}OpenTAK Web UI:${NC}"
         echo ""
         echo -e "    URL:      ${CYAN}https://${server_ip}:${webtak_port}/${NC}"
+        echo -e "    Username: ${CYAN}${fts_user}${NC}"
+        echo -e "    Password: ${CYAN}${fts_pass}${NC}"
         echo -e "    ${DIM}(accept the self-signed certificate on first load)${NC}"
         echo ""
     fi

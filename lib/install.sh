@@ -227,7 +227,6 @@ install_opentak() {
 
     local ots_dir="${DATA_DIR}/opentak"
     local ots_venv="${ots_dir}/venv"
-    local pkg_dir
 
     install_opentak_system_deps
 
@@ -236,24 +235,22 @@ install_opentak() {
     ensure_dir "${ots_dir}/ca"
 
     log_info "Creating OpenTAK virtual environment..."
-    python3 -m venv --system-site-packages "${ots_venv}"
+    rm -rf "${ots_venv}"
+    python3 -m venv "${ots_venv}"
     "${ots_venv}/bin/pip" install --quiet --upgrade pip setuptools wheel
     "${ots_venv}/bin/pip" install --quiet opentakserver
     log_ok "OpenTAK package installed"
 
-    pkg_dir=$(_opentak_package_dir "${ots_venv}")
-    if [[ -z "$pkg_dir" || ! -d "$pkg_dir" ]]; then
-        log_error "Could not locate installed opentakserver package"
-        return 1
-    fi
+    # Setup re-runs should regenerate config instead of reusing stale credentials.
+    rm -f "${ots_dir}/config.yml"
 
     log_info "Generating OpenTAK config"
     (
-        cd "$pkg_dir"
+        cd "${ots_dir}"
         OTS_DATA_FOLDER="${ots_dir}" \
         OTS_CONFIG_PATH="${ots_dir}/config.yml" \
         OTS_CONFIG_FILE="${ots_dir}/config.yml" \
-        FLASK_APP=wsgi.py \
+        FLASK_APP=opentakserver.app \
         "${ots_venv}/bin/flask" ots generate-config
     )
 
@@ -261,25 +258,33 @@ install_opentak() {
     patch_opentak_config "${ots_dir}" "${ots_venv}"
 
     log_info "Running OpenTAK database migrations"
+    local pkg_dir migrations_dir
+    pkg_dir=$(_opentak_package_dir "${ots_venv}")
+    migrations_dir="${pkg_dir}/migrations"
+    if [[ -z "$pkg_dir" || ! -d "$migrations_dir" ]]; then
+        log_error "Could not locate OpenTAK migrations directory in venv"
+        return 1
+    fi
     (
-        cd "$pkg_dir"
+        cd "${ots_dir}"
         OTS_DATA_FOLDER="${ots_dir}" \
         OTS_CONFIG_PATH="${ots_dir}/config.yml" \
         OTS_CONFIG_FILE="${ots_dir}/config.yml" \
-        FLASK_APP=wsgi.py \
-        "${ots_venv}/bin/flask" db upgrade
+        FLASK_APP=opentakserver.app \
+        "${ots_venv}/bin/flask" db upgrade -d "${migrations_dir}"
     )
 
     log_info "Generating OpenTAK CA certificates"
     (
-        cd "$pkg_dir"
+        cd "${ots_dir}"
         OTS_DATA_FOLDER="${ots_dir}" \
         OTS_CONFIG_PATH="${ots_dir}/config.yml" \
         OTS_CONFIG_FILE="${ots_dir}/config.yml" \
-        FLASK_APP=wsgi.py \
+        FLASK_APP=opentakserver.app \
         "${ots_venv}/bin/flask" ots create-ca
     )
 
+    setup_opentak_default_user "${ots_dir}" "${ots_venv}"
     setup_opentak_nginx "${ots_dir}"
     setup_opentak_rabbitmq
     create_opentak_services "${ots_dir}" "${ots_venv}"
@@ -360,11 +365,11 @@ patch_opentak_config() {
     # Replace installer placeholder in generated config.
     sed -i "s/POSTGRESQL_PASSWORD/${db_pass}/g" "$config"
 
-    "${ots_venv}/bin/python3" - "$config" "$ots_dir" "${SERVER_IP}" "${COT_PORT}" "${SSL_COT_PORT}" <<'PY'
+    "${ots_venv}/bin/python3" - "$config" "$ots_dir" "${SERVER_IP}" "${COT_PORT}" "${SSL_COT_PORT}" "$db_pass" <<'PY'
 import yaml
 import sys
 
-config_path, ots_dir, server_ip, cot_port, ssl_port = sys.argv[1:]
+config_path, ots_dir, server_ip, cot_port, ssl_port, db_pass = sys.argv[1:]
 
 with open(config_path, "r", encoding="utf-8") as fh:
     cfg = yaml.safe_load(fh) or {}
@@ -382,6 +387,8 @@ def deep_set(obj, key, value):
 
 cfg["OTS_DATA_FOLDER"] = ots_dir
 cfg["OTS_CA_FOLDER"] = f"{ots_dir}/ca"
+db_uri = f"postgresql+psycopg://ots:{db_pass}@127.0.0.1/ots"
+cfg["SQLALCHEMY_DATABASE_URI"] = db_uri
 
 # Update known keys if present in this OpenTAK release.
 for key, value in {
@@ -389,6 +396,9 @@ for key, value in {
     "OTS_WEBSERVER_PORT": 8081,
     "OTS_COT_PORT": int(cot_port),
     "OTS_SSL_COT_PORT": int(ssl_port),
+    "OTS_MEDIAMTX_ENABLE": False,
+    "SECURITY_TWO_FACTOR": False,
+    "SQLALCHEMY_DATABASE_URI": db_uri,
 }.items():
     if key in cfg:
         cfg[key] = value
@@ -411,8 +421,16 @@ _ensure_nginx_stream_include() {
 
 setup_opentak_nginx() {
     local ots_dir="$1"
+    local ots_cert="${ots_dir}/ca/certs/opentakserver/opentakserver.pem"
+    local ots_key="${ots_dir}/ca/certs/opentakserver/opentakserver.nopass.key"
 
     _ensure_nginx_stream_include
+
+    # Remove stale OTS installer artifacts that can break nginx -t.
+    sudo rm -f /etc/nginx/sites-enabled/ots_certificate_enrollment
+    sudo rm -f /etc/nginx/sites-available/ots_certificate_enrollment
+    sudo rm -f /etc/nginx/streams-enabled/mediamtx
+    sudo rm -f /etc/nginx/streams-available/mediamtx
 
     sudo tee /etc/nginx/sites-available/ots_http >/dev/null <<EOF
 server {
@@ -423,6 +441,14 @@ server {
 
     location / {
         try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location /Marti/ {
@@ -449,13 +475,21 @@ server {
     root /var/www/html/opentakserver;
     index index.html;
 
-    ssl_certificate ${ots_dir}/ca/certs/opentakserver/opentakserver.pem;
-    ssl_certificate_key ${ots_dir}/ca/certs/opentakserver/opentakserver.key;
+    ssl_certificate ${ots_cert};
+    ssl_certificate_key ${ots_key};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
 
     location / {
         try_files \$uri \$uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:8081/api/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 
     location /Marti/ {
@@ -480,8 +514,8 @@ EOF
 server {
     listen 8883 ssl;
     proxy_pass 127.0.0.1:1883;
-    ssl_certificate ${ots_dir}/ca/certs/opentakserver/opentakserver.pem;
-    ssl_certificate_key ${ots_dir}/ca/certs/opentakserver/opentakserver.key;
+    ssl_certificate ${ots_cert};
+    ssl_certificate_key ${ots_key};
 }
 EOF
 
@@ -490,7 +524,11 @@ EOF
     sudo ln -sf /etc/nginx/streams-available/rabbitmq /etc/nginx/streams-enabled/rabbitmq
 
     sudo nginx -t
-    sudo systemctl reload nginx
+    if sudo systemctl is-active --quiet nginx; then
+        sudo systemctl reload nginx
+    else
+        sudo systemctl start nginx
+    fi
     log_ok "Nginx configured for OpenTAK"
 }
 
@@ -629,6 +667,43 @@ install_webtak_ui() {
     sudo unzip -qo "$tmp" -d "$ui_dir"
     rm -f "$tmp"
     log_ok "WebTAK UI installed to ${ui_dir}"
+}
+
+setup_opentak_default_user() {
+    local ots_dir="$1"
+    local ots_venv="$2"
+    local username="${FTS_USERNAME:-administrator}"
+    local password="${FTS_PASSWORD:-password}"
+
+    if [[ ${#password} -lt 8 ]]; then
+        log_error "OpenTAK user password for '${username}' must be at least 8 characters."
+        return 1
+    fi
+
+    log_info "Ensuring OpenTAK admin user exists (${username})"
+    if ! (
+        cd "${ots_dir}"
+        export OTS_DATA_FOLDER="${ots_dir}"
+        export OTS_CONFIG_PATH="${ots_dir}/config.yml"
+        export OTS_CONFIG_FILE="${ots_dir}/config.yml"
+        export FLASK_APP=opentakserver.app
+
+        "${ots_venv}/bin/flask" roles create administrator >/dev/null 2>&1 || true
+
+        if ! "${ots_venv}/bin/flask" users create --username "${username}" --password "${password}" --active >/dev/null 2>&1; then
+            "${ots_venv}/bin/flask" users activate "${username}" >/dev/null 2>&1 || true
+            if ! "${ots_venv}/bin/flask" users change_password "${username}" --password "${password}" >/dev/null 2>&1; then
+                exit 1
+            fi
+        fi
+        "${ots_venv}/bin/flask" roles add "${username}" administrator >/dev/null 2>&1 || true
+    ); then
+        log_warn "Could not provision OpenTAK user '${username}' during setup."
+        log_warn "Setup will continue. Use OpenTAK default login: administrator / password"
+        return 0
+    fi
+
+    log_ok "OpenTAK web login ready: ${username}"
 }
 
 # ---------------------------------------------------------------------------

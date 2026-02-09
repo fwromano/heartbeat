@@ -121,6 +121,8 @@ resolve_cmd() {
     local input="$1"
     # Exact match first (including aliases)
     case "$input" in
+        start|stop|restart|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|help)
+            echo "$input"; return ;;
         log) echo "logs"; return ;;
         pkg) echo "package"; return ;;
         pkgs|list) echo "packages"; return ;;
