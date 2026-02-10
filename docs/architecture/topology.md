@@ -1,7 +1,7 @@
 # Heartbeat Architecture & Topology
 
 > **Document:** System Architecture Reference
-> **Updated:** 2026-02-06
+> **Updated:** 2026-02-10
 > **Status:** Current (master branch)
 
 ---
@@ -101,8 +101,8 @@ Heartbeat decouples the CLI from any specific TAK server through a pluggable bac
 │        (Common API for lifecycle, users, packages)           │
 │                                                              │
 │   lib/backends/interface.sh defines the contract:            │
-│     backend_start/stop/status/logs/update/uninstall          │
-│     backend_get_ports/get_package/supports                   │
+│     backend_start/stop/reset/status/logs/update/uninstall    │
+│     backend_get_ports/get_package/health_check/supports      │
 ├───────────────┬───────────────────┬──────────────────────────┤
 │   FreeTAK     │     OpenTAK       │      TAK Server          │
 │   Backend     │     Backend       │      Backend             │
@@ -137,11 +137,16 @@ heartbeat (CLI entry point)
   ├─ start ──► server.sh ──► _load_backend()
   │                │              ├── freetak.sh ──► Docker / venv
   │                │              └── opentak.sh ──► systemd services
+  │                │         backend_health_check()
   │                └──► record.sh ──► recorder.py (daemon)
   │
   ├─ stop ───► record.sh ──► kill recorder
   │            export.sh ──► exporter.py ──► gpkg_writer.py ──► .gpkg
   │            server.sh ──► backend_stop()
+  │
+  ├─ reset ─► record.sh ──► kill recorder
+  │           server.sh ──► backend_reset() (restart deps + server)
+  │           record.sh ──► recorder.py (restart)
   │
   ├─ record ─► record.sh ──► recorder.py
   │                              │
@@ -281,7 +286,7 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
 
   ┌──────────────────┐ ┌──────────────────┐
   │  eud_handler     │ │ eud_handler_ssl  │
-  │  (:8087 TCP)     │ │ (:8089 SSL)      │
+  │  (:8088 TCP)     │ │ (:8089 SSL)      │
   │                  │ │                  │
   │  phones connect  │ │  phones connect  │
   │  here (CoT)      │ │  here (CoT+TLS) │
@@ -325,7 +330,7 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
 
 | Port | Protocol | Binding | Service |
 |------|----------|---------|---------|
-| 8087 | TCP | 0.0.0.0 | eud_handler (CoT TCP) |
+| 8088 | TCP | 0.0.0.0 | eud_handler (CoT TCP) |
 | 8089 | TCP | 0.0.0.0 | eud_handler_ssl (CoT SSL) |
 | 8080 | HTTP | 0.0.0.0 | Nginx — WebTAK UI (HTTP) |
 | 8443 | HTTPS | 0.0.0.0 | Nginx — WebTAK UI + Marti API |
@@ -345,11 +350,27 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
   ├─ backend_start()                   ├─ record_stop()
   │    TAK server comes up             │    SIGTERM → recorder daemon
   │                                    │
-  └─ record_start()                    ├─ cmd_export()
-       recorder.py spawned as daemon   │    auto-export → data/cot_export_*.gpkg
-       connects to :8087               │
-       begins recording                └─ backend_stop()
-                                            TAK server goes down
+  ├─ backend_health_check()            ├─ cmd_export()
+  │    verify services + ports         │    auto-export → data/cot_export_*.gpkg
+  │                                    │
+  └─ record_start()                    └─ backend_stop()
+       recorder.py spawned as daemon        TAK server goes down
+       connects to CoT port
+       begins recording
+
+./heartbeat reset
+  │
+  ├─ record_stop()
+  │    SIGTERM → recorder daemon
+  │
+  ├─ backend_reset()
+  │    OpenTAK: stop all → restart rabbitmq/postgres/nginx → start all
+  │    FreeTAK: stop → sleep → start
+  │
+  ├─ backend_health_check()
+  │
+  └─ record_start()
+       recorder restarts
 ```
 
 ---

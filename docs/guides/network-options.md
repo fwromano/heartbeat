@@ -1,21 +1,23 @@
 # Heartbeat Network Options and Configurations
 
 This doc lays out the practical network permutations for running Heartbeat
-(FreeTAKServer) and connecting phones in the field. The key invariant is:
+and connecting phones in the field. The key invariant is:
 
 - Every phone must be able to reach the server at `SERVER_IP:COT_PORT` over TCP.
 
 If there is no IP path, TAK will not connect.
 
-> **Lite tier (default):** TCP only, no authentication. Phones connect directly - no usernames, passwords, or certificates required. This doc covers TCP connectivity.
+> **FreeTAK (Lite, default):** TCP only, no authentication. Phones connect directly -- no certs required.
+> **OpenTAK (Standard):** SSL with per-device certificates. Each device imports a unique connection package.
 
 ## Glossary (quick)
-- Server: the machine running Heartbeat + FreeTAKServer
+- Server: the machine running Heartbeat + TAK backend (FreeTAK or OpenTAK)
 - Client: iTAK/ATAK on a phone/tablet
-- CoT: Cursor-on-Target data stream (default TCP 8087)
-- SSL CoT: TLS-encrypted CoT (default TCP 8089)
+- CoT: Cursor-on-Target data stream (FreeTAK: TCP 8087, OpenTAK: TCP 8088)
+- SSL CoT: TLS-encrypted CoT (default TCP 8089, OpenTAK only)
+- WebTAK: Browser-based map (default HTTPS 8443, OpenTAK only)
 - DP: DataPackage service (default TCP 8443)
-- API: FreeTAKServer REST API (default TCP 19023)
+- API: FreeTAK REST API (TCP 19023) or OpenTAK API (HTTPS 8443)
 
 ## Axes of configuration (what can vary)
 
@@ -165,9 +167,11 @@ F2) Local server + satellite backhaul for command post
 - `COT_PORT` is the TCP port clients connect to (default 8087)
 
 ### Minimal client onboarding
-- Generate a package: `./heartbeat package "First Last"`
+- Generate a package: `./heartbeat package` (auto-names device-1, device-2, ...)
+- Or named: `./heartbeat package "First Last"`
 - Serve packages: `./heartbeat serve`
 - On phone: open `http://SERVER_IP:9000`
+- **OpenTAK:** each device must import a different package (unique cert identity)
 
 ## Connectivity checklist (fast triage)
 
@@ -184,7 +188,8 @@ F2) Local server + satellite backhaul for command post
 
 ## Security notes (simple)
 - If you expose a public IP, you are open to the internet.
-- For higher security, use SSL CoT (8089) and stronger credentials.
+- For higher security, use OpenTAK backend (SSL CoT on 8089 with per-device certs).
+- FreeTAK Lite is TCP, no auth -- fine for trusted LANs, not for public internet.
 - Lowest friction is not the most secure; choose based on threat model.
 
 ## Recommendation by environment

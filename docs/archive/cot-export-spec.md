@@ -3,7 +3,7 @@
 > **Branch:** `master`
 > **Purpose:** Record CoT events from TAK servers and export to GeoPackage for GIS workflows
 > **Created:** 2026-02-06
-> **Status:** IN PROGRESS
+> **Status:** COMPLETE
 
 ---
 

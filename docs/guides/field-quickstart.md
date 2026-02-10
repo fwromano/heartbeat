@@ -2,15 +2,24 @@
 
 Goal: get everyone's phone sharing live location on the same map, fast.
 
-> **No logins required.** Heartbeat uses TCP connections - just scan the QR and connect. No usernames, no passwords, no friction.
+## Pick your backend
+
+| | FreeTAK (Lite) | OpenTAK (Standard) |
+|---|---|---|
+| Setup | `./setup.sh` | `./setup.sh --backend opentak` |
+| Transport | TCP, no auth | SSL certs, per-device identity |
+| Browser map | No | Yes (WebTAK on :8443) |
+| Lines/polygons | Crashes on complex types | Works |
+
+> **Start with Lite** if you just need location sharing. Move to Standard when you need annotations, routes, or a browser map.
 
 ## 1) Start the server
 ```bash
-./setup.sh --interactive
+./setup.sh           # first time only (or ./setup.sh --backend opentak)
 ./heartbeat start
 ```
 
-> **Docker not required for Lite tier.** FreeTAKServer is a pure Python package — `./setup.sh` will auto-detect Docker and use it if available, but native mode (`./setup.sh --native`) works just as well and avoids installing Docker on lightweight field machines. Docker becomes more useful for the Standard (OpenTAK) and Enterprise (TAK Server) tiers where the server infrastructure is heavier.
+Setup auto-detects Docker, picks free ports, generates credentials. Recording starts automatically.
 
 ## 2) Get the server address
 ```bash
@@ -18,23 +27,39 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 ```
 Use the **Server IP** shown.
 
-## 3) Distribute connection
-Option A (recommended):
+## 3) Distribute connection packages
+
 ```bash
+# Generate packages (one per device for OpenTAK)
+./heartbeat package              # auto-names: device-1, device-2, ...
+./heartbeat package "Chief"      # or pick a name
+
+# Serve over HTTP
 ./heartbeat serve
 ```
-Phones open: `http://SERVER_IP:9000` -> download zip -> import into iTAK/ATAK.
 
-Option B (manual):
+Phones open: `http://SERVER_IP:9000` -- download zip -- import into iTAK/ATAK.
+
+**OpenTAK important:** Each device must import a *different* package. Sharing one package across phones causes identity collisions and breaks message routing.
+
+**FreeTAK alternative (manual):**
 - Server: `SERVER_IP`
 - Port: `8087`
 - Protocol: TCP
 
 ## 4) Confirm it's working
 ```bash
-./heartbeat listen
+./heartbeat status    # check ports and health
+./heartbeat listen    # live event monitor
 ```
 You should see connections and data events.
+
+## 5) After the operation
+```bash
+./heartbeat stop      # auto-exports recorded data to .gpkg
+```
+
+The exported GeoPackage opens in QGIS, ArcGIS, or any GIS tool.
 
 ---
 
@@ -51,4 +76,8 @@ You should see connections and data events.
   - Public VM (works anywhere)
   - Mesh VPN (Tailscale/ZeroTier) for no-router setups
 
-If you tell me your environment (work network rules, phone coverage), we can pick the best path.
+## Tailscale VPN
+```bash
+./heartbeat tailscale    # auto-sets SERVER_IP to Tailscale address
+./heartbeat package      # regenerate packages with new IP
+```

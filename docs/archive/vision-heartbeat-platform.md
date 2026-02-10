@@ -373,13 +373,16 @@ CREATE TABLE areas (
 #### Implementation Dependencies
 
 ```bash
-# Python packages for export engine
+# Python packages for export engine (implemented -- no GDAL needed)
 pip install \
-  fiona           # GeoPackage/Shapefile I/O (wraps GDAL/OGR)
-  shapely         # Geometry manipulation
-  pyproj          # Coordinate transformations
-  lxml            # Fast XML parsing for CoT
+  shapely         # Geometry objects + WKB serialization
+  pyyaml          # GCM mapping YAML parsing
+# Everything else is Python stdlib: sqlite3, xml.etree, struct, socket
 ```
+
+> **Note (2026-02-10):** The export engine was implemented without GDAL/fiona/pyproj.
+> GeoPackage is written directly via sqlite3 + shapely WKB. This keeps the dependency
+> footprint minimal for field laptops.
 
 ---
 
@@ -439,15 +442,15 @@ pip install \
 
 ## Implementation Roadmap
 
-| Phase | Focus | Deliverables | Priority |
-|-------|-------|--------------|----------|
-| **1** | Headless Core | Remove beacon/webmap, clean foundation | **NOW** |
-| **2** | Backend Abstraction | Interface definition, FreeTAK refactor | **HIGH** |
-| **3** | OpenTAK Backend | Standard tier with built-in WebTAK | **HIGH** |
-| **4** | Export Engine | GeoPackage export for all backends | **HIGH** |
-| **5** | Federation (Basic) | Peer-to-peer connection, manual config | **MEDIUM** |
-| **6** | TAK Server Backend | Enterprise tier, tak.gov integration | **MEDIUM** |
-| **7** | Federation (Advanced) | Hub-spoke, filtering, mesh support | **LOW** |
+| Phase | Focus | Deliverables | Status |
+|-------|-------|--------------|--------|
+| **1** | Headless Core | Remove beacon/webmap, clean foundation | COMPLETE |
+| **2** | Backend Abstraction | Interface definition, FreeTAK refactor | COMPLETE |
+| **3** | OpenTAK Backend | Standard tier with built-in WebTAK | COMPLETE |
+| **4** | Export Engine | GeoPackage export for all backends | COMPLETE |
+| **5** | Federation (Basic) | Peer-to-peer connection, manual config | Future |
+| **6** | TAK Server Backend | Enterprise tier, tak.gov integration | Future |
+| **7** | Federation (Advanced) | Hub-spoke, filtering, mesh support | Future |
 
 ---
 

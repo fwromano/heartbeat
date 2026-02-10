@@ -123,7 +123,7 @@ TAK_BACKEND="freetak"    # Options: freetak, opentak, takserver
 
 ---
 
-### Phase 3: OpenTAK Server Backend
+### Phase 3: OpenTAK Server Backend (COMPLETE)
 
 **Goal:** Add support for OpenTAK Server as an alternative backend
 
@@ -259,7 +259,7 @@ Since TAK Server cannot be auto-downloaded, Heartbeat provides guided setup:
 
 ---
 
-### Phase 5: CoT Recording and GeoPackage Export (ACTIVE)
+### Phase 5: CoT Recording and GeoPackage Export (COMPLETE)
 
 **Goal:** Capture CoT events and export to GIS-friendly GeoPackage
 
@@ -326,13 +326,13 @@ heartbeat
 
 ## Implementation Priority
 
-| Phase | Priority | Effort | Value |
-|-------|----------|--------|-------|
-| 1. Headless Core | **HIGH** | Low | Foundation for all future work |
-| 2. Abstraction Layer | **HIGH** | Medium | Enables multi-backend support |
-| 3. OpenTAK Backend | **MEDIUM** | Medium | Built-in map, growing community |
-| 4. TAK Server Backend | **LOW** | High | Niche audience, complex setup |
-| 5. CoT Export Engine | **HIGH** | Medium | Demo-critical, GIS workflows |
+| Phase | Priority | Effort | Status |
+|-------|----------|--------|--------|
+| 1. Headless Core | **HIGH** | Low | COMPLETE |
+| 2. Abstraction Layer | **HIGH** | Medium | COMPLETE |
+| 3. OpenTAK Backend | **HIGH** | Medium | COMPLETE (validating) |
+| 4. TAK Server Backend | **LOW** | High | Future |
+| 5. CoT Export Engine | **HIGH** | Medium | COMPLETE |
 
 ---
 
@@ -351,10 +351,10 @@ heartbeat
 - [ ] Adding new backend requires only new backend file
 
 ### Phase 3 (OpenTAK)
-- [ ] OpenTAK installs via `./setup.sh --backend opentak`
-- [ ] All core commands work with OpenTAK
-- [ ] Built-in WebTAK accessible after start
-- [ ] User can switch between FreeTAK and OpenTAK
+- [x] OpenTAK installs via `./setup.sh --backend opentak`
+- [x] All core commands work with OpenTAK
+- [x] Built-in WebTAK accessible after start
+- [x] User can switch between FreeTAK and OpenTAK
 
 ### Phase 4 (TAK Server)
 - [ ] Guided setup flow for tak.gov download
@@ -363,11 +363,11 @@ heartbeat
 - [ ] Documentation for government users
 
 ### Phase 5 (CoT Export)
-- [ ] CoT recorder daemon with reconnect and WAL storage
-- [ ] Raw GeoPackage export (positions, markers, routes, areas)
-- [ ] GCM export with YAML mapping
-- [ ] CLI commands: `record` and `export`
-- [ ] Documentation and verification steps
+- [x] CoT recorder daemon with reconnect and WAL storage
+- [x] Raw GeoPackage export (positions, markers, routes, areas)
+- [x] GCM export with YAML mapping
+- [x] CLI commands: `record` and `export`
+- [x] Documentation and verification steps
 
 ---
 
@@ -385,9 +385,11 @@ heartbeat
 
 ## Next Steps
 
-1. **Implement CoT Export** - Recorder + GeoPackage writer + CLI commands
-2. **Stabilize OpenTAK** - Verify image, confirm WebTAK behavior
-3. **Define TAK Server** - Draft tak.gov backend setup flow
+1. ~~Implement CoT Export~~ - DONE
+2. ~~Stabilize OpenTAK~~ - DONE (native systemd, SSL packages, health checks, reset)
+3. **Validate end-to-end OpenTAK multi-device** - Confirm location + annotation sharing after reset
+4. **Dynamic package serve** - Auto-generate next package on download
+5. **Define TAK Server** - Draft tak.gov backend setup flow (future)
 
 ---
 

@@ -2,20 +2,17 @@
 
 > TAK Server Manager for the ALIAS Ecosystem
 
-[← Back to main README](../README.md)
+[Back to main README](../README.md)
 
 ---
 
-## Planning
+## Architecture
 
-Strategic vision and implementation roadmaps.
+System topology and technical reference.
 
 | Document | Description |
 |----------|-------------|
-| [Platform Vision](planning/vision-heartbeat-platform.md) | Big picture: tiered backends, federation, export, ALIAS integration |
-| [TAK Abstraction Roadmap](planning/roadmap-tak-abstraction.md) | Backend abstraction: FreeTAK → OpenTAK → TAK Server |
-| [Headless Cleanup Spec](planning/headless-cleanup-spec.md) | Phase 1: Remove beacon/webmap, clean foundation |
-| [CoT Export Spec](planning/cot-export-spec.md) | CoT recording and GeoPackage export pipeline |
+| [System Topology](architecture/topology.md) | Full architecture: ecosystem, backend abstraction, data pipeline, port allocation |
 
 ---
 
@@ -25,29 +22,44 @@ User-facing documentation.
 
 | Document | Description |
 |----------|-------------|
-| [Field Quickstart](guides/field-quickstart.md) | Get up and running fast |
-| [Network Options](guides/network-options.md) | LAN, Tailscale, and connectivity |
+| [Field Quickstart](guides/field-quickstart.md) | One-page runbook for getting a team online fast |
+| [Network Options](guides/network-options.md) | LAN, Tailscale, cellular, MANET, and connectivity patterns |
 
 ---
 
-## Architecture
+## Specs
 
-Technical diagrams and reference.
+Implementation specifications (handed to developers).
 
-| File | Description |
-|------|-------------|
-| [architecture-v2.drawio](architecture/architecture-v2.drawio) | Editable diagram (draw.io) |
-| [architecture-v2.drawio.png](architecture/architecture-v2.drawio.png) | PNG export |
-| [architecture-v2.drawio.svg](architecture/architecture-v2.drawio.svg) | SVG export |
+| Document | Description |
+|----------|-------------|
+| [Backend Hardening](specs/backend-hardening.md) | Port mapping fix, credential cleanup, package simplification, health checks |
+
+---
+
+## Planning
+
+| Document | Description |
+|----------|-------------|
+| [Future Roadmap](planning/future.md) | TAK Server backend, federation, simulation, external data inputs |
 
 ---
 
 ## Notes
 
-Working notes and ideas (not polished docs).
+| File | Description |
+|------|-------------|
+| [tasks.md](notes/tasks.md) | Current task tracking |
+
+---
+
+## Archive
+
+Completed specs preserved for reference. These describe work that has already been implemented.
 
 | File | Description |
 |------|-------------|
-| [TAK-sync.txt](notes/TAK-sync.txt) | Brainstorm: sim integration, GPS spoofing, events |
-| [tasks.md](notes/tasks.md) | Legacy task tracking |
-| [Lucas_vision.png](notes/Lucas_vision.png) | Reference image |
+| [Headless Cleanup Spec](archive/headless-cleanup-spec.md) | Phase 1: beacon/webmap removal (COMPLETE) |
+| [CoT Export Spec](archive/cot-export-spec.md) | Recording + GeoPackage export pipeline (COMPLETE) |
+| [TAK Abstraction Roadmap](archive/roadmap-tak-abstraction.md) | Backend abstraction phases 1-5 (COMPLETE) |
+| [Platform Vision](archive/vision-heartbeat-platform.md) | Original strategic vision document |
