@@ -11,9 +11,10 @@
 #   start                Start the TAK server
 #   stop                 Stop the TAK server
 #   restart              Restart the TAK server
+#   reset                Full reset (backend + dependencies)
 #   status               Show server status
 #   logs [-f]            View server logs (-f to follow)
-#   package <name>       Generate a connection package for a team member
+#   package [name]       Generate a connection package (auto-names if omitted)
 #   packages             List all generated packages
 #   serve [port]         Serve packages over HTTP for phone download
 #   info                 Show server connection info
@@ -37,7 +38,8 @@ show_help() {
     echo -e "${BOLD}Server:${NC}"
     echo "  start                Start the TAK server"
     echo "  stop                 Stop the TAK server"
-    echo "  restart              Restart the TAK server"
+    echo "  restart              Restart the TAK server (OpenTAK: full stack reset)"
+    echo "  reset                Full reset (backend + dependencies)"
     echo "  status               Show server status and port checks"
     echo "  listen               Live monitor -- follow connections and events"
     echo "  logs [-f]            View server logs (-f to follow)"
@@ -45,7 +47,7 @@ show_help() {
     echo -e "${BOLD}Team:${NC}"
     echo "  qr                   Show QR code to scan from iTAK/ATAK"
     echo "  tailscale            Set SERVER_IP to the Tailscale IP"
-    echo "  package <name>       Generate a connection package for a member"
+    echo "  package [name]       Generate a connection package (auto-names if omitted)"
     echo "  packages             List all generated packages"
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
     echo ""
@@ -65,7 +67,9 @@ show_help() {
     echo ""
     echo -e "${BOLD}Examples:${NC}"
     echo "  ./heartbeat start"
-    echo "  ./heartbeat package \"Chief Smith\""
+    echo "  ./heartbeat reset"
+    echo "  ./heartbeat package             # auto-names: device-1, device-2, ..."
+    echo "  ./heartbeat package \"Chief Smith\" # explicit name"
     echo "  ./heartbeat serve"
     echo "  ./heartbeat status"
     echo ""
@@ -115,13 +119,13 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart status listen logs qr tailscale package packages serve clean info update systemd uninstall record export help)
+COMMANDS=(start stop restart reset status listen logs qr tailscale package packages serve clean info update systemd uninstall record export help)
 
 resolve_cmd() {
     local input="$1"
     # Exact match first (including aliases)
     case "$input" in
-        start|stop|restart|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|help)
+        start|stop|restart|reset|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|help)
             echo "$input"; return ;;
         log) echo "logs"; return ;;
         pkg) echo "package"; return ;;
@@ -187,7 +191,21 @@ case "$cmd" in
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
-        server_restart
+        load_config
+        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+            # OpenTAK restart should recycle broker/dependencies to clear stale channels.
+            server_reset
+        else
+            server_restart
+        fi
+        source "${LIB_DIR}/record.sh"
+        record_start
+        ;;
+    reset)
+        source "${LIB_DIR}/record.sh"
+        record_stop 2>/dev/null || true
+        source "${LIB_DIR}/server.sh"
+        server_reset
         source "${LIB_DIR}/record.sh"
         record_start
         ;;
@@ -222,12 +240,12 @@ case "$cmd" in
         log_info "Regenerate packages to update the server IP."
         ;;
     package)
-        if [[ $# -lt 1 ]]; then
-            log_error "Usage: ./heartbeat package \"Member Name\""
-            exit 1
-        fi
         source "${LIB_DIR}/package.sh"
-        generate_package "$1"
+        if [[ $# -ge 1 ]]; then
+            generate_package "$1"
+        else
+            generate_package "$(next_device_name)"
+        fi
         ;;
     packages)
         source "${LIB_DIR}/package.sh"

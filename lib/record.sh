@@ -121,7 +121,7 @@ record_stop() {
     local i=0
     while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
         sleep 1
-        ((i++))
+        i=$((i + 1))
     done
 
     if kill -0 "$pid" 2>/dev/null; then

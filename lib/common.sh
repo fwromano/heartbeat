@@ -150,6 +150,90 @@ gen_password() {
     head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 12
 }
 
+# Upsert an OpenTAK user using the app datastore directly (no Flask CLI user commands).
+opentak_upsert_user_local() {
+    local ots_dir="${1:?missing ots_dir}"
+    local ots_venv="${2:?missing ots_venv}"
+    local username="${3:?missing username}"
+    local password="${4:?missing password}"
+    local role="${5:-administrator}"
+    local retries="${6:-5}"
+
+    if [[ ! -x "${ots_venv}/bin/python3" ]]; then
+        log_error "OpenTAK Python runtime not found at ${ots_venv}/bin/python3"
+        return 1
+    fi
+
+    if [[ ${#password} -lt 8 ]]; then
+        log_error "OpenTAK password for '${username}' must be at least 8 characters."
+        return 1
+    fi
+
+    local attempt=1
+    local output=""
+    while [[ $attempt -le $retries ]]; do
+        if output=$(
+            cd "${ots_dir}" && \
+            OTS_DATA_FOLDER="${ots_dir}" \
+            OTS_CONFIG_PATH="${ots_dir}/config.yml" \
+            OTS_CONFIG_FILE="${ots_dir}/config.yml" \
+            "${ots_venv}/bin/python3" - "${username}" "${password}" "${role}" 2>&1 <<'PY'
+import sys
+
+from flask_security import hash_password
+
+from opentakserver.app import create_app
+from opentakserver.extensions import db
+
+username, password, role = sys.argv[1], sys.argv[2], sys.argv[3]
+
+try:
+    app = create_app(cli=True)
+    with app.app_context():
+        datastore = app.security.datastore
+
+        datastore.find_or_create_role(name="user", permissions={"user-read", "user-write"})
+        datastore.find_or_create_role(name="administrator", permissions={"administrator"})
+
+        user = datastore.find_user(username=username)
+        if user is None:
+            user = datastore.create_user(
+                username=username,
+                password=hash_password(password),
+                active=True,
+            )
+        else:
+            user.password = hash_password(password)
+            user.active = True
+            db.session.add(user)
+
+        datastore.add_role_to_user(user, "user")
+        if role and role != "user":
+            datastore.add_role_to_user(user, role)
+
+        db.session.commit()
+except Exception as exc:
+    print(f"{exc.__class__.__name__}: {exc}", file=sys.stderr)
+    sys.exit(1)
+PY
+        ); then
+            return 0
+        fi
+
+        if [[ $attempt -lt $retries ]]; then
+            sleep "$attempt"
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    log_warn "OpenTAK datastore user bootstrap failed for '${username}' after ${retries} attempts."
+    output="$(printf '%s\n' "$output" | sed '/^Mumble auth not supported on this platform$/d')"
+    if [[ -n "$output" ]]; then
+        log_warn "${output}"
+    fi
+    return 1
+}
+
 ensure_dir() {
     mkdir -p "$1"
 }
@@ -206,8 +290,8 @@ find_free_port() {
             echo "$port"
             return 0
         fi
-        ((port++))
-        ((i++))
+        port=$((port + 1))
+        i=$((i + 1))
     done
     echo "$1"  # fallback to original
 }

@@ -10,7 +10,7 @@
 #   ./setup.sh --interactive   Ask questions during setup
 #   ./setup.sh --docker     Force Docker mode
 #   ./setup.sh --native     Force native mode
-#   ./setup.sh --backend opentak   Select OpenTAK backend (default)
+#   ./setup.sh --backend opentak   Select OpenTAK backend
 #   ./setup.sh --username team --password secret
 #   ./setup.sh --team "My Team"   Set team name
 # ==========================================================================
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --interactive    Ask questions during setup"
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
-            echo "  --backend NAME   TAK backend: opentak (default), freetak"
+            echo "  --backend NAME   TAK backend: freetak (default), opentak"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --username NAME  Default TAK/WebTAK username"
@@ -70,24 +70,42 @@ done
 # Auto-detect safe ports (skip ports already in use)
 # ---------------------------------------------------------------------------
 auto_ports() {
+    local backend="${1:-freetak}"
     local cot ssl api dp
 
-    cot=$(find_free_port 8087)
-    ssl=$(find_free_port 8089)
-    api=$(find_free_port 19023)
-    dp=8443
+    case "$backend" in
+        opentak)
+            cot=$(find_free_port 8088)
+            ssl=$(find_free_port 8089)
+            api=8443
+            dp=8443
+            ;;
+        *)
+            cot=$(find_free_port 8087)
+            ssl=$(find_free_port 8089)
+            api=$(find_free_port 19023)
+            dp=8443
+            ;;
+    esac
+
     if ! port_available "$dp"; then
         log_warn "Port 8443 in use, DataPackage service may not be reachable" >&2
     fi
 
     # Log any ports that shifted (to stderr so they don't mix with output)
-    if [[ "$cot" != "8087" ]]; then
-        log_warn "Port 8087 in use, CoT port -> ${cot}" >&2
+    if [[ "$backend" == "opentak" ]]; then
+        if [[ "$cot" != "8088" ]]; then
+            log_warn "Port 8088 in use, CoT port -> ${cot}" >&2
+        fi
+    else
+        if [[ "$cot" != "8087" ]]; then
+            log_warn "Port 8087 in use, CoT port -> ${cot}" >&2
+        fi
     fi
     if [[ "$ssl" != "8089" ]]; then
         log_warn "Port 8089 in use, SSL CoT port -> ${ssl}" >&2
     fi
-    if [[ "$api" != "19023" ]]; then
+    if [[ "$backend" != "opentak" && "$api" != "19023" ]]; then
         log_warn "Port 19023 in use, API port -> ${api}" >&2
     fi
     echo "${cot} ${ssl} ${api} ${dp}"
@@ -104,9 +122,9 @@ main() {
     local prev_pass=""
     local prev_backend=""
 
-    # Default backend for fresh installs: OpenTAK.
+    # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
-        backend="opentak"
+        backend="freetak"
     fi
 
     case "$backend" in
@@ -117,10 +135,6 @@ main() {
             exit 1
             ;;
     esac
-
-    if [[ "$backend" == "opentak" ]]; then
-        webtak_port=8443
-    fi
 
     # Check for existing config
     if [[ -f "$HEARTBEAT_CONF" ]]; then
@@ -151,6 +165,13 @@ main() {
             exit 1
             ;;
     esac
+
+    # backend may have changed after reading existing config
+    if [[ "$backend" == "opentak" ]]; then
+        webtak_port=8443
+    else
+        webtak_port=8080
+    fi
 
     # ---- Clean previous installation artifacts ----
     if [[ -f "$HEARTBEAT_CONF" ]]; then
@@ -278,7 +299,7 @@ main() {
     # ---- Ports (auto-detect conflicts) ----
     log_step "Checking ports"
     local ports
-    ports=$(auto_ports)
+    ports=$(auto_ports "$backend")
     local cot_port ssl_cot_port api_port dp_port
     read -r cot_port ssl_cot_port api_port dp_port <<< "$ports"
 
@@ -316,12 +337,8 @@ main() {
     fi
 
     # ---- Default credentials ----
-    local default_user="team"
+    local default_user="admin"
     local default_pass=""
-    if [[ "$backend" == "opentak" ]]; then
-        default_user="franky"
-        default_pass="romano123"
-    fi
 
     local fts_user="${ARG_USERNAME:-${prev_user:-$default_user}}"
     local fts_pass
@@ -343,7 +360,7 @@ main() {
     fi
     if [[ "$backend" == "opentak" && ${#fts_pass} -lt 8 ]]; then
         log_error "OpenTAK password must be at least 8 characters."
-        log_error "Re-run with a longer password via --password (example: romano123)."
+        log_error "Re-run with a longer password via --password."
         exit 1
     fi
 

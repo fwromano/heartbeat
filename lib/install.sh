@@ -393,15 +393,14 @@ cfg["SQLALCHEMY_DATABASE_URI"] = db_uri
 # Update known keys if present in this OpenTAK release.
 for key, value in {
     "OTS_SERVER_ADDRESS": server_ip,
-    "OTS_WEBSERVER_PORT": 8081,
-    "OTS_COT_PORT": int(cot_port),
-    "OTS_SSL_COT_PORT": int(ssl_port),
+    "OTS_LISTENER_PORT": 8081,
+    "OTS_TCP_STREAMING_PORT": int(cot_port),
+    "OTS_SSL_STREAMING_PORT": int(ssl_port),
     "OTS_MEDIAMTX_ENABLE": False,
     "SECURITY_TWO_FACTOR": False,
     "SQLALCHEMY_DATABASE_URI": db_uri,
 }.items():
-    if key in cfg:
-        cfg[key] = value
+    cfg[key] = value
     deep_set(cfg, key, value)
 
 with open(config_path, "w", encoding="utf-8") as fh:
@@ -563,6 +562,7 @@ Environment=OTS_DATA_FOLDER=${ots_dir}
 Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
 Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
 ExecStart=${ots_venv}/bin/opentakserver
+LimitNOFILE=65535
 Restart=on-failure
 RestartSec=5s
 StandardOutput=append:${ots_dir}/logs/opentakserver.log
@@ -587,6 +587,7 @@ Environment=OTS_DATA_FOLDER=${ots_dir}
 Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
 Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
 ExecStart=${ots_venv}/bin/cot_parser
+LimitNOFILE=65535
 Restart=on-failure
 RestartSec=5s
 StandardOutput=append:${ots_dir}/logs/opentakserver.log
@@ -611,6 +612,7 @@ Environment=OTS_DATA_FOLDER=${ots_dir}
 Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
 Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
 ExecStart=${ots_venv}/bin/eud_handler
+LimitNOFILE=65535
 Restart=on-failure
 RestartSec=5s
 StandardOutput=append:${ots_dir}/logs/opentakserver.log
@@ -635,6 +637,7 @@ Environment=OTS_DATA_FOLDER=${ots_dir}
 Environment=OTS_CONFIG_PATH=${ots_dir}/config.yml
 Environment=OTS_CONFIG_FILE=${ots_dir}/config.yml
 ExecStart=${ots_venv}/bin/eud_handler --ssl
+LimitNOFILE=65535
 Restart=on-failure
 RestartSec=5s
 StandardOutput=append:${ots_dir}/logs/opentakserver.log
@@ -672,15 +675,26 @@ install_webtak_ui() {
 setup_opentak_default_user() {
     local ots_dir="$1"
     local ots_venv="$2"
-    local username="${FTS_USERNAME:-administrator}"
-    local password="${FTS_PASSWORD:-password}"
+    local username="${FTS_USERNAME:-admin}"
+    local password="${FTS_PASSWORD:-}"
 
+    if [[ -z "$password" ]]; then
+        log_error "OpenTAK user password for '${username}' is not set."
+        log_error "Re-run setup.sh to regenerate credentials."
+        return 1
+    fi
     if [[ ${#password} -lt 8 ]]; then
         log_error "OpenTAK user password for '${username}' must be at least 8 characters."
         return 1
     fi
 
     log_info "Ensuring OpenTAK admin user exists (${username})"
+    if opentak_upsert_user_local "${ots_dir}" "${ots_venv}" "${username}" "${password}" "administrator" 6; then
+        log_ok "OpenTAK web login ready: ${username}"
+        return 0
+    fi
+
+    log_warn "Datastore bootstrap failed for '${username}'; attempting Flask CLI fallback."
     if ! (
         cd "${ots_dir}"
         export OTS_DATA_FOLDER="${ots_dir}"
@@ -699,7 +713,7 @@ setup_opentak_default_user() {
         "${ots_venv}/bin/flask" roles add "${username}" administrator >/dev/null 2>&1 || true
     ); then
         log_warn "Could not provision OpenTAK user '${username}' during setup."
-        log_warn "Setup will continue. Use OpenTAK default login: administrator / password"
+        log_warn "Setup will continue. Use configured credentials from ${HEARTBEAT_CONF}."
         return 0
     fi
 

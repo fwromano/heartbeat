@@ -126,6 +126,23 @@ backend_get_package() {
     generate_package "$name"
 }
 
+backend_health_check() {
+    load_config
+    local issues=0
+
+    if ! port_listening "${COT_PORT:-8087}"; then
+        log_warn "TCP CoT port ${COT_PORT:-8087} not listening"
+        issues=$((issues + 1))
+    fi
+
+    if [[ "$DEPLOY_MODE" == "native" && -f "$PID_FILE" ]] && ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+        log_warn "Stale PID file detected at ${PID_FILE}; removing it."
+        rm -f "$PID_FILE"
+    fi
+
+    return $((issues > 0 ? 1 : 0))
+}
+
 # --- Private FreeTAK functions ---
 
 _freetak_docker_start() {
@@ -203,7 +220,7 @@ _freetak_native_stop() {
         local i=0
         while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
             sleep 1
-            ((i++))
+            i=$((i + 1))
         done
         if kill -0 "$pid" 2>/dev/null; then
             log_warn "Graceful shutdown timed out, forcing..."

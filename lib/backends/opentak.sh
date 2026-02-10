@@ -19,11 +19,15 @@ backend_supports() {
 
 backend_get_ports() {
     load_config
-    echo "COT:${COT_PORT:-8087} SSL:${SSL_COT_PORT:-8089} WebTAK:${WEBTAK_PORT:-8443} API:${API_PORT:-8443}"
+    echo "COT:${COT_PORT:-8088} SSL:${SSL_COT_PORT:-8089} WebTAK:${WEBTAK_PORT:-8443} API:${API_PORT:-8443}"
 }
 
 backend_start() {
     load_config
+
+    if ! _opentak_preflight; then
+        return 1
+    fi
 
     if [[ ! -f /etc/systemd/system/opentakserver.service ]]; then
         log_error "OpenTAK systemd service not found."
@@ -41,6 +45,21 @@ backend_stop() {
     log_step "Stopping TAK server (OpenTAK)"
     sudo systemctl stop opentakserver.service cot_parser.service eud_handler.service eud_handler_ssl.service 2>/dev/null || true
     log_ok "Server stopped"
+}
+
+backend_reset() {
+    log_step "Resetting TAK server stack (OpenTAK + dependencies)"
+
+    # Stop OTS workers first so no active consumers hold stale channels.
+    backend_stop
+
+    # Restart broker + dependencies to clear stale runtime state.
+    sudo systemctl restart rabbitmq-server
+    sudo systemctl restart postgresql
+    sudo systemctl restart nginx
+
+    # Bring OTS stack back up.
+    backend_start
 }
 
 backend_status() {
@@ -121,4 +140,67 @@ backend_get_package() {
     local name="$1"
     source "${LIB_DIR}/package.sh"
     generate_package "$name"
+}
+
+backend_health_check() {
+    local issues=0
+    load_config
+
+    for svc in opentakserver cot_parser eud_handler eud_handler_ssl; do
+        if ! systemctl is-active --quiet "${svc}.service" 2>/dev/null; then
+            log_warn "Service ${svc} is not running"
+            issues=$((issues + 1))
+        fi
+    done
+
+    if ! port_listening "${COT_PORT:-8088}"; then
+        log_warn "TCP CoT port ${COT_PORT:-8088} not listening"
+        issues=$((issues + 1))
+    fi
+    if ! port_listening "${SSL_COT_PORT:-8089}"; then
+        log_warn "SSL CoT port ${SSL_COT_PORT:-8089} not listening"
+        issues=$((issues + 1))
+    fi
+    if ! systemctl is-active --quiet nginx 2>/dev/null; then
+        log_warn "nginx is not running (WebTAK will be unavailable)"
+        issues=$((issues + 1))
+    fi
+
+    return $((issues > 0 ? 1 : 0))
+}
+
+_opentak_preflight() {
+    local ots_dir="${DATA_DIR}/opentak"
+
+    if [[ ! -f /etc/systemd/system/opentakserver.service ]]; then
+        log_error "OpenTAK not installed. Run: ./setup.sh --backend opentak"
+        return 1
+    fi
+
+    if [[ ! -x "${ots_dir}/venv/bin/opentakserver" ]]; then
+        log_error "OpenTAK venv is missing or broken at ${ots_dir}/venv."
+        log_error "Re-run setup: ./setup.sh --backend opentak"
+        return 1
+    fi
+
+    if [[ ! -f "${ots_dir}/config.yml" ]]; then
+        log_error "OpenTAK config is missing at ${ots_dir}/config.yml."
+        log_error "Re-run setup: ./setup.sh --backend opentak"
+        return 1
+    fi
+
+    if ! systemctl is-active --quiet postgresql 2>/dev/null; then
+        log_warn "PostgreSQL not running, starting..."
+        sudo systemctl start postgresql || return 1
+    fi
+    if ! systemctl is-active --quiet rabbitmq-server 2>/dev/null; then
+        log_warn "RabbitMQ not running, starting..."
+        sudo systemctl start rabbitmq-server || return 1
+    fi
+    if ! systemctl is-active --quiet nginx 2>/dev/null; then
+        log_warn "nginx not running, starting..."
+        sudo systemctl start nginx || return 1
+    fi
+
+    return 0
 }

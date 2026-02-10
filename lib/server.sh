@@ -23,7 +23,23 @@ _load_backend() {
         DEPLOY_MODE="native"
     fi
 
+    # Load interface defaults first, then backend implementation overrides.
+    source "${LIB_DIR}/backends/interface.sh"
     source "$backend_file"
+
+    local required_fns=(
+        backend_name backend_supports backend_get_ports
+        backend_start backend_stop backend_reset backend_status
+        backend_logs backend_update backend_uninstall
+        backend_get_package backend_health_check
+    )
+    local fn=""
+    for fn in "${required_fns[@]}"; do
+        if ! declare -f "$fn" >/dev/null 2>&1; then
+            log_error "Backend '${backend}' missing required function: ${fn}"
+            exit 1
+        fi
+    done
 }
 
 _backend_compose_dir() {
@@ -47,6 +63,7 @@ server_start() {
     _load_backend
     backend_start
     _wait_for_server
+    backend_health_check || true
     _show_running_info
 }
 
@@ -72,6 +89,17 @@ server_restart() {
     server_stop
     sleep 2
     server_start
+}
+
+# ---------------------------------------------------------------------------
+# Full reset (backend-defined)
+# ---------------------------------------------------------------------------
+server_reset() {
+    _load_backend
+    backend_reset
+    _wait_for_server
+    backend_health_check || true
+    _show_running_info
 }
 
 # ---------------------------------------------------------------------------
@@ -163,6 +191,7 @@ server_status() {
 
         # API health + connected clients
         _show_api_health
+        backend_health_check || true
     fi
 
     # Package count
@@ -336,13 +365,13 @@ _wait_for_server() {
                 break
             fi
             sleep 1
-            ((i++))
+            i=$((i + 1))
             printf "."
         done
     else
         while ! port_accepting "127.0.0.1" "${COT_PORT}" && [[ $i -lt $max_wait ]]; do
             sleep 1
-            ((i++))
+            i=$((i + 1))
             printf "."
         done
     fi
@@ -401,7 +430,7 @@ except urllib.error.HTTPError:
                 break
             fi
             sleep 1
-            ((i++))
+            i=$((i + 1))
         done
 
         # Create user via FTS REST API
@@ -515,7 +544,7 @@ _show_running_info() {
             local i=0
             while ! _server_ready && [[ $i -lt 60 ]]; do
                 sleep 2
-                ((i++))
+                i=$((i + 1))
             done
             if _server_ready && [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
                 _create_default_user >/dev/null 2>&1 || true
