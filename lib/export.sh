@@ -27,6 +27,7 @@ cmd_export() {
     local mapping=""
     local export_all=false
     local session_id=""
+    local explicit_session=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -48,6 +49,7 @@ cmd_export() {
                 ;;
             --session-id)
                 session_id="$2"
+                explicit_session=true
                 shift 2
                 ;;
             -h|--help)
@@ -84,6 +86,7 @@ cmd_export() {
     fi
 
     local selected_session_events=""
+    local latest_nonempty_session=""
 
     if ! has_cmd python3; then
         log_error "python3 is required but not found"
@@ -128,6 +131,21 @@ if row is not None:
     print(int(row[0] or 0))
 PY
 )
+        if [[ "$explicit_session" != "true" && -n "$selected_session_events" && "$selected_session_events" -eq 0 ]]; then
+            latest_nonempty_session=$(python3 - "$RECORDER_DB" <<'PY'
+import sqlite3
+import sys
+
+db = sqlite3.connect(sys.argv[1])
+row = db.execute(
+    "SELECT id FROM recording_sessions WHERE events_count > 0 ORDER BY id DESC LIMIT 1"
+).fetchone()
+db.close()
+if row:
+    print(int(row[0]))
+PY
+)
+        fi
     fi
 
     if ! python3 -c "import shapely" 2>/dev/null; then
@@ -169,6 +187,9 @@ PY
         log_info "Session:  ${session_id}"
         if [[ -n "$selected_session_events" && "$selected_session_events" -eq 0 ]]; then
             log_warn "Selected session has 0 ingested events (recorder saw no CoT data)."
+            if [[ -n "$latest_nonempty_session" && "$latest_nonempty_session" != "$session_id" ]]; then
+                log_warn "Last non-empty session: ${latest_nonempty_session} (run: ./heartbeat export --session-id ${latest_nonempty_session})"
+            fi
         fi
     else
         log_info "Session:  all"

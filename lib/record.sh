@@ -108,7 +108,14 @@ record_start() {
                 local ots_dir="${DATA_DIR}/opentak"
                 local cert_user=""
                 local preferred_cert_user="${OTS_RECORDER_CERT_USER:-administrator}"
-                cert_user=$(_opentak_pick_recorder_cert_user "$ots_dir" "$preferred_cert_user" "${FTS_USERNAME:-}")
+                local fallback_cert_user="${FTS_USERNAME:-}"
+                # Favor the configured TAK username when recorder user is left on the
+                # historical "administrator" default and a user cert exists.
+                if [[ "$preferred_cert_user" == "administrator" && -n "$fallback_cert_user" ]]; then
+                    preferred_cert_user="$fallback_cert_user"
+                    fallback_cert_user="administrator"
+                fi
+                cert_user=$(_opentak_pick_recorder_cert_user "$ots_dir" "$preferred_cert_user" "$fallback_cert_user")
                 if [[ -z "$cert_user" ]]; then
                     log_error "OpenTAK recorder cert/key not found."
                     log_error "Expected under: ${ots_dir}/ca/certs/<user>/<user>.pem and .key/.nopass.key"
@@ -313,27 +320,50 @@ record_status() {
 
     # Database stats
     if [[ -f "$RECORDER_DB" ]]; then
-        local stats event_count last_event
+        local stats event_count last_event latest_session latest_session_events latest_started latest_stopped
         stats=$(python3 -c "
 import sqlite3, sys
 conn = sqlite3.connect(sys.argv[1])
 try:
     c = conn.execute('SELECT COUNT(*) FROM cot_events').fetchone()[0]
     last = conn.execute('SELECT MAX(time) FROM cot_events').fetchone()[0] or ''
-    print(f'{c}|{last}')
+    session = conn.execute('SELECT id, events_count, started_at, stopped_at FROM recording_sessions ORDER BY id DESC LIMIT 1').fetchone()
+    if session:
+        sid = session[0] or ''
+        sev = session[1] or 0
+        sstart = session[2] or ''
+        sstop = session[3] or ''
+    else:
+        sid = ''
+        sev = 0
+        sstart = ''
+        sstop = ''
+    print(f'{c}|{last}|{sid}|{sev}|{sstart}|{sstop}')
 except:
-    print('0|')
+    print('0|||||')
 conn.close()
 " "$RECORDER_DB" 2>/dev/null || echo "0")
         event_count="${stats%%|*}"
-        last_event="${stats#*|}"
+        local rest
+        rest="${stats#*|}"
+        last_event="${rest%%|*}"
+        rest="${rest#*|}"
+        latest_session="${rest%%|*}"
+        rest="${rest#*|}"
+        latest_session_events="${rest%%|*}"
+        rest="${rest#*|}"
+        latest_started="${rest%%|*}"
+        latest_stopped="${rest#*|}"
 
         local db_size
         db_size=$(du -h "$RECORDER_DB" 2>/dev/null | cut -f1)
 
-        echo -e "  Events:    ${event_count}"
+        echo -e "  Events:    ${event_count} ${DIM}(lifetime)${NC}"
         if [[ -n "$last_event" ]]; then
-            echo -e "  Last:      ${last_event}"
+            echo -e "  Last:      ${last_event} ${DIM}(lifetime)${NC}"
+        fi
+        if [[ -n "$latest_session" ]]; then
+            echo -e "  Session:   ${latest_session} ${DIM}(${latest_session_events} events${latest_started:+, started ${latest_started}}${latest_stopped:+, stopped ${latest_stopped}})${NC}"
         fi
         echo -e "  DB size:   ${db_size}"
         echo -e "  DB path:   ${RECORDER_DB}"

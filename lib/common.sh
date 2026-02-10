@@ -150,6 +150,39 @@ gen_password() {
     head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 12
 }
 
+# Resolve the OpenTAK pip install target from config.
+# Default is PyPI package "opentakserver"; optional fork install uses:
+#   OTS_GIT_URL="https://github.com/<user>/OpenTAKServer.git"
+#   OTS_GIT_REF="branch-or-tag"
+opentak_pip_spec() {
+    local git_url="${OTS_GIT_URL:-}"
+    local git_ref="${OTS_GIT_REF:-}"
+
+    if [[ -z "$git_url" ]]; then
+        echo "opentakserver"
+        return 0
+    fi
+
+    local spec="$git_url"
+    if [[ "$spec" != git+* ]]; then
+        spec="git+${spec}"
+    fi
+    if [[ -n "$git_ref" && "$spec" != *"@"* ]]; then
+        spec="${spec}@${git_ref}"
+    fi
+    echo "$spec"
+}
+
+# Runtime patching is an opt-in fallback for legacy OpenTAK builds.
+opentak_runtime_patches_enabled() {
+    local value="${OTS_RUNTIME_PATCHES:-false}"
+    value=$(echo "$value" | tr '[:upper:]' '[:lower:]')
+    case "$value" in
+        1|true|yes|on) return 0 ;;
+    esac
+    return 1
+}
+
 # Apply Heartbeat runtime patches to OpenTAK's eud_handler in its venv.
 opentak_apply_runtime_patches() {
     local ots_venv="${1:?missing OpenTAK venv path}"

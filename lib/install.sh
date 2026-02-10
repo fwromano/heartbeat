@@ -238,11 +238,22 @@ install_opentak() {
     rm -rf "${ots_venv}"
     python3 -m venv "${ots_venv}"
     "${ots_venv}/bin/pip" install --quiet --upgrade pip setuptools wheel
-    "${ots_venv}/bin/pip" install --quiet opentakserver
-    if opentak_apply_runtime_patches "${ots_venv}"; then
-        log_ok "Applied OpenTAK runtime hotfixes"
+    local opentak_spec
+    opentak_spec="$(opentak_pip_spec)"
+    if [[ "$opentak_spec" == "opentakserver" ]]; then
+        log_info "Installing OpenTAK package from PyPI (opentakserver)"
     else
-        log_warn "Could not apply OpenTAK runtime hotfixes automatically"
+        log_info "Installing OpenTAK package from fork (${OTS_GIT_URL}${OTS_GIT_REF:+ @ ${OTS_GIT_REF}})"
+    fi
+    "${ots_venv}/bin/pip" install --quiet "$opentak_spec"
+    if opentak_runtime_patches_enabled; then
+        if opentak_apply_runtime_patches "${ots_venv}"; then
+            log_ok "Applied OpenTAK runtime hotfixes (OTS_RUNTIME_PATCHES=true)"
+        else
+            log_warn "Could not apply OpenTAK runtime hotfixes automatically"
+        fi
+    else
+        log_info "Skipping runtime hotfix patcher (OTS_RUNTIME_PATCHES=false)"
     fi
     log_ok "OpenTAK package installed"
 
@@ -314,7 +325,7 @@ install_opentak_system_deps() {
         postgresql postgresql-postgis \
         rabbitmq-server \
         nginx libnginx-mod-stream \
-        openssl curl unzip 2>/dev/null
+        openssl curl unzip git 2>/dev/null
 
     sudo systemctl enable --now postgresql 2>/dev/null || true
     sudo systemctl enable --now rabbitmq-server 2>/dev/null || true
@@ -401,6 +412,7 @@ for key, value in {
     "OTS_LISTENER_PORT": 8081,
     "OTS_TCP_STREAMING_PORT": int(cot_port),
     "OTS_SSL_STREAMING_PORT": int(ssl_port),
+    "OTS_ENABLE_SOCKETIO": True,
     "OTS_MEDIAMTX_ENABLE": False,
     "SECURITY_TWO_FACTOR": False,
     "SQLALCHEMY_DATABASE_URI": db_uri,

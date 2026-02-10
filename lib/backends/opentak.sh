@@ -35,9 +35,13 @@ backend_start() {
         return 1
     fi
 
-    if ! opentak_apply_runtime_patches "${DATA_DIR}/opentak/venv"; then
-        log_warn "OpenTAK runtime hotfixes were not applied"
+    if opentak_runtime_patches_enabled; then
+        if ! opentak_apply_runtime_patches "${DATA_DIR}/opentak/venv"; then
+            log_warn "OpenTAK runtime hotfixes were not applied"
+        fi
     fi
+
+    _opentak_ensure_socketio_exchange
 
     log_step "Starting TAK server (OpenTAK)"
     sudo systemctl start opentakserver.service
@@ -91,18 +95,30 @@ backend_logs() {
 }
 
 backend_update() {
+    load_config
+
     local ots_venv="${DATA_DIR}/opentak/venv"
     if [[ ! -x "${ots_venv}/bin/pip" ]]; then
         log_error "OpenTAK venv not found. Run setup first."
         return 1
     fi
 
+    local opentak_spec
+    opentak_spec="$(opentak_pip_spec)"
+
     log_step "Updating OpenTAK package"
-    "${ots_venv}/bin/pip" install --quiet --upgrade opentakserver
-    if opentak_apply_runtime_patches "${ots_venv}"; then
-        log_ok "Re-applied OpenTAK runtime hotfixes"
+    if [[ "$opentak_spec" == "opentakserver" ]]; then
+        log_info "Update source: PyPI (opentakserver)"
     else
-        log_warn "OpenTAK runtime hotfixes were not re-applied"
+        log_info "Update source: ${OTS_GIT_URL}${OTS_GIT_REF:+ @ ${OTS_GIT_REF}}"
+    fi
+    "${ots_venv}/bin/pip" install --quiet --upgrade "$opentak_spec"
+    if opentak_runtime_patches_enabled; then
+        if opentak_apply_runtime_patches "${ots_venv}"; then
+            log_ok "Re-applied OpenTAK runtime hotfixes"
+        else
+            log_warn "OpenTAK runtime hotfixes were not re-applied"
+        fi
     fi
     log_ok "OpenTAK updated. Restart with: ./heartbeat restart"
 }
@@ -212,4 +228,84 @@ _opentak_preflight() {
     fi
 
     return 0
+}
+
+_opentak_ensure_socketio_exchange() {
+    local ots_dir="${DATA_DIR}/opentak"
+    local ots_py="${ots_dir}/venv/bin/python3"
+    local ots_cfg="${ots_dir}/config.yml"
+
+    if [[ ! -x "$ots_py" || ! -f "$ots_cfg" ]]; then
+        return 0
+    fi
+
+    if "$ots_py" - "$ots_cfg" <<'PY' >/dev/null 2>&1
+import sys
+import yaml
+import pika
+
+config_path = sys.argv[1]
+with open(config_path, "r", encoding="utf-8") as fh:
+    cfg = yaml.safe_load(fh) or {}
+
+host = str(cfg.get("OTS_RABBITMQ_SERVER_ADDRESS") or "127.0.0.1")
+port = int(cfg.get("OTS_RABBITMQ_PORT") or 5672)
+username = str(cfg.get("OTS_RABBITMQ_USERNAME") or "guest")
+password = str(cfg.get("OTS_RABBITMQ_PASSWORD") or "guest")
+vhost = str(cfg.get("OTS_RABBITMQ_VHOST") or "/")
+
+params = pika.ConnectionParameters(
+    host=host,
+    port=port,
+    virtual_host=vhost,
+    credentials=pika.PlainCredentials(username, password),
+)
+connection = pika.BlockingConnection(params)
+try:
+    channel = connection.channel()
+    channel.exchange_declare(
+        exchange="flask-socketio",
+        exchange_type="fanout",
+        durable=False,
+        auto_delete=False,
+    )
+finally:
+    connection.close()
+PY
+    then
+        _opentak_set_socketio_enabled "true"
+        log_info "RabbitMQ exchange ready: flask-socketio"
+    else
+        _opentak_set_socketio_enabled "false"
+        log_warn "Could not pre-create RabbitMQ exchange 'flask-socketio'; disabling OTS socketio publish to prevent channel churn"
+    fi
+
+    return 0
+}
+
+_opentak_set_socketio_enabled() {
+    local enabled="${1:-true}"
+    local ots_dir="${DATA_DIR}/opentak"
+    local ots_py="${ots_dir}/venv/bin/python3"
+    local ots_cfg="${ots_dir}/config.yml"
+
+    if [[ ! -x "$ots_py" || ! -f "$ots_cfg" ]]; then
+        return 0
+    fi
+
+    "$ots_py" - "$ots_cfg" "$enabled" <<'PY' >/dev/null 2>&1 || true
+import sys
+import yaml
+
+config_path = sys.argv[1]
+enabled = str(sys.argv[2]).strip().lower() in {"1", "true", "yes", "on"}
+
+with open(config_path, "r", encoding="utf-8") as fh:
+    cfg = yaml.safe_load(fh) or {}
+
+cfg["OTS_ENABLE_SOCKETIO"] = bool(enabled)
+
+with open(config_path, "w", encoding="utf-8") as fh:
+    yaml.safe_dump(cfg, fh, sort_keys=False)
+PY
 }

@@ -17,15 +17,26 @@ class CotStreamParser:
 
     def __init__(self):
         self.buffer = ""
+        self._event_start = "<event"
 
     def feed(self, data: str) -> list:
         """Feed raw TCP data, return list of complete event XML strings."""
         self.buffer += data
         events = []
         while True:
-            start = self.buffer.find("<event")
+            start = self.buffer.find(self._event_start)
             if start == -1:
-                self.buffer = ""  # No event start, discard noise
+                # Keep a partial "<event" prefix if chunk boundaries split the tag.
+                # Example: chunk1 ends with "<ev", chunk2 begins with "ent ...".
+                keep = ""
+                max_prefix = len(self._event_start) - 1
+                tail = self.buffer[-max_prefix:] if max_prefix > 0 else self.buffer
+                for i in range(max_prefix, 0, -1):
+                    prefix = self._event_start[:i]
+                    if tail.endswith(prefix):
+                        keep = prefix
+                        break
+                self.buffer = keep
                 break
             end = self.buffer.find("</event>", start)
             if end == -1:

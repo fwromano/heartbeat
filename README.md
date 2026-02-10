@@ -126,6 +126,17 @@ Installs OpenTAK Server as native systemd services with PostgreSQL, RabbitMQ, an
 
 This gives you SSL certificates, per-device identity, WebTAK browser map on :8443, and reliable relay of lines/polygons/annotations between devices.
 
+To install OpenTAK from a fork/branch instead of PyPI, set:
+
+```bash
+OTS_GIT_URL="https://github.com/fwromano/OpenTAKServer.git"
+OTS_GIT_REF="heartbeat-fixes"   # or main
+OTS_RUNTIME_PATCHES="false"     # recommended with fork-based source fixes
+./setup.sh --backend opentak
+```
+
+`setup.sh` persists these in `config/heartbeat.conf`, and `./heartbeat update` uses the same source.
+
 ## Connecting from iTAK / ATAK
 
 ### Option A - Import a data package (recommended)
