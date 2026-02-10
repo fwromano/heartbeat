@@ -35,6 +35,10 @@ backend_start() {
         return 1
     fi
 
+    if ! opentak_apply_runtime_patches "${DATA_DIR}/opentak/venv"; then
+        log_warn "OpenTAK runtime hotfixes were not applied"
+    fi
+
     log_step "Starting TAK server (OpenTAK)"
     sudo systemctl start opentakserver.service
     log_ok "OpenTAK started"
@@ -95,6 +99,11 @@ backend_update() {
 
     log_step "Updating OpenTAK package"
     "${ots_venv}/bin/pip" install --quiet --upgrade opentakserver
+    if opentak_apply_runtime_patches "${ots_venv}"; then
+        log_ok "Re-applied OpenTAK runtime hotfixes"
+    else
+        log_warn "OpenTAK runtime hotfixes were not re-applied"
+    fi
     log_ok "OpenTAK updated. Restart with: ./heartbeat restart"
 }
 

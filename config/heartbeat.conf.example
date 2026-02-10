@@ -20,6 +20,8 @@ TAK_BACKEND="freetak"   # Options: freetak (default), opentak
 
 # OpenTAK-specific (only used when TAK_BACKEND=opentak)
 WEBTAK_PORT=8443        # WebTAK HTTPS interface
+OTS_RECORDER_TRANSPORT="ssl"      # Recorder transport: ssl (default), tcp, or rmq
+OTS_RECORDER_CERT_USER="administrator"  # Used only when OTS_RECORDER_TRANSPORT=ssl
 
 # ---------------------------------------------------------------------------
 # Ports

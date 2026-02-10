@@ -150,6 +150,27 @@ gen_password() {
     head -c 12 /dev/urandom | base64 | tr -d '/+=' | head -c 12
 }
 
+# Apply Heartbeat runtime patches to OpenTAK's eud_handler in its venv.
+opentak_apply_runtime_patches() {
+    local ots_venv="${1:?missing OpenTAK venv path}"
+    local patcher="${HEARTBEAT_DIR}/tools/patch_opentak_client_controller.py"
+
+    if [[ ! -x "${ots_venv}/bin/python3" ]]; then
+        log_warn "OpenTAK Python runtime not found at ${ots_venv}/bin/python3"
+        return 1
+    fi
+    if [[ ! -f "$patcher" ]]; then
+        log_warn "OpenTAK patcher not found: ${patcher}"
+        return 1
+    fi
+
+    if "${ots_venv}/bin/python3" "$patcher" --venv "$ots_venv" >/dev/null; then
+        return 0
+    fi
+
+    return 1
+}
+
 # Upsert an OpenTAK user using the app datastore directly (no Flask CLI user commands).
 opentak_upsert_user_local() {
     local ots_dir="${1:?missing ots_dir}"

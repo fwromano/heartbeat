@@ -121,6 +121,8 @@ main() {
     local prev_user=""
     local prev_pass=""
     local prev_backend=""
+    local prev_ots_transport=""
+    local prev_ots_cert_user=""
 
     # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
@@ -141,6 +143,8 @@ main() {
         prev_backend=$(awk -F'"' '/^TAK_BACKEND=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_user=$(awk -F'"' '/^FTS_USERNAME=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_pass=$(awk -F'"' '/^FTS_PASSWORD=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_ots_transport=$(awk -F'"' '/^OTS_RECORDER_TRANSPORT=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_ots_cert_user=$(awk -F'"' '/^OTS_RECORDER_CERT_USER=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
             backend="$prev_backend"
         fi
@@ -364,6 +368,9 @@ main() {
         exit 1
     fi
 
+    local ots_recorder_transport="${prev_ots_transport:-ssl}"
+    local ots_recorder_cert_user="${prev_ots_cert_user:-administrator}"
+
     # ---- Write config ----
     log_step "Writing configuration"
 
@@ -389,8 +396,15 @@ WEBTAK_PORT=${webtak_port}
 
 FTS_USERNAME="${fts_user}"
 FTS_PASSWORD="${fts_pass}"
+EOF
+
+    if [[ "$backend" == "opentak" ]]; then
+        cat >> "$HEARTBEAT_CONF" <<EOF
+OTS_RECORDER_TRANSPORT="${ots_recorder_transport}"
+OTS_RECORDER_CERT_USER="${ots_recorder_cert_user}"
 
 EOF
+    fi
 
     log_ok "Config: ${HEARTBEAT_CONF}"
 

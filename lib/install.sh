@@ -239,6 +239,11 @@ install_opentak() {
     python3 -m venv "${ots_venv}"
     "${ots_venv}/bin/pip" install --quiet --upgrade pip setuptools wheel
     "${ots_venv}/bin/pip" install --quiet opentakserver
+    if opentak_apply_runtime_patches "${ots_venv}"; then
+        log_ok "Applied OpenTAK runtime hotfixes"
+    else
+        log_warn "Could not apply OpenTAK runtime hotfixes automatically"
+    fi
     log_ok "OpenTAK package installed"
 
     # Setup re-runs should regenerate config instead of reusing stale credentials.

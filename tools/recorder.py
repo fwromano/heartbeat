@@ -17,6 +17,7 @@ import os
 import signal
 import socket
 import sqlite3
+import ssl
 import sys
 import time
 import uuid
@@ -24,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 
 # Add tools/ to path so we can import cot_parser as a sibling module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from cot_parser import CotStreamParser, parse_cot_event, is_multi_point_type
+from cot_parser import CotStreamParser, parse_cot_event
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +85,7 @@ CREATE INDEX IF NOT EXISTS idx_geom_event ON cot_geometry_points(event_id);
 
 # SA keepalive interval (seconds)
 SA_INTERVAL = 240  # 4 minutes
+RECONNECT_DELAY = 3
 
 
 def iso_now():
@@ -100,15 +102,30 @@ def iso_future(minutes=5):
 class CotRecorder:
     """Main recorder daemon that connects to a TAK server and records CoT events."""
 
-    def __init__(self, host, port, db_path, log_path):
+    def __init__(
+        self,
+        host,
+        port,
+        db_path,
+        log_path,
+        use_ssl=False,
+        cert_path=None,
+        key_path=None,
+        ca_path=None,
+    ):
         self.host = host
         self.port = port
         self.db_path = db_path
         self.log_path = log_path
+        self.use_ssl = use_ssl
+        self.cert_path = cert_path
+        self.key_path = key_path
+        self.ca_path = ca_path
         self.running = True
         self.sock = None
         self.session_id = None
         self.recorder_uid = f"heartbeat-recorder-{uuid.uuid4()}"
+        self.recorder_callsign = f"HB-REC-{uuid.uuid4().hex[:8]}"
 
         # Set up logging
         logging.basicConfig(
@@ -116,7 +133,6 @@ class CotRecorder:
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[
                 logging.FileHandler(log_path),
-                logging.StreamHandler(),
             ],
         )
         self.log = logging.getLogger("recorder")
@@ -143,7 +159,7 @@ class CotRecorder:
             f' how="m-g">'
             f'<point lat="0.0" lon="0.0" hae="0" ce="9999999" le="9999999"/>'
             f"<detail>"
-            f'<contact callsign="HB-RECORDER"/>'
+            f'<contact callsign="{self.recorder_callsign}"/>'
             f'<__group name="Cyan" role="HQ"/>'
             f'<precisionlocation altsrc="DTED0"/>'
             f'<takv version="heartbeat" platform="recorder" device="server" os="linux"/>'
@@ -152,17 +168,39 @@ class CotRecorder:
         )
 
     def connect(self):
-        """Establish TCP connection and send SA event."""
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.settimeout(5)
+        """Establish connection and send SA event."""
+        raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        raw_sock.settimeout(5)
+
+        if self.use_ssl:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
+            context.check_hostname = False
+
+            if self.ca_path:
+                context.load_verify_locations(cafile=self.ca_path)
+                context.verify_mode = ssl.CERT_REQUIRED
+            else:
+                context.verify_mode = ssl.CERT_NONE
+
+            if not self.cert_path or not self.key_path:
+                raise RuntimeError("SSL mode requires cert/key paths")
+
+            context.load_cert_chain(certfile=self.cert_path, keyfile=self.key_path)
+            self.sock = context.wrap_socket(raw_sock, server_hostname=self.host)
+        else:
+            self.sock = raw_sock
+
         self.sock.connect((self.host, self.port))
         self.sock.setblocking(True)
-        self.log.info("Connected to %s:%d", self.host, self.port)
+        mode = "SSL" if self.use_ssl else "TCP"
+        self.log.info("Connected (%s) to %s:%d", mode, self.host, self.port)
 
         # Send SA identification
         sa = self.make_sa_event()
         self.sock.sendall(sa.encode("utf-8"))
-        self.log.info("SA event sent (callsign=HB-RECORDER, uid=%s)", self.recorder_uid)
+        self.log.info(
+            "SA event sent (callsign=%s, uid=%s)", self.recorder_callsign, self.recorder_uid
+        )
 
     def record_event(self, conn, session_id, xml_str):
         """Parse a CoT event XML and insert into the database."""
@@ -174,9 +212,20 @@ class CotRecorder:
         if parsed["uid"] == self.recorder_uid:
             return False
 
-        # Skip events with no coordinates
-        if parsed["lat"] is None or parsed["lon"] is None:
+        geometry_points = parsed.get("geometry_points") or []
+        has_point = parsed["lat"] is not None and parsed["lon"] is not None
+        has_geometry = len(geometry_points) > 0
+
+        # Keep events that have either a main point or multi-point geometry.
+        if not has_point and not has_geometry:
             return False
+
+        anchor_lat = parsed["lat"]
+        anchor_lon = parsed["lon"]
+        anchor_hae = parsed["hae"]
+        if not has_point and has_geometry:
+            # Some drawing CoTs omit top-level point; use first vertex as anchor.
+            anchor_lat, anchor_lon, anchor_hae = geometry_points[0]
 
         try:
             cursor = conn.execute(
@@ -193,9 +242,9 @@ class CotRecorder:
                     parsed["start"],
                     parsed["stale"],
                     parsed["how"],
-                    parsed["lat"],
-                    parsed["lon"],
-                    parsed["hae"],
+                    anchor_lat,
+                    anchor_lon,
+                    anchor_hae,
                     parsed["ce"],
                     parsed["le"],
                     parsed["detail_xml"],
@@ -206,9 +255,9 @@ class CotRecorder:
             if cursor.rowcount > 0:
                 event_id = cursor.lastrowid
 
-                # Insert multi-point geometry if applicable
-                if is_multi_point_type(parsed["type"]) and parsed["geometry_points"]:
-                    for i, (lat, lon, hae) in enumerate(parsed["geometry_points"]):
+                # Persist any parsed geometry points, regardless of event type prefix.
+                if geometry_points:
+                    for i, (lat, lon, hae) in enumerate(geometry_points):
                         conn.execute(
                             """INSERT OR IGNORE INTO cot_geometry_points
                                (event_id, point_order, lat, lon, hae)
@@ -329,6 +378,10 @@ class CotRecorder:
 
                 self.session_id = None
 
+                # Avoid tight reconnect storms when server immediately closes.
+                if self.running:
+                    time.sleep(RECONNECT_DELAY)
+
         self.log.info("Recorder stopped")
 
     def stop(self, signum=None, frame=None):
@@ -346,11 +399,24 @@ def main():
     parser = argparse.ArgumentParser(description="Heartbeat CoT Recorder")
     parser.add_argument("--host", default="127.0.0.1", help="TAK server host")
     parser.add_argument("--port", type=int, default=8087, help="CoT TCP port")
+    parser.add_argument("--ssl", action="store_true", help="Use TLS with client certificate")
+    parser.add_argument("--cert", default="", help="Client certificate PEM path")
+    parser.add_argument("--key", default="", help="Client private key PEM path")
+    parser.add_argument("--ca", default="", help="CA certificate PEM path")
     parser.add_argument("--db", default="data/cot_records.db", help="SQLite database path")
     parser.add_argument("--log", default="data/recorder.log", help="Log file path")
     args = parser.parse_args()
 
-    recorder = CotRecorder(args.host, args.port, args.db, args.log)
+    recorder = CotRecorder(
+        args.host,
+        args.port,
+        args.db,
+        args.log,
+        use_ssl=args.ssl,
+        cert_path=args.cert or None,
+        key_path=args.key or None,
+        ca_path=args.ca or None,
+    )
 
     signal.signal(signal.SIGTERM, recorder.stop)
     signal.signal(signal.SIGINT, recorder.stop)

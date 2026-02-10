@@ -104,25 +104,51 @@ def parse_cot_event(xml_str: str) -> dict:
 
 def extract_geometry_points(detail: ET.Element) -> list:
     """
-    Extract ordered (lat, lon, hae) tuples from <link point="..."> elements.
+    Extract ordered (lat, lon, hae) tuples from geometry-bearing detail elements.
 
-    CoT encodes route waypoints and polygon vertices as <link> elements.
-    The point attribute format is "lat,lon,hae" (latitude first).
+    CoT commonly encodes route/polygon vertices as:
+    - any element with point="lat,lon[,hae]"
+    - elements with explicit lat/lon[/hae] attributes
+
+    Order is preserved as encountered in the XML document.
     """
     points = []
-    for link in detail.findall("link"):
-        point_str = link.get("point", "")
-        if not point_str:
+
+    def add_point(lat, lon, hae):
+        key = (lat, lon, hae)
+        # Keep traversal order and preserve ring-closing points (first == last).
+        # Only collapse immediate duplicates produced by noisy payloads.
+        if points and points[-1] == key:
+            return
+        points.append(key)
+
+    for elem in detail.iter():
+        point_str = elem.get("point")
+        if point_str:
+            parts = [p.strip() for p in point_str.split(",")]
+            if len(parts) >= 2:
+                try:
+                    lat = float(parts[0])
+                    lon = float(parts[1])
+                    hae = float(parts[2]) if len(parts) > 2 and parts[2] != "" else 0.0
+                    add_point(lat, lon, hae)
+                    continue
+                except (ValueError, TypeError):
+                    pass
+
+        lat_s = elem.get("lat")
+        lon_s = elem.get("lon")
+        if lat_s is None or lon_s is None:
             continue
-        parts = point_str.split(",")
-        if len(parts) >= 2:
-            try:
-                lat = float(parts[0])
-                lon = float(parts[1])
-                hae = float(parts[2]) if len(parts) > 2 else 0.0
-                points.append((lat, lon, hae))
-            except (ValueError, TypeError):
-                continue
+        try:
+            lat = float(lat_s)
+            lon = float(lon_s)
+            hae_s = elem.get("hae")
+            hae = float(hae_s) if hae_s is not None else 0.0
+            add_point(lat, lon, hae)
+        except (ValueError, TypeError):
+            continue
+
     return points
 
 
@@ -137,6 +163,10 @@ def classify_event(event_type: str) -> str:
     if event_type.startswith("u-d-r"):
         return "routes"
     if event_type.startswith("u-d-f"):
+        # Freehand/user-drawn payloads can be open paths or closed areas.
+        # Exporter resolves route vs polygon from geometry closure/hints.
+        return "routes"
+    if event_type.startswith("u-d-c"):
         return "areas"
     return "other"
 

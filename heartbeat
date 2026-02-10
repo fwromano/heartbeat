@@ -182,7 +182,7 @@ case "$cmd" in
         # Auto-export recorded data if there's a database
         if [[ -f "${DATA_DIR}/cot_records.db" ]]; then
             source "${LIB_DIR}/export.sh"
-            cmd_export -o "${DATA_DIR}/cot_export_$(date +%Y%m%d_%H%M%S).gpkg" 2>/dev/null || true
+            cmd_export 2>/dev/null || true
         fi
         source "${LIB_DIR}/server.sh"
         server_stop
