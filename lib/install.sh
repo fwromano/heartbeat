@@ -246,15 +246,6 @@ install_opentak() {
         log_info "Installing OpenTAK package from fork (${OTS_GIT_URL}${OTS_GIT_REF:+ @ ${OTS_GIT_REF}})"
     fi
     "${ots_venv}/bin/pip" install --quiet "$opentak_spec"
-    if opentak_runtime_patches_enabled; then
-        if opentak_apply_runtime_patches "${ots_venv}"; then
-            log_ok "Applied OpenTAK runtime hotfixes (OTS_RUNTIME_PATCHES=true)"
-        else
-            log_warn "Could not apply OpenTAK runtime hotfixes automatically"
-        fi
-    else
-        log_info "Skipping runtime hotfix patcher (OTS_RUNTIME_PATCHES=false)"
-    fi
     log_ok "OpenTAK package installed"
 
     # Setup re-runs should regenerate config instead of reusing stale credentials.

@@ -11,7 +11,6 @@ RECORDER_PID="${DATA_DIR}/recorder.pid"
 RECORDER_LOG="${DATA_DIR}/recorder.log"
 RECORDER_DB="${DATA_DIR}/cot_records.db"
 RECORDER_SCRIPT_TCP="${HEARTBEAT_DIR}/tools/recorder.py"
-RECORDER_SCRIPT_RMQ="${HEARTBEAT_DIR}/tools/recorder_rmq.py"
 
 # ---------------------------------------------------------------------------
 # Command dispatcher
@@ -58,106 +57,59 @@ record_start() {
     local recorder_args=()
 
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
-        # OpenTAK defaults to SSL recorder capture (deterministic mTLS path).
+        # OpenTAK recorder path is SSL-only (mTLS) to capture all routed CoT types.
         local transport="${OTS_RECORDER_TRANSPORT:-ssl}"
         transport=$(echo "$transport" | tr '[:upper:]' '[:lower:]')
+        if [[ "$transport" != "ssl" ]]; then
+            log_warn "OTS_RECORDER_TRANSPORT='${transport}' is deprecated; using ssl"
+        fi
 
-        if [[ "$transport" == "rmq" ]]; then
-            local ots_py="${DATA_DIR}/opentak/venv/bin/python3"
-            local ots_cfg="${DATA_DIR}/opentak/config.yml"
-            recorder_script="$RECORDER_SCRIPT_RMQ"
+        cot_host="127.0.0.1"
+        cot_port="${SSL_COT_PORT:-8089}"
+        target_label="${cot_host}:${cot_port}"
 
-            if [[ ! -x "$ots_py" ]]; then
-                log_error "OpenTAK Python runtime not found at ${ots_py}"
-                log_error "Run: ./setup.sh --backend opentak"
-                return 1
-            fi
-            if [[ ! -f "$ots_cfg" ]]; then
-                log_error "OpenTAK config not found: ${ots_cfg}"
-                return 1
-            fi
-
-            python_bin="$ots_py"
-
-            local rmq_host rmq_user rmq_pass rmq_port
-            if ! read -r rmq_host rmq_user rmq_pass rmq_port < <(_opentak_rabbitmq_values "$python_bin" "$ots_cfg"); then
-                log_error "Could not read OpenTAK RabbitMQ settings from ${ots_cfg}"
-                return 1
-            fi
-
-            rmq_host="${rmq_host:-127.0.0.1}"
-            rmq_user="${rmq_user:-guest}"
-            rmq_pass="${rmq_pass:-guest}"
-            rmq_port="${rmq_port:-5672}"
-
-            recorder_args+=(
-                --username "$rmq_user"
-                --password "$rmq_pass"
-                --exchange "firehose"
-            )
-            cot_host="$rmq_host"
-            cot_port="$rmq_port"
-            target_label="${rmq_host}:${rmq_port} (RabbitMQ firehose)"
-            log_info "Mode: OpenTAK RabbitMQ firehose consumer"
-        elif [[ "$transport" == "tcp" || "$transport" == "ssl" ]]; then
-            cot_host="127.0.0.1"
-            cot_port="${COT_PORT:-8088}"
-            target_label="${cot_host}:${cot_port}"
-
-            if [[ "$transport" == "ssl" ]]; then
-                local ots_dir="${DATA_DIR}/opentak"
-                local cert_user=""
-                local preferred_cert_user="${OTS_RECORDER_CERT_USER:-administrator}"
-                local fallback_cert_user="${FTS_USERNAME:-}"
-                # Favor the configured TAK username when recorder user is left on the
-                # historical "administrator" default and a user cert exists.
-                if [[ "$preferred_cert_user" == "administrator" && -n "$fallback_cert_user" ]]; then
-                    preferred_cert_user="$fallback_cert_user"
-                    fallback_cert_user="administrator"
-                fi
-                cert_user=$(_opentak_pick_recorder_cert_user "$ots_dir" "$preferred_cert_user" "$fallback_cert_user")
-                if [[ -z "$cert_user" ]]; then
-                    log_error "OpenTAK recorder cert/key not found."
-                    log_error "Expected under: ${ots_dir}/ca/certs/<user>/<user>.pem and .key/.nopass.key"
-                    log_error "Generate at least one user package/cert first, then retry."
-                    return 1
-                fi
-                if [[ "$cert_user" != "$preferred_cert_user" ]]; then
-                    log_warn "Recorder cert user '${preferred_cert_user}' not found, using '${cert_user}'"
-                    set_config "OTS_RECORDER_CERT_USER" "$cert_user"
-                fi
-                local cert_dir="${ots_dir}/ca/certs/${cert_user}"
-                local cert_file="${cert_dir}/${cert_user}.pem"
-                local key_file="${cert_dir}/${cert_user}.nopass.key"
-                local ca_file="${ots_dir}/ca/ca.pem"
-
-                cot_port="${SSL_COT_PORT:-8089}"
-                target_label="${cot_host}:${cot_port}"
-
-                if [[ ! -f "$key_file" ]]; then
-                    key_file="${cert_dir}/${cert_user}.key"
-                fi
-
-                if [[ ! -f "$cert_file" || ! -f "$key_file" ]]; then
-                    log_error "OpenTAK recorder cert/key not found for '${cert_user}'."
-                    log_error "Expected: ${cert_file} and ${key_file}"
-                    log_error "Generate a package/cert first, then retry."
-                    return 1
-                fi
-
-                recorder_args+=(--ssl --cert "$cert_file" --key "$key_file")
-                if [[ -f "$ca_file" ]]; then
-                    recorder_args+=(--ca "$ca_file")
-                fi
-                log_info "Mode: OpenTAK SSL client (${cert_user})"
-            else
-                log_info "Mode: OpenTAK local TCP client"
-            fi
-        else
-            log_error "Unknown OTS_RECORDER_TRANSPORT='${transport}'"
-            log_error "Supported values: rmq, tcp, ssl"
+        local ots_dir="${DATA_DIR}/opentak"
+        local cert_user=""
+        local preferred_cert_user="${OTS_RECORDER_CERT_USER:-administrator}"
+        local fallback_cert_user="${FTS_USERNAME:-}"
+        # Favor the configured TAK username when recorder user is left on the
+        # historical "administrator" default and a user cert exists.
+        if [[ "$preferred_cert_user" == "administrator" && -n "$fallback_cert_user" ]]; then
+            preferred_cert_user="$fallback_cert_user"
+            fallback_cert_user="administrator"
+        fi
+        cert_user=$(_opentak_pick_recorder_cert_user "$ots_dir" "$preferred_cert_user" "$fallback_cert_user")
+        if [[ -z "$cert_user" ]]; then
+            log_error "OpenTAK recorder cert/key not found."
+            log_error "Expected under: ${ots_dir}/ca/certs/<user>/<user>.pem and .key/.nopass.key"
+            log_error "Generate at least one user package/cert first, then retry."
             return 1
         fi
+        if [[ "$cert_user" != "$preferred_cert_user" ]]; then
+            log_warn "Recorder cert user '${preferred_cert_user}' not found, using '${cert_user}'"
+            set_config "OTS_RECORDER_CERT_USER" "$cert_user"
+        fi
+        local cert_dir="${ots_dir}/ca/certs/${cert_user}"
+        local cert_file="${cert_dir}/${cert_user}.pem"
+        local key_file="${cert_dir}/${cert_user}.nopass.key"
+        local ca_file="${ots_dir}/ca/ca.pem"
+
+        if [[ ! -f "$key_file" ]]; then
+            key_file="${cert_dir}/${cert_user}.key"
+        fi
+
+        if [[ ! -f "$cert_file" || ! -f "$key_file" ]]; then
+            log_error "OpenTAK recorder cert/key not found for '${cert_user}'."
+            log_error "Expected: ${cert_file} and ${key_file}"
+            log_error "Generate a package/cert first, then retry."
+            return 1
+        fi
+
+        recorder_args+=(--ssl --cert "$cert_file" --key "$key_file")
+        if [[ -f "$ca_file" ]]; then
+            recorder_args+=(--ca "$ca_file")
+        fi
+        log_info "Mode: OpenTAK SSL client (${cert_user})"
     fi
 
     if [[ "$python_bin" == "python3" ]]; then
@@ -200,25 +152,6 @@ record_start() {
         rm -f "$RECORDER_PID"
         exit 1
     fi
-}
-
-_opentak_rabbitmq_values() {
-    local python_bin="$1"
-    local config_path="$2"
-    "$python_bin" - "$config_path" <<'PY'
-import sys
-import yaml
-
-config_path = sys.argv[1]
-with open(config_path, "r", encoding="utf-8") as fh:
-    cfg = yaml.safe_load(fh) or {}
-
-host = str(cfg.get("OTS_RABBITMQ_SERVER_ADDRESS", "127.0.0.1"))
-user = str(cfg.get("OTS_RABBITMQ_USERNAME", "guest"))
-password = str(cfg.get("OTS_RABBITMQ_PASSWORD", "guest"))
-port = str(cfg.get("OTS_RABBITMQ_PORT", 5672))
-print(host, user, password, port)
-PY
 }
 
 _opentak_pick_recorder_cert_user() {

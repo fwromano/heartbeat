@@ -20,11 +20,9 @@ TAK_BACKEND="freetak"   # Options: freetak (default), opentak
 
 # OpenTAK-specific (only used when TAK_BACKEND=opentak)
 WEBTAK_PORT=8443        # WebTAK HTTPS interface
-OTS_RECORDER_TRANSPORT="ssl"      # Recorder transport: ssl (default), tcp, or rmq
-OTS_RECORDER_CERT_USER="${FTS_USERNAME}"  # Used only when OTS_RECORDER_TRANSPORT=ssl
+OTS_RECORDER_CERT_USER="${FTS_USERNAME}"  # Recorder client cert identity for OpenTAK SSL capture
 OTS_GIT_URL=""          # Optional OpenTAK fork URL (pip git install target)
 OTS_GIT_REF=""          # Optional branch/tag/commit for OTS_GIT_URL (ex: heartbeat-fixes)
-OTS_RUNTIME_PATCHES="false"  # Legacy venv patcher fallback (recommended: false when using fixed fork)
 
 # ---------------------------------------------------------------------------
 # Ports

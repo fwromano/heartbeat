@@ -121,11 +121,9 @@ main() {
     local prev_user=""
     local prev_pass=""
     local prev_backend=""
-    local prev_ots_transport=""
     local prev_ots_cert_user=""
     local prev_ots_git_url=""
     local prev_ots_git_ref=""
-    local prev_ots_runtime_patches=""
 
     # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
@@ -146,11 +144,9 @@ main() {
         prev_backend=$(awk -F'"' '/^TAK_BACKEND=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_user=$(awk -F'"' '/^FTS_USERNAME=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_pass=$(awk -F'"' '/^FTS_PASSWORD=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
-        prev_ots_transport=$(awk -F'"' '/^OTS_RECORDER_TRANSPORT=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_cert_user=$(awk -F'"' '/^OTS_RECORDER_CERT_USER=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_url=$(awk -F'"' '/^OTS_GIT_URL=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_ref=$(awk -F'"' '/^OTS_GIT_REF=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
-        prev_ots_runtime_patches=$(awk -F'"' '/^OTS_RUNTIME_PATCHES=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
             backend="$prev_backend"
         fi
@@ -374,11 +370,9 @@ main() {
         exit 1
     fi
 
-    local ots_recorder_transport="${prev_ots_transport:-ssl}"
     local ots_recorder_cert_user="${prev_ots_cert_user:-$fts_user}"
     local ots_git_url="${OTS_GIT_URL:-${prev_ots_git_url:-}}"
     local ots_git_ref="${OTS_GIT_REF:-${prev_ots_git_ref:-}}"
-    local ots_runtime_patches="${OTS_RUNTIME_PATCHES:-${prev_ots_runtime_patches:-false}}"
     if [[ -n "$ots_git_url" && -z "$ots_git_ref" ]]; then
         ots_git_ref="main"
     fi
@@ -412,11 +406,9 @@ EOF
 
     if [[ "$backend" == "opentak" ]]; then
         cat >> "$HEARTBEAT_CONF" <<EOF
-OTS_RECORDER_TRANSPORT="${ots_recorder_transport}"
 OTS_RECORDER_CERT_USER="${ots_recorder_cert_user}"
 OTS_GIT_URL="${ots_git_url}"
 OTS_GIT_REF="${ots_git_ref}"
-OTS_RUNTIME_PATCHES="${ots_runtime_patches}"
 
 EOF
     fi

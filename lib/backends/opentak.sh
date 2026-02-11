@@ -35,12 +35,6 @@ backend_start() {
         return 1
     fi
 
-    if opentak_runtime_patches_enabled; then
-        if ! opentak_apply_runtime_patches "${DATA_DIR}/opentak/venv"; then
-            log_warn "OpenTAK runtime hotfixes were not applied"
-        fi
-    fi
-
     _opentak_ensure_socketio_exchange
 
     log_step "Starting TAK server (OpenTAK)"
@@ -113,13 +107,6 @@ backend_update() {
         log_info "Update source: ${OTS_GIT_URL}${OTS_GIT_REF:+ @ ${OTS_GIT_REF}}"
     fi
     "${ots_venv}/bin/pip" install --quiet --upgrade "$opentak_spec"
-    if opentak_runtime_patches_enabled; then
-        if opentak_apply_runtime_patches "${ots_venv}"; then
-            log_ok "Re-applied OpenTAK runtime hotfixes"
-        else
-            log_warn "OpenTAK runtime hotfixes were not re-applied"
-        fi
-    fi
     log_ok "OpenTAK updated. Restart with: ./heartbeat restart"
 }
 
