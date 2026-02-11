@@ -1,6 +1,6 @@
 # Heartbeat Future Roadmap
 
-> **Updated:** 2026-02-10
+> **Updated:** 2026-02-11
 > **Context:** Phases 1-4 (headless core, backend abstraction, OpenTAK, CoT export) are complete.
 > Detailed specs for completed work are archived in `docs/archive/`.
 
@@ -23,10 +23,18 @@
 - Confirm location + annotation sharing between devices after `./heartbeat reset`
 - Both devices on unique certs, RabbitMQ channels stay clean
 
-### Dynamic package serve
-- Auto-generate next package when one is downloaded
-- Hybrid: pre-gen one, kick off background gen when it's pulled
-- Replace `python3 -m http.server` with custom handler in `tools/serve.py`
+### Recorder reliability hardening
+- Add recorder watchdog checks to `./heartbeat status` (not just PID presence)
+- Track ingest freshness (`last_event_at`, events in current session) and alert when stale
+- Decide whether restart should auto-heal recorder when ingest stalls
+
+### OpenTAK portability improvement
+- Investigate containerized Standard tier (OTS + Postgres + RabbitMQ) for faster moves/resets
+- Compare operational tradeoffs vs current native/systemd install (security, performance, maintenance)
+
+### Shell test baseline (bats-core)
+- Add minimal CI-safe tests for `resolve_cmd`, `set_config`, backend defaults, and parsing assumptions
+- Build a small fixture matrix for OpenTAK/FreeTAK config permutations
 
 ---
 
@@ -80,6 +88,18 @@ For training scenarios, inject simulated data into TAK:
 # Future command
 ./heartbeat sim connect --source udp://sim-server:5000
 ```
+
+### Dynamic Package Serve
+
+Auto-generate next package when one is downloaded, so the serve page always has a fresh unique package ready. Replace `python3 -m http.server` with custom handler in `tools/serve.py`.
+
+> **Status:** No implementation exists. Currently using basic `python3 -m http.server`.
+
+### GPKG Import Pipeline
+
+Read features from a GeoPackage file, generate CoT XML events, and inject them into a running TAK server. See `docs/planning/gpkg-import-spec.md` for the design spec.
+
+> **Status:** Designed but NOT IMPLEMENTED. Zero implementation code exists.
 
 ### External Data Inputs
 

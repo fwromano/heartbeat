@@ -2,9 +2,21 @@
 
 **Author:** Claude (spec review for Cody)
 **Date:** 2026-02-09
+**Updated:** 2026-02-10
 **Goal:** `git clone` → `./setup.sh` → `./heartbeat start` → phone connects → recorder captures → export works — on a fresh Linux box, for either backend.
 
 **Guiding principle:** _Defaults work. Everything is configurable. If something is wrong, detect it and fix it automatically._
+
+**Implementation Status:**
+| Section | Status |
+|---------|--------|
+| 1. Port Mapping Bug | IMPLEMENTED |
+| 2. Default Backend | IMPLEMENTED |
+| 3. Hardcoded Credentials | IMPLEMENTED |
+| 4. Package Generation | IMPLEMENTED |
+| 5. Health Checks | IMPLEMENTED |
+| 6. Abstraction Finish-Through | IMPLEMENTED |
+| 7. Datastore Upsert Review | Partial (retry backoff not added) |
 
 ---
 

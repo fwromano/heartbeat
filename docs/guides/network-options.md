@@ -44,8 +44,8 @@ If there is no IP path, TAK will not connect.
 - T2: Reverse tunnel to a public server (ssh tunnel, cloud relay)
 
 5) Transport
-- P1: CoT over TCP (8087)
-- P2: SSL CoT over TCP (8089)
+- P1: CoT over TCP (FreeTAK: 8087, OpenTAK: 8088)
+- P2: SSL CoT over TCP (8089, OpenTAK only)
 
 6) Enrollment / distribution
 - D1: Package served locally (`./heartbeat serve`)
@@ -86,7 +86,7 @@ B1) Cloud VM with public IP
 - Works: Yes
 - Requirements:
   - VM has public IPv4
-  - Ports open: 8087 (required), optional 8089/9000
+  - Ports open: 8087 or 8088 (CoT, required), optional 8089 (SSL) / 8443 (WebTAK) / 9000 (packages)
 - Steps:
   1) Deploy on VM, set `SERVER_IP` to public IP
   2) Phones connect over 5G using public IP
@@ -164,7 +164,7 @@ F2) Local server + satellite backhaul for command post
 
 ### Set the server address for clients
 - `SERVER_IP` must be the address phones can reach (local or public)
-- `COT_PORT` is the TCP port clients connect to (default 8087)
+- `COT_PORT` is the TCP port clients connect to (FreeTAK: 8087, OpenTAK: 8088)
 
 ### Minimal client onboarding
 - Generate a package: `./heartbeat package` (auto-names device-1, device-2, ...)
@@ -179,9 +179,9 @@ F2) Local server + satellite backhaul for command post
 - Same Wi-Fi: open `http://SERVER_IP:9000` after `./heartbeat serve`
 - Public: open `http://PUBLIC_IP:9000` from cellular
 
-2) Is TCP 8087 open?
-- Required for TAK clients
-- Firewalls often block it
+2) Is the CoT port open?
+- FreeTAK: TCP 8087; OpenTAK: TCP 8088 (or 8089 for SSL)
+- Firewalls often block these
 
 3) Is the Wi-Fi isolated?
 - Guest networks often block device-to-device traffic

@@ -2,7 +2,8 @@
 
 > **Document:** Technical Roadmap & Architecture Vision
 > **Created:** 2026-02-05
-> **Status:** Planning
+> **Updated:** 2026-02-10
+> **Status:** Phases 1-3 and 5 COMPLETE. Phase 4 (TAK Server) not started.
 
 ---
 
@@ -36,12 +37,12 @@ Transform Heartbeat from a FreeTAKServer-specific tool into a **universal TAK se
 
 **Deliverables:**
 - [x] Create headless branch
-- [x] Document cleanup spec (`docs/planning/headless-cleanup-spec.md`)
+- [x] Document cleanup spec (`docs/archive/headless-cleanup-spec.md`)
 - [x] Remove beacon component
 - [x] Remove webmap/CoTView component
 - [x] Clean configuration templates
 - [x] Update documentation
-- [ ] Test core functionality
+- [x] Test core functionality
 
 **Outcome:** A minimal, focused CLI that manages FreeTAKServer lifecycle without bundled visualization tools.
 
@@ -317,9 +318,9 @@ heartbeat
 ├── CLI Layer (backend-agnostic)
 ├── Abstraction Layer (interface.sh)
 └── Backends/
-    ├── freetak.sh   (lightweight, open source)
-    ├── opentak.sh   (built-in map, modern)
-    └── takserver.sh (full-featured, official)
+    ├── freetak.sh   (Lite — lightweight, open source)
+    ├── opentak.sh   (Standard — built-in map, SSL, systemd)
+    └── takserver.sh (Enterprise — future, tak.gov)
 ```
 
 ---
@@ -330,8 +331,8 @@ heartbeat
 |-------|----------|--------|--------|
 | 1. Headless Core | **HIGH** | Low | COMPLETE |
 | 2. Abstraction Layer | **HIGH** | Medium | COMPLETE |
-| 3. OpenTAK Backend | **HIGH** | Medium | COMPLETE (validating) |
-| 4. TAK Server Backend | **LOW** | High | Future |
+| 3. OpenTAK Backend | **HIGH** | Medium | COMPLETE |
+| 4. TAK Server Backend | **LOW** | High | Not started |
 | 5. CoT Export Engine | **HIGH** | Medium | COMPLETE |
 
 ---
@@ -339,16 +340,16 @@ heartbeat
 ## Success Metrics
 
 ### Phase 1 (Headless)
-- [ ] All tests pass without beacon/webmap
-- [ ] `./heartbeat start/stop/status` work cleanly
-- [ ] Package generation functional
-- [ ] Documentation updated
+- [x] All tests pass without beacon/webmap
+- [x] `./heartbeat start/stop/status` work cleanly
+- [x] Package generation functional
+- [x] Documentation updated
 
 ### Phase 2 (Abstraction)
-- [ ] Backend interface defined and documented
-- [ ] FreeTAK refactored to use interface
-- [ ] No FreeTAK-specific code in core CLI
-- [ ] Adding new backend requires only new backend file
+- [x] Backend interface defined and documented
+- [x] FreeTAK refactored to use interface
+- [x] No FreeTAK-specific code in core CLI
+- [x] Adding new backend requires only new backend file
 
 ### Phase 3 (OpenTAK)
 - [x] OpenTAK installs via `./setup.sh --backend opentak`
@@ -383,13 +384,13 @@ heartbeat
 
 ---
 
-## Next Steps
+## Next Steps (as of 2026-02-10)
 
-1. ~~Implement CoT Export~~ - DONE
-2. ~~Stabilize OpenTAK~~ - DONE (native systemd, SSL packages, health checks, reset)
-3. **Validate end-to-end OpenTAK multi-device** - Confirm location + annotation sharing after reset
-4. **Dynamic package serve** - Auto-generate next package on download
-5. **Define TAK Server** - Draft tak.gov backend setup flow (future)
+1. ~~Implement CoT Export~~ - COMPLETE
+2. ~~Stabilize OpenTAK~~ - COMPLETE (native systemd, SSL packages, health checks, reset)
+3. **Validate end-to-end OpenTAK multi-device** - Confirm location + annotation sharing after reset (blocked on field test)
+4. **Dynamic package serve** - Backlog (no implementation started; still using `python3 -m http.server`)
+5. **Define TAK Server** - Backlog (tak.gov backend, future phase)
 
 ---
 

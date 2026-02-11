@@ -1,14 +1,20 @@
 # Tasks
 
+> **Last updated:** 2026-02-11
+
 ## In Progress
 
-- **[med] End-to-end OpenTAK validation** -- Setup works, devices connect, certs generate. Need to confirm multi-device location + annotation sharing after `./heartbeat reset` clears stale RabbitMQ state.
-- **[med] Dynamic package serve** -- Auto-generate next package when one is downloaded, so the serve page always has a fresh unique package ready.
+- **[med] End-to-end OpenTAK validation** -- Setup works, devices connect, certs generate. Need to confirm multi-device location + annotation sharing after `./heartbeat reset` clears stale RabbitMQ state. Requires field test with 2+ physical devices.
 
 ## Backlog
 
+- **[med] Dynamic package serve** -- Auto-generate next package when one is downloaded. No implementation exists; still using `python3 -m http.server`. See `docs/planning/future.md`.
 - **[med] Rethink iTAK server QR** -- What should the iTAK "Add Server > Scan QR" code contain for TCP-only? Currently not working in iTAK.
 - **[med] DataPackage port conflicts** -- Warn + disable or remap when port is already in use
+- **[low] GPKG import pipeline** -- Inject GeoPackage features into TAK server as CoT events. Design spec at `docs/planning/gpkg-import-spec.md`, zero implementation.
+- **[high] Recorder watchdog + ingest health** -- Upgrade `./heartbeat status` from PID-only to ingest-aware health (last-event age, per-session event delta, recorder heartbeat) so silent recorder failures are surfaced during mission runtime.
+- **[med] OpenTAK portability for Standard tier** -- Evaluate containerized OpenTAK stack (OTS + Postgres + RabbitMQ) to reduce host-coupled cleanup/reinstall burden and improve migration parity with Lite tier.
+- **[med] Add shell test baseline (bats-core)** -- Add regression tests for command resolution + config mutation paths (`resolve_cmd`, `set_config`, backend selection, parser assumptions) to catch brittle shell/output changes early.
 - **[low] TAK Server backend** -- Add official TAK Server (tak.gov) support
 - **[low] Federation support** -- Connect multiple Heartbeat instances
 - **[low] Add LICENSE file** -- Document "free for humanity" philosophy

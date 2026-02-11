@@ -7,23 +7,25 @@ Heartbeat wraps [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) (L
 ## Quick Start
 
 ```bash
-# 1. Run setup (picks backend, mode, ports, credentials)
-./setup.sh
+# First time only
+./setup.sh                    # picks backend, mode, ports, credentials
 
-# 2. Start the server (recorder auto-starts)
+# Start the server (recorder auto-starts, packages auto-generate)
 ./heartbeat start
 
-# 3. Generate connection packages for devices
-./heartbeat package              # auto-names: device-1, device-2, ...
-./heartbeat package "Chief Smith" # or pick a name
+# Onboard phones (serve packages over HTTP)
+./heartbeat serve             # phones open http://SERVER_IP:9000
 
-# 4. Serve packages over HTTP so phones can download them
-./heartbeat serve
+# After the operation
+./heartbeat stop              # auto-exports recorded data to .gpkg
 ```
 
-Open the URL on your phone, download the `.zip`, and import it into iTAK/ATAK.
+That's it. Phones download the `.zip` and import it into iTAK/ATAK. After initial onboarding, your daily workflow is just `start` and `stop` — recording and export happen automatically.
 
-Credentials are generated during setup and stored in `config/heartbeat.conf`.
+For OpenTAK (multiple devices), generate additional packages as needed:
+```bash
+./heartbeat package "Squad 2"   # one unique package per device
+```
 
 ## Backends
 
@@ -131,7 +133,6 @@ To install OpenTAK from a fork/branch instead of PyPI, set:
 ```bash
 OTS_GIT_URL="https://github.com/fwromano/OpenTAKServer.git"
 OTS_GIT_REF="heartbeat-fixes"   # or main
-OTS_RUNTIME_PATCHES="false"     # recommended with fork-based source fixes
 ./setup.sh --backend opentak
 ```
 
@@ -139,17 +140,16 @@ OTS_RUNTIME_PATCHES="false"     # recommended with fork-based source fixes
 
 ## Connecting from iTAK / ATAK
 
-### Option A - Import a data package (recommended)
+### Option A - Data package (recommended)
 
-1. Generate: `./heartbeat package` (or `./heartbeat package "Your Name"`)
-2. Serve:   `./heartbeat serve`
-3. On your phone, open the URL shown in a browser
-4. Download the `.zip` file
-5. Open it with iTAK (share sheet > iTAK, or Files > open with iTAK)
+1. Run `./heartbeat serve` on the server
+2. On your phone, open `http://SERVER_IP:9000` in a browser
+3. Download the `.zip` file
+4. Open it with iTAK (share sheet > iTAK) or ATAK (import manager)
 
-**OpenTAK note:** Each device must import a different package. Do not share one package across multiple phones/tablets -- this causes identity collisions and breaks message routing.
+Packages are auto-generated when you serve. For OpenTAK, each device needs its own unique package — generate extras with `./heartbeat package "Name"`.
 
-### Option B - Manual configuration (FreeTAK only)
+### Option B - Manual connection (FreeTAK only)
 
 1. Open iTAK > Settings > Network Preferences > Servers
 2. Add server:
@@ -159,20 +159,20 @@ OTS_RUNTIME_PATCHES="false"     # recommended with fork-based source fixes
 
 ## Recording and Export
 
-Heartbeat records all CoT events (positions, markers, routes, polygons) from the TAK server into a SQLite database. Recording starts automatically with `./heartbeat start` and exports automatically on `./heartbeat stop`.
+Recording and export are fully automatic. `./heartbeat start` begins capturing all CoT events (positions, markers, routes, polygons) and `./heartbeat stop` exports them to GeoPackage.
+
+Output files land in `data/exports/` — open directly in QGIS, ArcGIS, or any spatial tool. No GDAL required.
 
 ```bash
-# Check what's been recorded
+# Check what's been recorded (during an operation)
 ./heartbeat record status
 
-# Manual export anytime
+# Manual export anytime (without stopping the server)
 ./heartbeat export -o tracks.gpkg
 
 # Export tactical geometry only (no position tracks)
 ./heartbeat export --gcm -o tactical.gpkg
 ```
-
-Output is OGC GeoPackage (.gpkg) -- opens directly in QGIS, ArcGIS, or any spatial tool. No GDAL required on the server.
 
 ## Project Structure
 
@@ -212,10 +212,11 @@ heartbeat/
 ├── docs/
 │   ├── README.md               Documentation index
 │   ├── architecture/           System topology and diagrams
-│   ├── planning/               Vision, roadmaps, specs
+│   ├── specs/                  Active implementation specs
+│   ├── planning/               Future roadmaps and design docs
 │   ├── guides/                 Field quickstart, network options
-│   ├── specs/                  Implementation specs
-│   └── notes/                  Working notes
+│   ├── notes/                  Working notes and task tracking
+│   └── archive/                Completed specs and historical docs
 ├── packages/                   Generated .zip packages (gitignored)
 └── data/                       Runtime data (gitignored)
 ```

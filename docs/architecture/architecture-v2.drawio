@@ -1,29 +1,29 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36" version="29.3.7">
-  <diagram id="architecture-v2" name="Page-1">
-    <mxGraphModel dx="1007" dy="851" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="640" pageHeight="640" background="#1A1A1A" math="0" shadow="0">
+  <diagram id="architecture-v2-current" name="Page-1">
+    <mxGraphModel dx="1007" dy="851" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="640" pageHeight="760" background="#1A1A1A" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="t1" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="HEARTBEAT v1.0" vertex="1">
+        <mxCell id="t1" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=16;fontStyle=1;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="HEARTBEAT v2.0" vertex="1">
           <mxGeometry height="20" width="200" x="220" y="28" as="geometry" />
         </mxCell>
-        <mxCell id="t2" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="TAK Server Deployment &amp;amp; Team Onboarding" vertex="1">
+        <mxCell id="t2" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Current State: FreeTAK default, OpenTAK supported, recorder/export integrated" vertex="1">
           <mxGeometry height="16" width="300" x="170" y="48" as="geometry" />
         </mxCell>
         <mxCell id="srv_box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#1e293b;fillColor=none;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="" vertex="1">
-          <mxGeometry height="360" width="220" x="50" y="100" as="geometry" />
+          <mxGeometry height="430" width="220" x="50" y="100" as="geometry" />
         </mxCell>
         <mxCell id="srv_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="SERVER (ANY LINUX LAPTOP)" vertex="1">
           <mxGeometry height="12" width="200" x="60" y="106" as="geometry" />
         </mxCell>
-        <mxCell id="fts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="FreeTAKServer&lt;br&gt;&lt;span style=&quot;font-size: 9px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;CoT routing - user mgmt - :8087 :8089&lt;/font&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="60" width="200" x="60" y="124" as="geometry" />
+        <mxCell id="fts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="TAK Backend Layer&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;FreeTAK default: :8087 TCP&lt;br&gt;OpenTAK supported: :8088 TCP / :8089 SSL / :8443 Web+API&lt;/font&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="74" width="200" x="60" y="124" as="geometry" />
         </mxCell>
-        <mxCell id="cfg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Config + Data&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;heartbeat.conf - certs - logs&lt;/font&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="60" width="200" x="60" y="292" as="geometry" />
+        <mxCell id="cfg" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Fork + Source Patches&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;fwromano/OpenTAKServer@heartbeat-fixes&lt;br&gt;declares flask-socketio exchange&lt;br&gt;channel-close recovery ordering fixes&lt;br&gt;map_state returns EUD last_point&lt;/font&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="74" width="200" x="60" y="292" as="geometry" />
         </mxCell>
-        <mxCell id="dl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Download Page&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;URL QR + iTAK QR + .zip packages&lt;/font&gt;&lt;/span&gt;" vertex="1">
-          <mxGeometry height="60" width="200" x="60" y="376" as="geometry" />
+        <mxCell id="dl" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Recorder + Export Pipeline&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;SSL recorder client -&gt; cot_records.db (sessions)&lt;br&gt;exporter -&gt; GeoPackage (.gpkg)&lt;/font&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="74" width="200" x="60" y="376" as="geometry" />
         </mxCell>
         <mxCell id="srv_pkgs" edge="1" parent="1" style="endArrow=block;strokeColor=#22c55e;strokeWidth=1;dashed=1;dashPattern=4 3;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
           <mxGeometry relative="1" as="geometry">
@@ -32,7 +32,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="net" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1e293b;strokeColor=#334155;opacity=40;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="" vertex="1">
-          <mxGeometry height="360" width="40" x="300" y="100" as="geometry" />
+          <mxGeometry height="430" width="40" x="300" y="100" as="geometry" />
         </mxCell>
         <mxCell id="net_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="NETWORK" vertex="1">
           <mxGeometry height="16" width="80" x="280" y="276" as="geometry" />
@@ -41,21 +41,21 @@
           <mxGeometry height="14" width="80" x="280" y="292" as="geometry" />
         </mxCell>
         <mxCell id="dev_box" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=#1e293b;fillColor=none;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="" vertex="1">
-          <mxGeometry height="264" width="220" x="370" y="100" as="geometry" />
+          <mxGeometry height="430" width="220" x="370" y="100" as="geometry" />
         </mxCell>
         <mxCell id="dev_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=9;fontStyle=1;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="FIELD DEVICES" vertex="1">
           <mxGeometry height="12" width="180" x="390" y="106" as="geometry" />
         </mxCell>
-        <mxCell id="d1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="iPhone - iTAK" vertex="1">
+        <mxCell id="d1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="iPhone - iTAK&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;unique SSL cert package&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="380" y="124" as="geometry" />
         </mxCell>
-        <mxCell id="d2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="iPad - iTAK" vertex="1">
+        <mxCell id="d2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="iPad - iTAK&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;unique SSL cert package&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="380" y="208" as="geometry" />
         </mxCell>
-        <mxCell id="d3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Android - ATAK" vertex="1">
+        <mxCell id="d3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Android ATAK / WinTAK&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;TCP/SSL client endpoints&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="380" y="292" as="geometry" />
         </mxCell>
-        <mxCell id="d4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#333333;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="Onboarding&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;Scan QR - download .zip - import&lt;/font&gt;&lt;/span&gt;" vertex="1">
+        <mxCell id="d4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#333333;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="WebTAK Browser (:8443)&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;/api/map_state + live socket updates&lt;/font&gt;&lt;/span&gt;" vertex="1">
           <mxGeometry height="60" width="200" x="380" y="376" as="geometry" />
         </mxCell>
         <mxCell id="cot1" edge="1" parent="1" style="endArrow=block;strokeColor=#3b82f6;strokeWidth=1.5;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
@@ -82,7 +82,7 @@
             <mxPoint x="260" y="164" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="cot_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="CoT / SA&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;all positions, GPS&lt;/font&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="cot_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="D4 CoT Stream&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;positions + markers + lines/polygons/circles&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="26" width="68" x="286" y="146" as="geometry" />
         </mxCell>
         <mxCell id="dp1" edge="1" parent="1" style="endArrow=block;strokeColor=#22c55e;strokeWidth=1;dashed=1;dashPattern=4 3;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;">
@@ -97,11 +97,409 @@
             <mxPoint x="370" y="406" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="dp_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="DATA PKGS&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;certs + config .zip&lt;/font&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="dp_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="D2 Package + Access&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;serve .zip (:9000) + web map (:8443)&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="22" width="68" x="286" y="396" as="geometry" />
         </mxCell>
-        <mxCell id="footer" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;Network: WiFi / LAN / Tailscale VPN - no cloud required - ports bound to local interface only&lt;/font&gt;" vertex="1">
-          <mxGeometry height="16" width="500" x="70" y="483" as="geometry" />
+        <mxCell id="footer" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=9;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;No venv monkey-patching; source-level OTS fixes installed from fork and tracked by OTS_GIT_URL/OTS_GIT_REF&lt;/font&gt;" vertex="1">
+          <mxGeometry height="18" width="500" x="70" y="548" as="geometry" />
+        </mxCell>
+        <mxCell id="ots_stack" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#1a1e27;strokeColor=#1e293b;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;" value="OpenTAK Service Stack&lt;br&gt;&lt;span style=&quot;font-size: 8px;&quot;&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;opentakserver + eud_handler + cot_parser&lt;br&gt;postgres + rabbitmq + nginx&lt;/font&gt;&lt;/span&gt;" vertex="1">
+          <mxGeometry height="74" width="200" x="60" y="208" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="D1 Control Plane&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;setup/start/stop/reset/update&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="24" width="68" x="286" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="rec_label" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#14161a;strokeColor=none;fontSize=7;fontColor=light-dark(#FFFFFF,#2F3842);fontStyle=1;fontFamily=Courier New;" value="D6/D7 Recorder&lt;div&gt;&lt;font style=&quot;color: rgb(179, 179, 179);&quot;&gt;SSL tap -&gt; SQLite sessions&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="24" width="68" x="286" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="legend_v2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#14161a;strokeColor=#1e293b;fontSize=8;fontColor=light-dark(#FFFFFF,#2F3842);fontFamily=Courier New;spacing=6;" value="&lt;b&gt;FSA (Operational States)&lt;/b&gt;&lt;br&gt;S0 Unconfigured -&gt; S1 Configured -&gt; S2 Installed -&gt; S3 Starting -&gt; S4 Running Healthy / S5 Running Degraded -&gt; S6 Stopping -&gt; S7 Stopped, S8 Error&lt;br&gt;&lt;b&gt;Data-Flow Labels&lt;/b&gt;&lt;br&gt;D1 Control, D2 Package onboarding, D3 mTLS auth/identity, D4 CoT routing, D5 Web map state, D6 Recorder ingest, D7 SQLite persistence, D8 GPKG export, D9 GIS/ALIAS downstream" vertex="1">
+          <mxGeometry height="92" width="520" x="70" y="574" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="ontology-v2" name="Ontology-v2">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1700" background="#0b1220" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="t0" parent="1" vertex="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=22;fontStyle=1;fontColor=#e2e8f0;fontFamily=JetBrains Mono;" value="Heartbeat Ontology v2 (Current State)">
+          <mxGeometry x="30" y="18" width="820" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" parent="1" vertex="1" style="text;html=1;align=left;verticalAlign=middle;fontSize=11;fontColor=#93c5fd;fontFamily=JetBrains Mono;" value="Each node is one concept. Edges are typed relations.">
+          <mxGeometry x="30" y="46" width="1120" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_ctrl" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#334155;fillColor=#0f172a;fontColor=#e2e8f0;fontStyle=1;fontSize=12;align=left;verticalAlign=top;spacingTop=8;spacingLeft=10;" value="Control Components">
+          <mxGeometry x="30" y="80" width="460" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_iface" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#334155;fillColor=#0f172a;fontColor=#e2e8f0;fontStyle=1;fontSize=12;align=left;verticalAlign=top;spacingTop=8;spacingLeft=10;" value="Abstractions &amp; Backends">
+          <mxGeometry x="510" y="80" width="390" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_run" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#334155;fillColor=#0f172a;fontColor=#e2e8f0;fontStyle=1;fontSize=12;align=left;verticalAlign=top;spacingTop=8;spacingLeft=10;" value="OpenTAK Runtime + Source Patch Model">
+          <mxGeometry x="920" y="80" width="700" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_data" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#334155;fillColor=#0f172a;fontColor=#e2e8f0;fontStyle=1;fontSize=12;align=left;verticalAlign=top;spacingTop=8;spacingLeft=10;" value="Data/Artifact/Access Graph">
+          <mxGeometry x="1640" y="80" width="730" height="860" as="geometry" />
+        </mxCell>
+        <mxCell id="c_setup" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="setup.sh">
+          <mxGeometry x="50" y="130" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_cli" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="heartbeat (CLI)">
+          <mxGeometry x="270" y="130" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_common" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/common.sh">
+          <mxGeometry x="50" y="210" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_install" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/install.sh">
+          <mxGeometry x="50" y="290" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_server" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/server.sh">
+          <mxGeometry x="270" y="290" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_record" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/record.sh">
+          <mxGeometry x="50" y="370" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_export" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/export.sh">
+          <mxGeometry x="270" y="370" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_package" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="lib/package.sh">
+          <mxGeometry x="50" y="450" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_conf" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f59e0b;fillColor=#78350f;fontColor=#fffbeb;fontSize=11;" value="config/heartbeat.conf">
+          <mxGeometry x="270" y="210" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="c_help" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#475569;fillColor=#111827;fontColor=#cbd5e1;fontSize=10;align=left;verticalAlign=top;spacing=6;" value="&lt;b&gt;FSA binding&lt;/b&gt;&lt;br&gt;S0 Unconfigured -&gt; S1 Configured -&gt; S2 Installed -&gt; S3 Starting -&gt; S4 Running Healthy / S5 Degraded -&gt; S6 Stopping -&gt; S7 Stopped, S8 Error&lt;br&gt;&lt;br&gt;&lt;b&gt;This lane drives state transitions.&lt;/b&gt;">
+          <mxGeometry x="50" y="760" width="420" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="i_contract" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#a78bfa;fillColor=#4c1d95;fontColor=#f5f3ff;fontSize=11;" value="lib/backends/interface.sh&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#ddd6fe;&quot;&gt;backend_start/stop/reset/status/logs/update/health&lt;/font&gt;">
+          <mxGeometry x="530" y="130" width="350" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="i_loader" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#a78bfa;fillColor=#4c1d95;fontColor=#f5f3ff;fontSize=11;" value="_load_backend() resolver">
+          <mxGeometry x="530" y="220" width="350" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="i_opentak" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#a78bfa;fillColor=#4c1d95;fontColor=#f5f3ff;fontSize=11;" value="lib/backends/opentak.sh">
+          <mxGeometry x="530" y="300" width="350" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="i_freetak" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#a78bfa;fillColor=#4c1d95;fontColor=#f5f3ff;fontSize=11;" value="lib/backends/freetak.sh">
+          <mxGeometry x="530" y="380" width="350" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="i_caps" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#a78bfa;fillColor=#4c1d95;fontColor=#f5f3ff;fontSize=11;" value="Capability ontology&lt;br&gt;&lt;font style=&quot;font-size:10px;color:#ddd6fe;&quot;&gt;ssl, users, webmap, federation&lt;/font&gt;">
+          <mxGeometry x="530" y="460" width="350" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="r_fork" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="fwromano/OpenTAKServer@heartbeat-fixes">
+          <mxGeometry x="940" y="130" width="320" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r_patch" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="&lt;b&gt;Patched feature set&lt;/b&gt;&lt;br&gt;- flask-socketio exchange declared&lt;br&gt;- channel close/recovery ordering fixed&lt;br&gt;- map_state includes EUD last_point&lt;br&gt;- identity handling hardened">
+          <mxGeometry x="1280" y="130" width="320" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="r_ots" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#34d399;fillColor=#064e3b;fontColor=#ecfdf5;fontSize=11;" value="opentakserver.service">
+          <mxGeometry x="940" y="320" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_eud" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#34d399;fillColor=#064e3b;fontColor=#ecfdf5;fontSize=11;" value="eud_handler(.ssl)">
+          <mxGeometry x="1170" y="320" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_cotp" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#34d399;fillColor=#064e3b;fontColor=#ecfdf5;fontSize=11;" value="cot_parser.service">
+          <mxGeometry x="1400" y="320" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_pg" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f59e0b;fillColor=#78350f;fontColor=#fffbeb;fontSize=11;" value="PostgreSQL">
+          <mxGeometry x="940" y="400" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_rmq" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f59e0b;fillColor=#78350f;fontColor=#fffbeb;fontSize=11;" value="RabbitMQ">
+          <mxGeometry x="1170" y="400" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_nginx" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f59e0b;fillColor=#78350f;fontColor=#fffbeb;fontSize=11;" value="nginx / WebTAK static">
+          <mxGeometry x="1400" y="400" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_api" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#34d399;fillColor=#064e3b;fontColor=#ecfdf5;fontSize=11;" value="OTS API /api/*">
+          <mxGeometry x="940" y="480" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="r_sock" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#34d399;fillColor=#064e3b;fontColor=#ecfdf5;fontSize=11;" value="socket exchange">
+          <mxGeometry x="1170" y="480" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_recpy" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="tools/recorder.py">
+          <mxGeometry x="1660" y="130" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_parse" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="tools/cot_parser.py">
+          <mxGeometry x="1900" y="130" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_db" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f59e0b;fillColor=#78350f;fontColor=#fffbeb;fontSize=11;" value="data/cot_records.db">
+          <mxGeometry x="2140" y="130" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_exportpy" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="tools/exporter.py">
+          <mxGeometry x="1660" y="220" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_gpkg" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="tools/gpkg_writer.py">
+          <mxGeometry x="1900" y="220" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_exports" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f472b6;fillColor=#831843;fontColor=#fdf2f8;fontSize=11;" value="data/exports/*.gpkg">
+          <mxGeometry x="2140" y="220" width="210" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_pkgzip" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#f472b6;fillColor=#831843;fontColor=#fdf2f8;fontSize=11;" value="packages/*.zip">
+          <mxGeometry x="1660" y="320" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_serve" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#60a5fa;fillColor=#1e3a8a;fontColor=#eff6ff;fontSize=11;" value="heartbeat serve :9000">
+          <mxGeometry x="1900" y="320" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="d_clients" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="iTAK / ATAK / WinTAK clients">
+          <mxGeometry x="2140" y="320" width="210" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d_webtak" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="WebTAK browser (:8443)">
+          <mxGeometry x="1660" y="420" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d_net" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="Tailscale / LAN mesh">
+          <mxGeometry x="1900" y="420" width="450" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d_alias" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#94a3b8;fillColor=#1f2937;fontColor=#f8fafc;fontSize=11;" value="QGIS / ArcGIS / ALIAS downstream">
+          <mxGeometry x="1660" y="520" width="690" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#475569;fillColor=#111827;fontColor=#cbd5e1;fontSize=10;align=left;verticalAlign=top;spacing=6;" value="&lt;b&gt;Edge ontology&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#dbeafe&quot;&gt;blue:&lt;/font&gt; control/delegation&lt;br&gt;&lt;font color=&quot;#ede9fe&quot;&gt;violet:&lt;/font&gt; interface/implementation&lt;br&gt;&lt;font color=&quot;#d1fae5&quot;&gt;green:&lt;/font&gt; runtime/service/dependency&lt;br&gt;&lt;font color=&quot;#fce7f3&quot;&gt;pink:&lt;/font&gt; data/artifact flow&lt;br&gt;&lt;br&gt;&lt;b&gt;Data-flow labels&lt;/b&gt;: D1 control, D2 packages, D3 identity/auth, D4 CoT routing, D5 Web map, D6 ingest, D7 persistence, D8 export, D9 analytics">
+          <mxGeometry x="1660" y="760" width="690" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="ec1" parent="1" edge="1" source="c_setup" target="c_install" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="delegates-to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec2" parent="1" edge="1" source="c_setup" target="c_conf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="writes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec3" parent="1" edge="1" source="c_cli" target="c_server" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="delegates-to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec4" parent="1" edge="1" source="c_cli" target="c_record" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="delegates-to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec5" parent="1" edge="1" source="c_cli" target="c_export" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="delegates-to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec6" parent="1" edge="1" source="c_cli" target="c_package" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="delegates-to">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec7" parent="1" edge="1" source="c_common" target="c_conf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="reads">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec8" parent="1" edge="1" source="c_server" target="i_loader" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="calls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec9" parent="1" edge="1" source="c_install" target="r_fork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#93c5fd;fontColor=#dbeafe;fontSize=10;" value="installs-from">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei1" parent="1" edge="1" source="i_loader" target="i_contract" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="constrained-by">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei2" parent="1" edge="1" source="i_loader" target="i_opentak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="selects">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei3" parent="1" edge="1" source="i_loader" target="i_freetak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="selects">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei4" parent="1" edge="1" source="i_opentak" target="i_contract" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="implements">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei5" parent="1" edge="1" source="i_freetak" target="i_contract" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="implements">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei6" parent="1" edge="1" source="i_opentak" target="i_caps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="declares capabilities">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ei7" parent="1" edge="1" source="i_freetak" target="i_caps" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#c4b5fd;fontColor=#ede9fe;fontSize=10;" value="declares capabilities">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er1" parent="1" edge="1" source="r_fork" target="r_patch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="contains fixes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er2" parent="1" edge="1" source="r_patch" target="r_eud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="modifies behavior">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er3" parent="1" edge="1" source="r_patch" target="r_api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="modifies behavior">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er4" parent="1" edge="1" source="i_opentak" target="r_ots" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="controls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er5" parent="1" edge="1" source="i_opentak" target="r_eud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="controls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er6" parent="1" edge="1" source="i_opentak" target="r_cotp" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="controls">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er7" parent="1" edge="1" source="r_ots" target="r_pg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er8" parent="1" edge="1" source="r_eud" target="r_rmq" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="routes-through">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er9" parent="1" edge="1" source="r_nginx" target="d_webtak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="serves">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er10" parent="1" edge="1" source="r_api" target="d_webtak" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="feeds D5 map_state">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="er11" parent="1" edge="1" source="r_eud" target="r_sock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6ee7b7;fontColor=#d1fae5;fontSize=10;" value="publishes/consumes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed1" parent="1" edge="1" source="c_record" target="d_recpy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="launches D6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed2" parent="1" edge="1" source="d_recpy" target="d_parse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="parses-with">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed3" parent="1" edge="1" source="d_recpy" target="d_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="writes D7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed4" parent="1" edge="1" source="c_export" target="d_exportpy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="launches D8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed5" parent="1" edge="1" source="d_exportpy" target="d_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="reads">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed6" parent="1" edge="1" source="d_exportpy" target="d_gpkg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed7" parent="1" edge="1" source="d_gpkg" target="d_exports" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="writes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed8" parent="1" edge="1" source="d_exports" target="d_alias" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="feeds D9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed9" parent="1" edge="1" source="c_package" target="d_pkgzip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="generates D2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed10" parent="1" edge="1" source="d_serve" target="d_pkgzip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="serves">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed11" parent="1" edge="1" source="d_clients" target="d_pkgzip" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="imports">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed12" parent="1" edge="1" source="d_clients" target="r_eud" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="authenticates/sends D3+D4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed13" parent="1" edge="1" source="d_clients" target="d_net" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="connects-over">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed14" parent="1" edge="1" source="d_webtak" target="d_net" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="connects-over">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed15" parent="1" edge="1" source="d_serve" target="d_clients" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="distributes packages">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed16" parent="1" edge="1" source="d_parse" target="d_db" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#f9a8d4;fontColor=#fce7f3;fontSize=10;" value="normalizes event schema">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_cli_start" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#7dd3fc;fillColor=#0f172a;fontColor=#e0f2fe;fontSize=10;" value="start">
+          <mxGeometry x="270" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_cli_stop" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#7dd3fc;fillColor=#0f172a;fontColor=#e0f2fe;fontSize=10;" value="stop">
+          <mxGeometry x="332" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_cli_reset" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#7dd3fc;fillColor=#0f172a;fontColor=#e0f2fe;fontSize=10;" value="reset">
+          <mxGeometry x="394" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="se_cli_start" parent="1" edge="1" source="c_cli" target="sb_cli_start" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_cli_stop" parent="1" edge="1" source="c_cli" target="sb_cli_stop" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_cli_reset" parent="1" edge="1" source="c_cli" target="sb_cli_reset" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_iface_lifecycle" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#c4b5fd;fillColor=#1e1b4b;fontColor=#ede9fe;fontSize=10;" value="lifecycle">
+          <mxGeometry x="530" y="206" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_iface_pkg" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#c4b5fd;fillColor=#1e1b4b;fontColor=#ede9fe;fontSize=10;" value="package">
+          <mxGeometry x="594" y="206" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_iface_health" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#c4b5fd;fillColor=#1e1b4b;fontColor=#ede9fe;fontSize=10;" value="health">
+          <mxGeometry x="658" y="206" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="se_iface_lifecycle" parent="1" edge="1" source="i_contract" target="sb_iface_lifecycle" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_iface_pkg" parent="1" edge="1" source="i_contract" target="sb_iface_pkg" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_iface_health" parent="1" edge="1" source="i_contract" target="sb_iface_health" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_eud_ssl" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#86efac;fillColor=#052e16;fontColor=#ecfdf5;fontSize=10;" value="SSL">
+          <mxGeometry x="1170" y="386" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_eud_tcp" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#86efac;fillColor=#052e16;fontColor=#ecfdf5;fontSize=10;" value="TCP">
+          <mxGeometry x="1234" y="386" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="se_eud_ssl" parent="1" edge="1" source="r_eud" target="sb_eud_ssl" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_eud_tcp" parent="1" edge="1" source="r_eud" target="sb_eud_tcp" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_patch_exchange" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#86efac;fillColor=#052e16;fontColor=#ecfdf5;fontSize=10;" value="exchange">
+          <mxGeometry x="1280" y="300" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_patch_recovery" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#86efac;fillColor=#052e16;fontColor=#ecfdf5;fontSize=10;" value="recovery">
+          <mxGeometry x="1344" y="300" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_patch_map" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#86efac;fillColor=#052e16;fontColor=#ecfdf5;fontSize=10;" value="map_state">
+          <mxGeometry x="1408" y="300" width="56" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="se_patch_exchange" parent="1" edge="1" source="r_patch" target="sb_patch_exchange" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_patch_recovery" parent="1" edge="1" source="r_patch" target="sb_patch_recovery" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_patch_map" parent="1" edge="1" source="r_patch" target="sb_patch_map" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_db_sessions" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="sessions">
+          <mxGeometry x="2140" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_db_events" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="events">
+          <mxGeometry x="2202" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_db_geom" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="geometry">
+          <mxGeometry x="2264" y="198" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="se_db_sessions" parent="1" edge="1" source="d_db" target="sb_db_sessions" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_db_events" parent="1" edge="1" source="d_db" target="sb_db_events" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_db_geom" parent="1" edge="1" source="d_db" target="sb_db_geom" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_client_itak" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="iTAK">
+          <mxGeometry x="2140" y="398" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_client_atak" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="ATAK">
+          <mxGeometry x="2202" y="398" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_client_wintak" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="WinTAK">
+          <mxGeometry x="2264" y="398" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="se_client_itak" parent="1" edge="1" source="d_clients" target="sb_client_itak" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_client_atak" parent="1" edge="1" source="d_clients" target="sb_client_atak" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_client_wintak" parent="1" edge="1" source="d_clients" target="sb_client_wintak" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_export_raw" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="raw">
+          <mxGeometry x="2140" y="286" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="sb_export_gcm" parent="1" vertex="1" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;strokeColor=#f9a8d4;fillColor=#500724;fontColor=#fdf2f8;fontSize=10;" value="gcm">
+          <mxGeometry x="2202" y="286" width="54" height="54" as="geometry" />
+        </mxCell>
+        <mxCell id="se_export_raw" parent="1" edge="1" source="d_exports" target="sb_export_raw" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="se_export_gcm" parent="1" edge="1" source="d_exports" target="sb_export_gcm" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=oval;endFill=1;strokeColor=#94a3b8;fontColor=#cbd5e1;fontSize=9;dashed=1;" value="has-part">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="txt_pack_v2" parent="1" vertex="1" style="rounded=1;whiteSpace=wrap;html=1;strokeColor=#64748b;fillColor=#020617;fontColor=#e2e8f0;fontSize=10;align=left;verticalAlign=top;spacing=6;fontFamily=JetBrains Mono;" value="&lt;b&gt;Canonical Text Pack (v2 Current)&lt;/b&gt;&lt;br&gt;&lt;b&gt;First Principles:&lt;/b&gt; Control plane (CLI/setup), Data plane (CoT routing), Identity plane (per-device cert CN), Observability plane (recorder+SQLite+export), Access plane (WebTAK + package server).&lt;br&gt;&lt;b&gt;Backend Policy:&lt;/b&gt; FreeTAK is default backend (setup.sh); OpenTAK supported through backend abstraction.&lt;br&gt;&lt;b&gt;Ports:&lt;/b&gt; OpenTAK CoT TCP :8088, OpenTAK CoT SSL :8089, OpenTAK Web/API :8443, package server :9000, FreeTAK CoT TCP :8087.&lt;br&gt;&lt;b&gt;Runtime Components:&lt;/b&gt; opentakserver, eud_handler, cot_parser, postgres, rabbitmq, nginx.&lt;br&gt;&lt;b&gt;Source-of-Truth Patch Model:&lt;/b&gt; install OpenTAK from fwromano/OpenTAKServer@heartbeat-fixes (source-level fixes). No runtime venv monkey-patching in Heartbeat.&lt;br&gt;&lt;b&gt;Patched Features Reflected:&lt;/b&gt; flask-socketio exchange declaration, channel close/recovery ordering hardening, map_state includes EUD last_point, identity handling hardening.&lt;br&gt;&lt;b&gt;Recorder Contract:&lt;/b&gt; OpenTAK recorder path is SSL client to 127.0.0.1:8089 using real cert/key; writes cot_records.db sessions/events; captures positions + markers + lines/polygons/circles.&lt;br&gt;&lt;b&gt;Export Contract:&lt;/b&gt; exporter.py -&gt; gpkg_writer.py -&gt; data/exports/*.gpkg, modes: raw + gcm.&lt;br&gt;&lt;b&gt;Package Contract:&lt;/b&gt; one generated package per physical device identity (no shared cert package).&lt;br&gt;&lt;b&gt;FSA:&lt;/b&gt; S0 Unconfigured -&gt; S1 Configured -&gt; S2 Installed -&gt; S3 Starting -&gt; S4 Running Healthy / S5 Running Degraded -&gt; S6 Stopping -&gt; S7 Stopped; S8 Error + recovery via restart/reset.&lt;br&gt;&lt;b&gt;Data Labels:&lt;/b&gt; D1 Control, D2 Package onboarding, D3 mTLS identity/auth, D4 CoT routing, D5 Web map state, D6 Recorder ingest, D7 SQLite persistence, D8 GPKG export, D9 GIS/ALIAS downstream.&lt;br&gt;&lt;b&gt;Network:&lt;/b&gt; Tailscale/LAN mesh is the transport domain for devices + WebTAK reachability.&lt;br&gt;&lt;b&gt;Ops Commands:&lt;/b&gt; setup, start, stop, restart/reset, status, package, serve, record status, export, update.">
+          <mxGeometry x="30" y="1260" width="2340" height="260" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

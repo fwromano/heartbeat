@@ -3,8 +3,13 @@
 > **Document:** Strategic Vision & Platform Architecture
 > **Project:** ALIAS / Heartbeat
 > **Created:** 2026-02-05
-> **Status:** Vision Draft
+> **Updated:** 2026-02-10
+> **Status:** Vision — Pillars 1 (Tiered TAK) and 3 (Data Export) IMPLEMENTED. Pillar 2 (Federation) is FUTURE.
 > **Target Demo:** March 25-26, 2026 (ready by ~March 11)
+>
+> **Implementation Note:** This document is a strategic vision, not a specification.
+> Commands and features marked below as examples may not yet exist in the codebase.
+> See `docs/architecture/topology.md` for the current-state reference.
 
 **Priority:** Real-world firefighter deployment is FIRST CLASS. Simulation/training supports this but is secondary.
 
@@ -105,13 +110,13 @@ Different missions need different capabilities. Heartbeat provides a unified int
 
 **User Experience:**
 ```bash
-# Choose your tier at setup
-./setup.sh --tier lite        # FreeTAKServer
-./setup.sh --tier standard    # OpenTAK (recommended)
-./setup.sh --tier enterprise  # TAK Server from tak.gov
+# Actual CLI uses --backend flag (not --tier):
+./setup.sh                     # FreeTAK (Lite, default)
+./setup.sh --backend opentak   # OpenTAK (Standard)
+# ./setup.sh --backend takserver  # TAK Server (Enterprise, future)
 ```
 
-**See:** `docs/roadmap-tak-abstraction.md` for implementation details
+**See:** `docs/archive/roadmap-tak-abstraction.md` for implementation details
 
 ---
 
@@ -180,6 +185,8 @@ Connect multiple Heartbeat instances to share situational awareness across:
 ```
 
 #### Federation Commands
+
+> **NOT YET IMPLEMENTED.** The commands below are aspirational designs. No `federation` command exists in the current CLI.
 
 ```bash
 # List federation status
@@ -293,6 +300,10 @@ CREATE TABLE areas (
 ```
 
 #### Export Commands
+
+> **PARTIALLY IMPLEMENTED.** Basic export works (`./heartbeat export -o file.gpkg` and `--gcm` mode).
+> Time range filters (`--from`/`--to`), layer filters (`--layers`), callsign filters, `--live` mode,
+> and format conversion (`--format geojson/shapefile`) are NOT yet implemented.
 
 ```bash
 # Export all data from the last 24 hours
@@ -447,10 +458,10 @@ pip install \
 | **1** | Headless Core | Remove beacon/webmap, clean foundation | COMPLETE |
 | **2** | Backend Abstraction | Interface definition, FreeTAK refactor | COMPLETE |
 | **3** | OpenTAK Backend | Standard tier with built-in WebTAK | COMPLETE |
-| **4** | Export Engine | GeoPackage export for all backends | COMPLETE |
-| **5** | Federation (Basic) | Peer-to-peer connection, manual config | Future |
-| **6** | TAK Server Backend | Enterprise tier, tak.gov integration | Future |
-| **7** | Federation (Advanced) | Hub-spoke, filtering, mesh support | Future |
+| **4** | Export Engine | GeoPackage export (raw + GCM modes) | COMPLETE |
+| **5** | Federation (Basic) | Peer-to-peer connection, manual config | Not started |
+| **6** | TAK Server Backend | Enterprise tier, tak.gov integration | Not started |
+| **7** | Federation (Advanced) | Hub-spoke, filtering, mesh support | Not started |
 
 ---
 
@@ -463,38 +474,39 @@ pip install \
 **Export:** Post-incident GPKG for training review
 
 ```bash
-./setup.sh --tier lite
+./setup.sh                # FreeTAK (Lite) is the default
 ./heartbeat start
 # ... incident response ...
-./heartbeat export --output incident-2026-02-05.gpkg
+./heartbeat export -o incident-2026-02-05.gpkg
 ```
 
 ### Scenario 2: County Emergency Management
 
 **Tier:** Standard (OpenTAK)
-**Federation:** Hub-spoke to State EOC
+**Federation:** Hub-spoke to State EOC (future)
 **Export:** Shift reports, mutual aid coordination
 
 ```bash
-./setup.sh --tier standard
-./heartbeat federation add --name "State EOC" --host eoc.state.gov
+./setup.sh --backend opentak
 ./heartbeat start
 # ... operations ...
-./heartbeat export --from "today 06:00" --output day-shift.gpkg
+./heartbeat export -o day-shift.gpkg
+# Federation commands not yet implemented — see Pillar 2 above
 ```
 
-### Scenario 3: Multi-Agency Task Force
+### Scenario 3: Multi-Agency Task Force (Future)
+
+> **NOT YET IMPLEMENTED.** Enterprise tier and federation are future phases.
 
 **Tier:** Enterprise (TAK Server)
 **Federation:** Mesh between 5 agencies
 **Export:** Continuous archive, compliance records
 
 ```bash
-./setup.sh --tier enterprise
-./heartbeat federation add --name "Agency A" --host ...
-./heartbeat federation add --name "Agency B" --host ...
-# ... configure mesh ...
-./heartbeat export --live --output operation-archive.gpkg
+# Future:
+# ./setup.sh --backend takserver
+# ./heartbeat federation add --name "Agency A" --host ...
+# ./heartbeat export --live --output operation-archive.gpkg
 ```
 
 ---
@@ -559,9 +571,9 @@ Why GPKG over other formats:
 
 | Document | Purpose |
 |----------|---------|
-| `docs/headless-cleanup-spec.md` | Phase 1 implementation details |
-| `docs/roadmap-tak-abstraction.md` | Phase 2-4 backend architecture |
-| `docs/vision-heartbeat-platform.md` | This document (strategic vision) |
+| `docs/archive/headless-cleanup-spec.md` | Phase 1 implementation details |
+| `docs/archive/roadmap-tak-abstraction.md` | Phase 2-4 backend architecture |
+| `docs/archive/vision-heartbeat-platform.md` | This document (strategic vision) |
 
 ---
 
@@ -728,12 +740,12 @@ Heartbeat runs wherever you need it:
 
 ```bash
 # Local
-./setup.sh --tier standard
+./setup.sh --backend opentak
 
 # Cloud (same commands, just on a VM)
 ssh user@cloud-vm
 git clone ... && cd heartbeat
-./setup.sh --tier standard
+./setup.sh --backend opentak
 ```
 
 ### Connectivity Considerations

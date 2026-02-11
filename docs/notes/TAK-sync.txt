@@ -1,3 +1,9 @@
+Raw requirements notes from planning session (2026-02-05). Not a specification.
+Items below are prioritized candidates for post-demo phases.
+See docs/planning/future.md for the current roadmap.
+
+================================================================================
+
 nfs training scenarios
 translating sim to real gps location tak
 tak matrix integration ???
@@ -24,7 +30,7 @@ INTERPRETATION (Claude, 2026-02-05)
 - "tak matrix integration" = Matrix is the simulation system
 - "gps spoof/simulation node" = translate sim positions to TAK client locations
 - "translating sim to real gps location tak" = same concept
-- See docs/planning/vision-heartbeat-platform.md for GPS spoofing approaches
+- See docs/archive/vision-heartbeat-platform.md for GPS spoofing approaches
 
 ## Connectivity Considerations
 - "5g elevation vs helicopter" = 5G coverage has altitude ceiling (~300-500m AGL)

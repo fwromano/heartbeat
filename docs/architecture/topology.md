@@ -21,11 +21,11 @@ How Heartbeat ties together the field deployment stack — TAK servers, phones, 
          ▼                         ▼                         ▼
   ┌──────────────┐    ┌────────────────────┐    ┌────────────────────┐
   │  TAK Server  │    │   CoT Recorder     │    │  Package Server    │
-  │              │    │   (TCP client)     │    │  (HTTP :9000)      │
+  │              │    │   (SSL or TCP)     │    │  (HTTP :9000)      │
   │  FreeTAK     │    │                    │    │                    │
-  │    or        │◄───┤  Listens to all    │    │  Serves .zip       │
-  │  OpenTAK     │    │  CoT traffic       │    │  connection pkgs   │
-  │              │    │                    │    │  to phones         │
+  │    or        │◄───┤  FTS: TCP :8087    │    │  Serves .zip       │
+  │  OpenTAK     │    │  OTS: SSL :8089    │    │  connection pkgs   │
+  │              │    │  (mTLS w/ certs)   │    │  to phones         │
   │  :8087 TCP   │    └────────┬───────────┘    └─────────┬──────────┘
   │  :8089 SSL   │             │                          │
   │  :8443 Web   │             ▼                          │
@@ -73,7 +73,7 @@ How Heartbeat ties together the field deployment stack — TAK servers, phones, 
 | **TAK Server** | FTS or OTS | Backend abstraction — same CLI, different engine underneath |
 | **Phones** | ATAK/iTAK | Connection packages (.zip) served over HTTP, phones import and connect |
 | **WebTAK** | Browser map | OpenTAK only — nginx serves UI on :8443 with live CoT overlay |
-| **Recording** | CoT capture | Passive TCP client that sees everything every phone sends |
+| **Recording** | CoT capture | FreeTAK: TCP client on :8087. OpenTAK: SSL mTLS client on 127.0.0.1:8089 (with cert/key for full annotation ingest) |
 | **GIS Export** | GeoPackage | Standard OGC format — opens in QGIS, ArcGIS, or any spatial tool |
 | **ALIAS** | Downstream | GPKG feeds into the broader DARPA autonomous firefighting pipeline |
 
@@ -134,33 +134,61 @@ How the Heartbeat codebase is wired together.
 ```
 heartbeat (CLI entry point)
   │
-  ├─ start ──► server.sh ──► _load_backend()
-  │                │              ├── freetak.sh ──► Docker / venv
-  │                │              └── opentak.sh ──► systemd services
-  │                │         backend_health_check()
-  │                └──► record.sh ──► recorder.py (daemon)
+  │  Server lifecycle
+  │  ──────────────────────────────────────────────
+  ├─ start ────► server.sh ──► _load_backend()
+  │                  │              ├── freetak.sh ──► Docker / venv
+  │                  │              └── opentak.sh ──► systemd services
+  │                  │         backend_health_check()
+  │                  └──► record.sh ──► recorder.py (auto-start daemon)
   │
-  ├─ stop ───► record.sh ──► kill recorder
-  │            export.sh ──► exporter.py ──► gpkg_writer.py ──► .gpkg
-  │            server.sh ──► backend_stop()
+  ├─ stop ─────► record.sh ──► kill recorder
+  │              export.sh ──► auto-export → .gpkg (if DB exists)
+  │              server.sh ──► backend_stop()
   │
-  ├─ reset ─► record.sh ──► kill recorder
-  │           server.sh ──► backend_reset() (restart deps + server)
-  │           record.sh ──► recorder.py (restart)
+  ├─ restart ──► record.sh ──► kill recorder
+  │              server.sh ──► server_restart() or server_reset()
+  │              record.sh ──► recorder.py (restart)
+  │              (OpenTAK uses reset to clear stale broker channels)
   │
-  ├─ record ─► record.sh ──► recorder.py
-  │                              │
-  │                              ├─ cot_parser.py (XML framing)
-  │                              └─ SQLite DB (cot_records.db)
+  ├─ reset ────► record.sh ──► kill recorder
+  │              server.sh ──► backend_reset() (restart deps + server)
+  │              record.sh ──► recorder.py (restart)
   │
-  ├─ export ─► export.sh ──► exporter.py
-  │                              ├─ raw mode: 4 layers (positions/markers/routes/areas)
-  │                              └─ gcm mode: gcm_mapper.py + gcm-mapping.yml
-  │                                    └─► gpkg_writer.py ──► .gpkg
+  ├─ status ───► server.sh ──► backend_status() + port checks
+  │              record.sh ──► recorder status + event count
   │
-  ├─ package ► package.sh ──► generate .zip (certs or TCP template)
-  ├─ serve ──► package.sh ──► python http.server on :9000
-  ├─ qr ─────► qr.sh ──────► qrencode (terminal + PNG)
+  ├─ listen ───► server.sh ──► server_listen() (live CoT log stream)
+  ├─ logs ─────► server.sh ──► backend_logs() (-f to follow)
+  │
+  │  Team / onboarding
+  │  ──────────────────────────────────────────────
+  ├─ qr ───────► qr.sh ──────► qrencode (terminal + PNG)
+  ├─ tailscale ► common.sh ──► detect_tailscale_ip() → set SERVER_IP
+  ├─ package ──► package.sh ──► generate .zip (certs or TCP template)
+  ├─ packages ─► package.sh ──► list_packages()
+  ├─ serve ────► package.sh ──► python http.server on :9000
+  │
+  │  Recording & export
+  │  ──────────────────────────────────────────────
+  ├─ record ───► record.sh ──► recorder.py
+  │                                │
+  │                                ├─ cot_parser.py (XML framing)
+  │                                └─ SQLite DB (cot_records.db)
+  │
+  ├─ export ───► export.sh ──► exporter.py
+  │                                ├─ raw mode: 4 layers (positions/markers/routes/areas)
+  │                                └─ gcm mode: gcm_mapper.py + gcm-mapping.yml
+  │                                      └─► gpkg_writer.py ──► .gpkg
+  │
+  │  System administration
+  │  ──────────────────────────────────────────────
+  ├─ info ─────► cmd_info() ──► display connection details
+  ├─ update ───► server.sh ──► backend_update()
+  ├─ systemd ──► install.sh ─► install_systemd_service()
+  ├─ clean ────► remove packages, logs, PIDs, certs, Docker volumes
+  ├─ uninstall ► server.sh ──► backend_uninstall()
+  ├─ help ─────► show_help()
   │
   └─ setup.sh (one-time install)
        ├─ detect IP / Tailscale
@@ -180,9 +208,11 @@ heartbeat (CLI entry point)
 ### Recording
 
 ```
-TAK Server (:8087 TCP)
+TAK Server
        │
-       │  raw CoT XML stream (no framing delimiter)
+       │  FreeTAK: TCP :8087 (raw CoT XML, no framing delimiter)
+       │  OpenTAK: SSL :8089 via 127.0.0.1 (mTLS with cert/key from ca/certs/<user>/)
+       │           SSL mode required for full annotation ingest (routes, polygons, markers)
        ▼
 recorder.py (tools/recorder.py)
        │
@@ -299,9 +329,22 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
   │  RabbitMQ queue   │
   └──────────────────┘
 
-  All services managed via systemd:
-    sudo systemctl start opentakserver  (pulls in all 4 services)
-    sudo systemctl stop opentakserver
+  Systemd service management:
+
+    OTS application services (managed as a unit):
+      sudo systemctl start opentakserver   ← starts all 4 OTS services
+      sudo systemctl stop opentakserver    ← stops all 4 OTS services
+      Services: opentakserver, cot_parser, eud_handler, eud_handler_ssl
+
+    System infrastructure (independent, managed separately):
+      sudo systemctl restart rabbitmq-server
+      sudo systemctl restart postgresql
+      sudo systemctl restart nginx
+
+    Note: `./heartbeat reset` restarts infrastructure services first,
+    then brings OTS services back up. `./heartbeat start` only starts
+    the 4 OTS services — it assumes postgres/rabbitmq/nginx are already
+    running (started at boot or by setup.sh).
 
   All data contained under:
     data/opentak/
@@ -350,32 +393,61 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
   ├─ backend_start()                   ├─ record_stop()
   │    TAK server comes up             │    SIGTERM → recorder daemon
   │                                    │
-  ├─ backend_health_check()            ├─ cmd_export()
-  │    verify services + ports         │    auto-export → data/cot_export_*.gpkg
-  │                                    │
-  └─ record_start()                    └─ backend_stop()
-       recorder.py spawned as daemon        TAK server goes down
-       connects to CoT port
+  ├─ backend_health_check()            ├─ cmd_export()  (auto)
+  │    verify services + ports         │    export → data/exports/*.gpkg
+  │                                    │    (only if cot_records.db exists)
+  └─ record_start()                    │
+       recorder.py spawned as daemon   └─ backend_stop()
+       FTS: connects TCP :8087              TAK server goes down
+       OTS: connects SSL :8089 (mTLS)
        begins recording
 
-./heartbeat reset
-  │
-  ├─ record_stop()
-  │    SIGTERM → recorder daemon
-  │
-  ├─ backend_reset()
-  │    OpenTAK: stop all → restart rabbitmq/postgres/nginx → start all
-  │    FreeTAK: stop → sleep → start
-  │
-  ├─ backend_health_check()
-  │
+./heartbeat restart                  ./heartbeat reset
+  │                                    │
+  ├─ record_stop()                     ├─ record_stop()
+  │    SIGTERM → recorder daemon       │    SIGTERM → recorder daemon
+  │                                    │
+  ├─ if OpenTAK:                       ├─ backend_reset()
+  │    server_reset()                  │    OpenTAK: stop all →
+  │    (same as reset — clears         │      restart rabbitmq/postgres/nginx →
+  │     stale broker channels)         │      start all
+  │  else:                             │    FreeTAK: stop → sleep → start
+  │    server_restart()                │
+  │    (stop → sleep 2s → start)       ├─ backend_health_check()
+  │                                    │
+  ├─ backend_health_check()            └─ record_start()
+  │                                         recorder restarts
   └─ record_start()
        recorder restarts
 ```
 
 ---
 
-## 8. File Structure
+## 8. v2 Diagram Legend
+
+`architecture-v2.drawio` uses explicit state/data labels so implementation and operations map to the same model:
+
+- `S0..S8` (FSA states): `Unconfigured -> Configured -> Installed -> Starting -> Running (healthy/degraded) -> Stopping -> Stopped`, with `Error` as failure sink/recovery target.
+- `D1` Control: `setup/start/stop/reset/update` through Heartbeat CLI + backend adapter.
+- `D2` Package onboarding: `./heartbeat package` + `./heartbeat serve` to deliver per-device zip.
+- `D3` Identity/auth: OpenTAK SSL/mTLS cert/user identity.
+- `D4` CoT routing: positions + markers + lines/polygons/circles between clients.
+- `D5` Web map: `/api/map_state` + socket updates to WebTAK.
+- `D6` Recorder ingest: SSL recorder client subscribed to OpenTAK stream.
+- `D7` Persistence: SQLite session/event storage in `data/cot_records.db`.
+- `D8` Export: `exporter.py` writes GeoPackage outputs.
+- `D9` Downstream analytics: QGIS/ArcGIS/ALIAS consume `.gpkg`.
+
+OpenTAK patch visibility in v2 diagram is source-level (fork install), not runtime monkey-patching:
+- `fwromano/OpenTAKServer@heartbeat-fixes`
+- exchange declaration + channel-recovery ordering fixes
+- map-state `last_point` payload fix for WebTAK marker placement
+
+`architecture-v2.drawio` now has two pages:
+- `Page-1` (`architecture-v2-current`): deployment/runtime architecture
+- `Ontology-v2` (`ontology-v2`): clean ontology map (classed lanes + typed edge vocabulary)
+
+## 9. File Structure
 
 ```
 heartbeat/
@@ -397,7 +469,7 @@ heartbeat/
 │       ├── freetak.sh     FreeTAK implementation (Docker or venv)
 │       └── opentak.sh     OpenTAK implementation (native systemd)
 ├── tools/
-│   ├── recorder.py        CoT TCP client daemon
+│   ├── recorder.py        CoT client daemon (TCP or SSL mTLS)
 │   ├── cot_parser.py      CoT XML stream parser
 │   ├── exporter.py        SQLite → GeoPackage converter
 │   ├── gpkg_writer.py     OGC GeoPackage writer (no GDAL)
@@ -411,19 +483,22 @@ heartbeat/
 │   ├── cot_records.db     Recorded CoT events
 │   ├── recorder.pid       Recorder daemon PID
 │   ├── recorder.log       Recorder daemon log
-│   ├── cot_export_*.gpkg  Auto-exported GeoPackages
+│   ├── exports/           Auto-exported GeoPackages (.gpkg)
 │   └── opentak/           Contained OTS install (venv, config, certs)
 ├── packages/              Generated connection packages (.zip)
 └── docs/
     ├── architecture/      Diagrams (this file, drawio files)
-    ├── planning/          Specs and roadmaps
-    ├── guides/            User-facing docs
-    └── notes/             Working notes
+    ├── specs/             Active specifications
+    ├── planning/          Future roadmaps and design docs
+    ├── guides/            User-facing field deployment docs
+    ├── notes/             Working notes and task tracking
+    └── archive/           Completed specs and historical documents
 ```
 
 ---
 
 ## Related Diagrams
 
-- [Backend Abstraction (v3)](architecture-v3-abstraction.drawio.png) — drawio diagram of the abstraction layer
-- [Architecture v2](architecture-v2.drawio.svg) — earlier architecture before backend abstraction
+- [Architecture v2 (current)](architecture-v2.drawio) — current draw.io source (FreeTAK default, OpenTAK supported + recorder/export flow)
+- [Backend Abstraction (v1.5)](architecture-v1.5-abstraction.drawio.png) — abstraction layer snapshot
+- [Architecture v1 (legacy)](architecture-v1.drawio.svg) — earlier architecture before abstraction

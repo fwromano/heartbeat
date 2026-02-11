@@ -3,7 +3,7 @@
 > **Branch:** `headless`
 > **Purpose:** Remove beacon and webmap components to create a minimal, headless TAK server deployment
 > **Created:** 2026-02-05
-> **Status:** COMPLETE
+> **Status:** COMPLETE — All items implemented and verified 2026-02-10
 
 ---
 
@@ -243,9 +243,9 @@ Review and remove any beacon/webmap initialization logic, including:
 
 ### Phase 3: Update Documentation
 - [x] Edit `README.md` - remove beacon/webmap feature descriptions
-- [x] Review `docs/field-quickstart.md` for beacon/webmap references (clean)
-- [x] Review `docs/network-options.md` for beacon/webmap references (clean)
-- [x] Review `docs/tasks.md` for outdated task references
+- [x] Review `docs/guides/field-quickstart.md` for beacon/webmap references (clean)
+- [x] Review `docs/guides/network-options.md` for beacon/webmap references (clean)
+- [x] Review `docs/notes/tasks.md` for outdated task references
 
 ### Phase 4: Testing
 - [x] Verify `./heartbeat start` works without errors

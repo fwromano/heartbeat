@@ -13,48 +13,44 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 
 > **Start with Lite** if you just need location sharing. Move to Standard when you need annotations, routes, or a browser map.
 
-## 1) Start the server
+## 1) Setup and start
 ```bash
 ./setup.sh           # first time only (or ./setup.sh --backend opentak)
-./heartbeat start
+./heartbeat start    # server + recorder auto-start, package auto-generated
 ```
 
-Setup auto-detects Docker, picks free ports, generates credentials. Recording starts automatically.
-
-## 2) Get the server address
+## 2) Onboard phones
 ```bash
-./heartbeat info
-```
-Use the **Server IP** shown.
-
-## 3) Distribute connection packages
-
-```bash
-# Generate packages (one per device for OpenTAK)
-./heartbeat package              # auto-names: device-1, device-2, ...
-./heartbeat package "Chief"      # or pick a name
-
-# Serve over HTTP
-./heartbeat serve
+./heartbeat serve    # packages auto-generate if none exist
 ```
 
 Phones open: `http://SERVER_IP:9000` -- download zip -- import into iTAK/ATAK.
 
+For OpenTAK with multiple devices, generate additional packages:
+```bash
+./heartbeat package "Squad 2"    # one unique package per device
+```
+
 **OpenTAK important:** Each device must import a *different* package. Sharing one package across phones causes identity collisions and breaks message routing.
 
-**FreeTAK alternative (manual):**
-- Server: `SERVER_IP`
-- Port: `8087`
+**FreeTAK alternative (manual connection):**
+- Server: `SERVER_IP` (shown by `./heartbeat info`)
+- Port: `8087` (FreeTAK) or `8088` (OpenTAK TCP) or `8089` (OpenTAK SSL)
 - Protocol: TCP
 
-## 4) Confirm it's working
+**OpenTAK WebTAK (browser access):**
+- Open `https://SERVER_IP:8443/` in any browser
+- Accept the self-signed certificate warning
+- Log in with the credentials shown during setup
+
+## 3) Confirm it's working
 ```bash
 ./heartbeat status    # check ports and health
 ./heartbeat listen    # live event monitor
 ```
 You should see connections and data events.
 
-## 5) After the operation
+## 4) After the operation
 ```bash
 ./heartbeat stop      # auto-exports recorded data to .gpkg
 ```
@@ -79,5 +75,5 @@ The exported GeoPackage opens in QGIS, ArcGIS, or any GIS tool.
 ## Tailscale VPN
 ```bash
 ./heartbeat tailscale    # auto-sets SERVER_IP to Tailscale address
-./heartbeat package      # regenerate packages with new IP
 ```
+After changing the IP, regenerate packages with `./heartbeat serve` (auto-generates) or `./heartbeat package "Name"`.
