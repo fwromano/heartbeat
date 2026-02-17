@@ -428,6 +428,7 @@ _ensure_nginx_stream_include() {
 
 setup_opentak_nginx() {
     local ots_dir="$1"
+    local ots_ca="${ots_dir}/ca/ca.pem"
     local ots_cert="${ots_dir}/ca/certs/opentakserver/opentakserver.pem"
     local ots_key="${ots_dir}/ca/certs/opentakserver/opentakserver.nopass.key"
 
@@ -486,6 +487,9 @@ server {
     ssl_certificate_key ${ots_key};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
+    ssl_client_certificate ${ots_ca};
+    ssl_verify_client optional;
+    ssl_verify_depth 3;
 
     location / {
         try_files \$uri \$uri/ /index.html;
@@ -504,6 +508,8 @@ server {
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Ssl-Cert \$ssl_client_escaped_cert;
     }
 
     location /SocketIO/ {
