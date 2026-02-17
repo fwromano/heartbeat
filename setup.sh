@@ -124,6 +124,10 @@ main() {
     local prev_ots_cert_user=""
     local prev_ots_git_url=""
     local prev_ots_git_ref=""
+    local prev_fire_enabled=""
+    local prev_fire_interval=""
+    local prev_fire_bbox=""
+    local prev_fire_range_km=""
 
     # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
@@ -147,6 +151,10 @@ main() {
         prev_ots_cert_user=$(awk -F'"' '/^OTS_RECORDER_CERT_USER=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_url=$(awk -F'"' '/^OTS_GIT_URL=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_ref=$(awk -F'"' '/^OTS_GIT_REF=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_enabled=$(awk -F'"' '/^FIRE_FEED_ENABLED=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_interval=$(awk -F'[=" ]+' '/^FIRE_FEED_INTERVAL=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_bbox=$(awk -F'"' '/^FIRE_FEED_BBOX=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_range_km=$(awk -F'[=" ]+' '/^FIRE_FEED_RANGE_KM=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
             backend="$prev_backend"
         fi
@@ -373,6 +381,10 @@ main() {
     local ots_recorder_cert_user="${prev_ots_cert_user:-$fts_user}"
     local ots_git_url="${OTS_GIT_URL:-${prev_ots_git_url:-}}"
     local ots_git_ref="${OTS_GIT_REF:-${prev_ots_git_ref:-}}"
+    local fire_feed_enabled="${prev_fire_enabled:-true}"
+    local fire_feed_interval="${prev_fire_interval:-900}"
+    local fire_feed_bbox="${prev_fire_bbox:-}"
+    local fire_feed_range_km="${prev_fire_range_km:-100}"
     if [[ -n "$ots_git_url" && -z "$ots_git_ref" ]]; then
         ots_git_ref="main"
     fi
@@ -402,6 +414,11 @@ WEBTAK_PORT=${webtak_port}
 
 FTS_USERNAME="${fts_user}"
 FTS_PASSWORD="${fts_pass}"
+
+FIRE_FEED_ENABLED="${fire_feed_enabled}"
+FIRE_FEED_INTERVAL=${fire_feed_interval}
+FIRE_FEED_BBOX="${fire_feed_bbox}"
+FIRE_FEED_RANGE_KM=${fire_feed_range_km}
 EOF
 
     if [[ "$backend" == "opentak" ]]; then

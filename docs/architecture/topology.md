@@ -1,7 +1,7 @@
 # Heartbeat Architecture & Topology
 
 > **Document:** System Architecture Reference
-> **Updated:** 2026-02-10
+> **Updated:** 2026-02-17
 > **Status:** Current (master branch)
 
 ---
@@ -74,6 +74,7 @@ How Heartbeat ties together the field deployment stack — TAK servers, phones, 
 | **Phones** | ATAK/iTAK | Connection packages (.zip) served over HTTP, phones import and connect |
 | **WebTAK** | Browser map | OpenTAK only — nginx serves UI on :8443 with live CoT overlay |
 | **Recording** | CoT capture | FreeTAK: TCP client on :8087. OpenTAK: SSL mTLS client on 127.0.0.1:8089 (with cert/key for full annotation ingest) |
+| **External Feed** | Wildfire incidents | `fire_feed.py` polls ArcGIS incidents and injects CoT points (`a-h-G`) into TAK |
 | **GIS Export** | GeoPackage | Standard OGC format — opens in QGIS, ArcGIS, or any spatial tool |
 | **ALIAS** | Downstream | GPKG feeds into the broader DARPA autonomous firefighting pipeline |
 
@@ -84,6 +85,8 @@ Firefighter moves       TAK server          Heartbeat           QGIS / ALIAS
 with phone in pocket ─► broadcasts to  ──► records all    ──► spatial analysis
                         all devices        CoT events         after-action review
                                                               autonomous planning
+
+ArcGIS wildfire feed ──► fire_feed.py ──► injects incidents ─► visible in ATAK/iTAK/WebTAK
 ```
 
 ---
@@ -140,23 +143,30 @@ heartbeat (CLI entry point)
   │                  │              ├── freetak.sh ──► Docker / venv
   │                  │              └── opentak.sh ──► systemd services
   │                  │         backend_health_check()
-  │                  └──► record.sh ──► recorder.py (auto-start daemon)
+  │                  ├──► record.sh ──► recorder.py (auto-start daemon)
+  │                  └──► fire.sh ────► fire_feed.py (auto-start if enabled)
   │
   ├─ stop ─────► record.sh ──► kill recorder
+  │              fire.sh ────► kill fire feed
   │              export.sh ──► auto-export → .gpkg (if DB exists)
   │              server.sh ──► backend_stop()
   │
   ├─ restart ──► record.sh ──► kill recorder
+  │              fire.sh ────► kill fire feed
   │              server.sh ──► server_restart() or server_reset()
   │              record.sh ──► recorder.py (restart)
+  │              fire.sh ────► fire_feed.py (restart if enabled)
   │              (OpenTAK uses reset to clear stale broker channels)
   │
   ├─ reset ────► record.sh ──► kill recorder
+  │              fire.sh ────► kill fire feed
   │              server.sh ──► backend_reset() (restart deps + server)
   │              record.sh ──► recorder.py (restart)
+  │              fire.sh ────► fire_feed.py (restart if enabled)
   │
   ├─ status ───► server.sh ──► backend_status() + port checks
   │              record.sh ──► recorder status + event count
+  │              fire.sh ────► fire feed status
   │
   ├─ listen ───► server.sh ──► server_listen() (live CoT log stream)
   ├─ logs ─────► server.sh ──► backend_logs() (-f to follow)
@@ -173,8 +183,15 @@ heartbeat (CLI entry point)
   │  ──────────────────────────────────────────────
   ├─ record ───► record.sh ──► recorder.py
   │                                │
+  │                                ├─ tak_client.py (shared socket + SA keepalive)
+  │                                │
   │                                ├─ cot_parser.py (XML framing)
   │                                └─ SQLite DB (cot_records.db)
+  │
+  ├─ fire ─────► fire.sh ─────► fire_feed.py
+  │                                │
+  │                                ├─ ArcGIS REST poll (USA_Wildfires_v1)
+  │                                └─ tak_client.py ──► TAK CoT inject
   │
   ├─ export ───► export.sh ──► exporter.py
   │                                ├─ raw mode: 4 layers (positions/markers/routes/areas)

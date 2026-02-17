@@ -13,7 +13,11 @@
 #   restart              Restart the TAK server
 #   reset                Full reset (backend + dependencies)
 #   status               Show server status
+#   listen               Live monitor (connections/events)
 #   logs [-f]            View server logs (-f to follow)
+#   record               Manage CoT recorder daemon
+#   fire                 Manage wildfire feed daemon
+#   export               Export recorded CoT to GeoPackage
 #   package [name]       Generate a connection package (auto-names if omitted)
 #   packages             List all generated packages
 #   serve [port]         Serve packages over HTTP for phone download
@@ -51,9 +55,11 @@ show_help() {
     echo "  packages             List all generated packages"
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
     echo ""
-    echo -e "${BOLD}Recording & Export:${NC}"
+    echo -e "${BOLD}Recording, Feeds & Export:${NC}"
     echo "  record status        Check recorder status and event count"
     echo "  record start|stop    Manually control recorder (auto-starts with server)"
+    echo "  fire status          Check fire feed status"
+    echo "  fire start|stop      Manually control fire feed (auto-starts if enabled)"
     echo "  export [-o file]     Export recorded events to GeoPackage (.gpkg)"
     echo "  export --gcm [-o f]  Export GCM (tactical geometry) only"
     echo ""
@@ -119,13 +125,13 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart reset status listen logs qr tailscale package packages serve clean info update systemd uninstall record export help)
+COMMANDS=(start stop restart reset status listen logs qr tailscale package packages serve clean info update systemd uninstall record fire export help)
 
 resolve_cmd() {
     local input="$1"
     # Exact match first (including aliases)
     case "$input" in
-        start|stop|restart|reset|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|help)
+        start|stop|restart|reset|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|fire|export|help)
             echo "$input"; return ;;
         log) echo "logs"; return ;;
         pkg) echo "package"; return ;;
@@ -174,11 +180,16 @@ case "$cmd" in
         # Auto-start recorder so CoT events are always captured
         source "${LIB_DIR}/record.sh"
         record_start
+        # Auto-start fire feed if enabled
+        source "${LIB_DIR}/fire.sh"
+        fire_start
         ;;
     stop)
-        # Stop recorder and auto-export before shutting down server
+        # Stop recorder/fire feed and auto-export before shutting down server
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/fire.sh"
+        fire_stop 2>/dev/null || true
         # Auto-export recorded data if there's a database
         if [[ -f "${DATA_DIR}/cot_records.db" ]]; then
             source "${LIB_DIR}/export.sh"
@@ -190,6 +201,8 @@ case "$cmd" in
     restart)
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/fire.sh"
+        fire_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         load_config
         if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
@@ -200,20 +213,28 @@ case "$cmd" in
         fi
         source "${LIB_DIR}/record.sh"
         record_start
+        source "${LIB_DIR}/fire.sh"
+        fire_start
         ;;
     reset)
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/fire.sh"
+        fire_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         server_reset
         source "${LIB_DIR}/record.sh"
         record_start
+        source "${LIB_DIR}/fire.sh"
+        fire_start
         ;;
     status)
         source "${LIB_DIR}/server.sh"
         server_status
         source "${LIB_DIR}/record.sh"
         record_status
+        source "${LIB_DIR}/fire.sh"
+        fire_status
         ;;
     listen)
         source "${LIB_DIR}/server.sh"
@@ -299,6 +320,10 @@ case "$cmd" in
     record)
         source "${LIB_DIR}/record.sh"
         cmd_record "$@"
+        ;;
+    fire)
+        source "${LIB_DIR}/fire.sh"
+        cmd_fire "$@"
         ;;
     export)
         source "${LIB_DIR}/export.sh"

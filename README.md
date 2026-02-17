@@ -10,7 +10,7 @@ Heartbeat wraps [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) (L
 # First time only
 ./setup.sh                    # picks backend, mode, ports, credentials
 
-# Start the server (recorder auto-starts, packages auto-generate)
+# Start the server (recorder auto-starts, fire feed auto-starts if enabled)
 ./heartbeat start
 
 # Onboard phones (serve packages over HTTP)
@@ -80,9 +80,11 @@ Team:
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
 
-Recording & Export:
+Recording, Feeds & Export:
   record status        Check recorder status and event count
   record start|stop    Manually control recorder (auto-starts with server)
+  fire status          Check fire feed status
+  fire start|stop      Manually control fire feed (auto-starts if enabled)
   export [-o file]     Export recorded events to GeoPackage (.gpkg)
   export --gcm [-o f]  Export GCM (tactical geometry) only
 
@@ -159,7 +161,7 @@ Packages are auto-generated when you serve. For OpenTAK, each device needs its o
 
 ## Recording and Export
 
-Recording and export are fully automatic. `./heartbeat start` begins capturing all CoT events (positions, markers, routes, polygons) and `./heartbeat stop` exports them to GeoPackage.
+Recording and export are fully automatic. `./heartbeat start` begins capturing all CoT events (positions, markers, routes, polygons) and `./heartbeat stop` exports them to GeoPackage. If enabled, fire incident feed polling also starts automatically.
 
 Output files land in `data/exports/` — open directly in QGIS, ArcGIS, or any spatial tool. No GDAL required.
 
@@ -184,6 +186,7 @@ heartbeat/
 │   ├── common.sh               Shared utilities, config, logging
 │   ├── server.sh               Server lifecycle (delegates to backends)
 │   ├── record.sh               Recorder daemon management
+│   ├── fire.sh                 Fire incident feed daemon management
 │   ├── export.sh               GeoPackage export wrapper
 │   ├── package.sh              Connection package generation + HTTP serving
 │   ├── install.sh              System deps + backend-specific installers
@@ -194,6 +197,8 @@ heartbeat/
 │       └── opentak.sh          OpenTAK implementation (native systemd)
 ├── tools/
 │   ├── recorder.py             CoT TCP client daemon
+│   ├── tak_client.py           Shared TAK TCP/SSL client
+│   ├── fire_feed.py            ArcGIS wildfire feed -> CoT injector
 │   ├── cot_parser.py           CoT XML stream parser
 │   ├── exporter.py             SQLite -> GeoPackage converter
 │   ├── gpkg_writer.py          OGC GeoPackage writer (no GDAL)

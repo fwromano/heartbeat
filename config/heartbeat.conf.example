@@ -41,6 +41,14 @@ FTS_USERNAME="admin"     # Default TAK/WebTAK username (set during setup)
 FTS_PASSWORD=""          # Generated during setup — do not commit
 
 # ---------------------------------------------------------------------------
+# Fire feed
+# ---------------------------------------------------------------------------
+FIRE_FEED_ENABLED="true"   # Auto-start wildfire feed on ./heartbeat start
+FIRE_FEED_INTERVAL=900     # Poll interval in seconds (default: 15 min)
+FIRE_FEED_BBOX=""          # Optional bbox: "lon_min,lat_min,lon_max,lat_max"
+FIRE_FEED_RANGE_KM=100     # Reserved for future auto-bbox mode
+
+# ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)
 # ---------------------------------------------------------------------------
 FTS_DATA_DIR=""          # Set during setup

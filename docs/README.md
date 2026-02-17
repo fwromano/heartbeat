@@ -27,6 +27,19 @@ User-facing documentation.
 
 ---
 
+## Command Surface
+
+Current operational command groups in `./heartbeat`.
+
+| Group | Commands |
+|-------|----------|
+| Server | `start`, `stop`, `restart`, `reset`, `status`, `listen`, `logs` |
+| Team | `qr`, `tailscale`, `package`, `packages`, `serve` |
+| Recording/Feeds/Export | `record`, `fire`, `export` |
+| System | `info`, `update`, `systemd`, `uninstall`, `clean`, `help` |
+
+---
+
 ## Specs
 
 Implementation specifications (handed to developers).
