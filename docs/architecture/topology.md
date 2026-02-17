@@ -74,7 +74,7 @@ How Heartbeat ties together the field deployment stack — TAK servers, phones, 
 | **Phones** | ATAK/iTAK | Connection packages (.zip) served over HTTP, phones import and connect |
 | **WebTAK** | Browser map | OpenTAK only — nginx serves UI on :8443 with live CoT overlay |
 | **Recording** | CoT capture | FreeTAK: TCP client on :8087. OpenTAK: SSL mTLS client on 127.0.0.1:8089 (with cert/key for full annotation ingest) |
-| **External Feed** | Wildfire incidents | `fire_feed.py` polls ArcGIS incidents and injects CoT points (`a-h-G`) into TAK; bbox can auto-follow team centroid on OpenTAK |
+| **External Feed** | Wildfire incidents/perimeters | `fire_feed.py` polls ArcGIS incidents (`a-h-G`) and optional perimeters (`u-d-f`); bbox can auto-follow team centroid on OpenTAK |
 | **GIS Export** | GeoPackage | Standard OGC format — opens in QGIS, ArcGIS, or any spatial tool |
 | **ALIAS** | Downstream | GPKG feeds into the broader DARPA autonomous firefighting pipeline |
 
@@ -86,7 +86,7 @@ with phone in pocket ─► broadcasts to  ──► records all    ──► sp
                         all devices        CoT events         after-action review
                                                               autonomous planning
 
-ArcGIS wildfire feed ──► fire_feed.py ──► injects incidents ─► visible in ATAK/iTAK/WebTAK
+ArcGIS wildfire feed ──► fire_feed.py ──► injects incidents/perimeters ─► visible in ATAK/iTAK/WebTAK
 ```
 
 ---

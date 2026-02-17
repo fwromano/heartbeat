@@ -129,6 +129,9 @@ main() {
     local prev_fire_bbox=""
     local prev_fire_range_km=""
     local prev_fire_ots_api_url=""
+    local prev_fire_perimeters_enabled=""
+    local prev_fire_perimeter_simplify=""
+    local prev_fire_perimeter_max_vertices=""
 
     # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
@@ -157,6 +160,9 @@ main() {
         prev_fire_bbox=$(awk -F'"' '/^FIRE_FEED_BBOX=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_fire_range_km=$(awk -F'[=" ]+' '/^FIRE_FEED_RANGE_KM=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_fire_ots_api_url=$(awk -F'"' '/^FIRE_FEED_OTS_API_URL=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_perimeters_enabled=$(awk -F'"' '/^FIRE_FEED_PERIMETERS_ENABLED=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_perimeter_simplify=$(awk -F'[=" ]+' '/^FIRE_FEED_PERIMETER_SIMPLIFY=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_fire_perimeter_max_vertices=$(awk -F'[=" ]+' '/^FIRE_FEED_PERIMETER_MAX_VERTICES=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
             backend="$prev_backend"
         fi
@@ -388,6 +394,9 @@ main() {
     local fire_feed_bbox="${prev_fire_bbox:-}"
     local fire_feed_range_km="${prev_fire_range_km:-100}"
     local fire_feed_ots_api_url="${prev_fire_ots_api_url:-http://127.0.0.1:8081/api}"
+    local fire_feed_perimeters_enabled="${prev_fire_perimeters_enabled:-false}"
+    local fire_feed_perimeter_simplify="${prev_fire_perimeter_simplify:-0.001}"
+    local fire_feed_perimeter_max_vertices="${prev_fire_perimeter_max_vertices:-250}"
     if [[ -n "$ots_git_url" && -z "$ots_git_ref" ]]; then
         ots_git_ref="main"
     fi
@@ -423,6 +432,9 @@ FIRE_FEED_INTERVAL=${fire_feed_interval}
 FIRE_FEED_BBOX="${fire_feed_bbox}"
 FIRE_FEED_RANGE_KM=${fire_feed_range_km}
 FIRE_FEED_OTS_API_URL="${fire_feed_ots_api_url}"
+FIRE_FEED_PERIMETERS_ENABLED="${fire_feed_perimeters_enabled}"
+FIRE_FEED_PERIMETER_SIMPLIFY=${fire_feed_perimeter_simplify}
+FIRE_FEED_PERIMETER_MAX_VERTICES=${fire_feed_perimeter_max_vertices}
 EOF
 
     if [[ "$backend" == "opentak" ]]; then

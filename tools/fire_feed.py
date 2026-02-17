@@ -27,6 +27,10 @@ INCIDENTS_URL = (
     "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/"
     "USA_Wildfires_v1/FeatureServer/0/query"
 )
+PERIMETERS_URL = (
+    "https://services9.arcgis.com/RHVPKKiFTONKtxq3/arcgis/rest/services/"
+    "USA_Wildfires_v1/FeatureServer/1/query"
+)
 
 
 def iso_now():
@@ -62,6 +66,9 @@ class FireFeed:
         auto_bbox_user="",
         auto_bbox_password="",
         auto_bbox_range_km=100,
+        include_perimeters=False,
+        perimeter_simplify=0.001,
+        perimeter_max_vertices=250,
     ):
         self.client = client
         self.bbox = (bbox or "").strip()
@@ -76,6 +83,10 @@ class FireFeed:
         self._api_logged_in = False
         self._api_cookie_jar = None
         self._api_opener = None
+        self.include_perimeters = bool(include_perimeters)
+        self.perimeter_simplify = max(float(perimeter_simplify), 0.0)
+        self.perimeter_max_vertices = max(int(perimeter_max_vertices), 16)
+        self._perimeter_shapely_unavailable_logged = False
         self.running = True
 
         logging.basicConfig(
@@ -252,6 +263,131 @@ class FireFeed:
             data = json.loads(resp.read().decode("utf-8"))
         return data.get("features", [])
 
+    def poll_perimeters(self, bbox_override=""):
+        params = {
+            "where": "1=1",
+            "outFields": "IncidentName,GISAcres,DateCurrent,IRWINID,FeatureCategory,OBJECTID",
+            "f": "geojson",
+            "resultRecordCount": 500,
+        }
+        params.update(self._bbox_params(bbox_override or self.bbox))
+
+        query = urllib.parse.urlencode(params)
+        req = urllib.request.Request(
+            f"{PERIMETERS_URL}?{query}",
+            headers={"User-Agent": "heartbeat-fire-feed/1.0"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return data.get("features", [])
+
+    def _shape_coords_fallback(self, geometry):
+        geom_type = (geometry or {}).get("type")
+        coords = (geometry or {}).get("coordinates") or []
+        if geom_type == "Polygon" and coords:
+            return coords[0] or []
+        if geom_type == "MultiPolygon" and coords and coords[0]:
+            return coords[0][0] or []
+        return []
+
+    def _simplify_perimeter(self, geometry):
+        try:
+            from shapely.geometry import shape
+        except Exception:
+            if not self._perimeter_shapely_unavailable_logged:
+                self.log.warning(
+                    "Shapely unavailable; using raw perimeter geometry without simplification"
+                )
+                self._perimeter_shapely_unavailable_logged = True
+            ring = self._shape_coords_fallback(geometry)
+            if not ring:
+                return [], None
+            vertices = [(safe_float(p[0]), safe_float(p[1])) for p in ring if len(p) >= 2]
+            vertices = [(lon, lat) for lon, lat in vertices if lon is not None and lat is not None]
+            if not vertices:
+                return [], None
+            centroid_lon = sum(lon for lon, _ in vertices) / len(vertices)
+            centroid_lat = sum(lat for _, lat in vertices) / len(vertices)
+            return vertices, (centroid_lat, centroid_lon)
+
+        geom = shape(geometry or {})
+        if geom.is_empty:
+            return [], None
+
+        if geom.geom_type == "MultiPolygon":
+            geom = max(geom.geoms, key=lambda g: g.area)
+        if geom.geom_type != "Polygon":
+            return [], None
+
+        simplified = geom.simplify(self.perimeter_simplify, preserve_topology=True)
+        if simplified.geom_type == "MultiPolygon":
+            simplified = max(simplified.geoms, key=lambda g: g.area)
+        if simplified.geom_type != "Polygon":
+            return [], None
+
+        coords = list(simplified.exterior.coords)
+        if len(coords) > self.perimeter_max_vertices:
+            step = max(1, len(coords) // self.perimeter_max_vertices)
+            coords = coords[::step]
+            if coords and coords[0] != coords[-1]:
+                coords.append(coords[0])
+
+        vertices = [(safe_float(lon), safe_float(lat)) for lon, lat in coords]
+        vertices = [(lon, lat) for lon, lat in vertices if lon is not None and lat is not None]
+        if not vertices:
+            return [], None
+
+        centroid = simplified.centroid
+        return vertices, (centroid.y, centroid.x)
+
+    def perimeter_to_cot(self, feature):
+        props = feature.get("properties") or {}
+        geometry = feature.get("geometry") or {}
+        vertices, centroid = self._simplify_perimeter(geometry)
+        if len(vertices) < 3 or centroid is None:
+            raise ValueError("invalid perimeter geometry")
+
+        lat, lon = centroid
+        perimeter_id = (
+            props.get("IRWINID")
+            or props.get("OBJECTID")
+            or f"{lat:.5f}-{lon:.5f}"
+        )
+        uid = f"fire-perimeter-{clean_uid_component(str(perimeter_id))}"
+
+        name = str(props.get("IncidentName") or "Unknown Fire")
+        acres = safe_float(props.get("GISAcres"))
+        acres_str = f"{acres:.0f}" if acres is not None else "?"
+        category = str(props.get("FeatureCategory") or "")
+
+        remarks = f"{name} perimeter | {acres_str} ac"
+        if category:
+            remarks += f" | {category}"
+
+        now = iso_now()
+        stale = iso_future(30)
+        escaped_name = html.escape(name, quote=True)
+        escaped_remarks = html.escape(remarks, quote=True)
+        links = "".join(
+            f'<link point="{v_lat:.6f},{v_lon:.6f}"/>'
+            for v_lon, v_lat in vertices
+        )
+
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            f'<event version="2.0" uid="{uid}" type="u-d-f"'
+            f' time="{now}" start="{now}" stale="{stale}" how="m-g">'
+            f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0" ce="9999999" le="9999999"/>'
+            f"<detail>"
+            f"{links}"
+            f'<contact callsign="{escaped_name} Perimeter"/>'
+            f"<remarks>{escaped_remarks}</remarks>"
+            f'<strokeColor value="#FFFF0000"/>'
+            f'<fillColor value="#44FF0000"/>'
+            f"</detail>"
+            f"</event>"
+        )
+
     def feature_to_cot(self, feature):
         props = feature.get("properties") or {}
         geom = feature.get("geometry") or {}
@@ -362,7 +498,37 @@ class FireFeed:
                         except Exception as e:
                             self.log.debug("Skipping malformed incident feature: %s", e)
 
-                    self.log.info("Polled %d incidents, sent %d CoT events", len(features), sent)
+                    perimeter_count = 0
+                    perimeter_sent = 0
+                    if self.include_perimeters:
+                        try:
+                            perimeter_features = self.poll_perimeters(
+                                bbox_override=effective_bbox
+                            )
+                        except Exception as e:
+                            self.log.warning("Perimeter poll failed: %s", e)
+                            perimeter_features = []
+
+                        perimeter_count = len(perimeter_features)
+                        for feature in perimeter_features:
+                            if not self.running:
+                                break
+                            try:
+                                cot = self.perimeter_to_cot(feature)
+                                self.client.send(cot)
+                                perimeter_sent += 1
+                            except Exception as e:
+                                self.log.debug(
+                                    "Skipping malformed perimeter feature: %s", e
+                                )
+
+                    self.log.info(
+                        "Polled incidents=%d sent=%d perimeters=%d sent=%d",
+                        len(features),
+                        sent,
+                        perimeter_count,
+                        perimeter_sent,
+                    )
 
                     try:
                         self.client.send_keepalive()
@@ -420,6 +586,23 @@ def main():
         default=100.0,
         help="Auto-bbox radius in km around team centroid (default: 100)",
     )
+    parser.add_argument(
+        "--include-perimeters",
+        action="store_true",
+        help="Also poll fire perimeters (FeatureServer layer 1) and emit polygon CoT",
+    )
+    parser.add_argument(
+        "--perimeter-simplify",
+        type=float,
+        default=0.001,
+        help="Shapely simplify tolerance for perimeters (default: 0.001)",
+    )
+    parser.add_argument(
+        "--perimeter-max-vertices",
+        type=int,
+        default=250,
+        help="Max perimeter vertices after decimation (default: 250)",
+    )
     parser.add_argument("--log", default="data/fire_feed.log", help="Log file path")
     args = parser.parse_args()
 
@@ -446,6 +629,9 @@ def main():
         auto_bbox_user=args.auto_bbox_user,
         auto_bbox_password=args.auto_bbox_password,
         auto_bbox_range_km=args.auto_bbox_range_km,
+        include_perimeters=args.include_perimeters,
+        perimeter_simplify=args.perimeter_simplify,
+        perimeter_max_vertices=args.perimeter_max_vertices,
     )
 
     signal.signal(signal.SIGTERM, feed.stop)

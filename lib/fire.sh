@@ -106,6 +106,10 @@ fire_start() {
     local interval="${FIRE_FEED_INTERVAL:-900}"
     local bbox="${FIRE_FEED_BBOX:-}"
     local range_km="${FIRE_FEED_RANGE_KM:-100}"
+    local include_perimeters="${FIRE_FEED_PERIMETERS_ENABLED:-false}"
+    local perimeter_simplify="${FIRE_FEED_PERIMETER_SIMPLIFY:-0.001}"
+    local perimeter_max_vertices="${FIRE_FEED_PERIMETER_MAX_VERTICES:-250}"
+    include_perimeters=$(echo "$include_perimeters" | tr '[:upper:]' '[:lower:]')
     fire_args+=(--interval "$interval")
     if [[ -n "$bbox" ]]; then
         fire_args+=(--bbox "$bbox")
@@ -121,6 +125,14 @@ fire_start() {
         fi
     fi
 
+    if [[ "$include_perimeters" == "true" ]]; then
+        fire_args+=(
+            --include-perimeters
+            --perimeter-simplify "$perimeter_simplify"
+            --perimeter-max-vertices "$perimeter_max_vertices"
+        )
+    fi
+
     log_step "Starting fire feed"
     log_info "Server: ${target_label}"
     log_info "Interval: ${interval}s"
@@ -131,6 +143,7 @@ fire_start() {
     else
         log_info "BBOX: none (nationwide feed)"
     fi
+    log_info "Perimeters: ${include_perimeters}"
 
     nohup "$python_bin" "$FIRE_SCRIPT" \
         --host "${cot_host}" \
@@ -244,6 +257,11 @@ fire_status() {
         echo -e "  BBOX:      auto (team centroid ±${FIRE_FEED_RANGE_KM:-100}km)"
     else
         echo -e "  BBOX:      nationwide (no filter)"
+    fi
+    echo -e "  Perimeters: ${FIRE_FEED_PERIMETERS_ENABLED:-false}"
+    if [[ "${FIRE_FEED_PERIMETERS_ENABLED:-false}" == "true" ]]; then
+        echo -e "  Simplify:  ${FIRE_FEED_PERIMETER_SIMPLIFY:-0.001}"
+        echo -e "  Max verts: ${FIRE_FEED_PERIMETER_MAX_VERTICES:-250}"
     fi
 
     if [[ -f "$FIRE_PID" ]]; then
