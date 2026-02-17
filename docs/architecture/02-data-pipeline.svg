@@ -1,172 +1,295 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" font-family="Consolas, 'Courier New', monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" font-family="Consolas, 'Courier New', monospace">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a1628"/>
-      <stop offset="100%" style="stop-color:#122040"/>
+      <stop offset="0%" style="stop-color:#0a1628"/><stop offset="100%" style="stop-color:#101d35"/>
     </linearGradient>
     <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a2d4a"/>
-      <stop offset="100%" style="stop-color:#152238"/>
+      <stop offset="0%" style="stop-color:#182b48"/><stop offset="100%" style="stop-color:#142035"/>
     </linearGradient>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
-    <marker id="arrowCyan" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#00b4d8"/>
-    </marker>
-    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#f4a261"/>
-    </marker>
-    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#40916c"/>
-    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.35"/></filter>
+    <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#2ecc71" flood-opacity="0.12"/></filter>
+    <marker id="ar" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#3a5a7a"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#f4a261"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#2ecc71"/></marker>
+    <marker id="ab" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#00b4d8"/></marker>
+    <marker id="ap" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#bb77dd"/></marker>
   </defs>
 
-  <rect width="1200" height="700" fill="url(#bgGrad)"/>
+  <rect width="1920" height="1080" fill="url(#bgGrad)"/>
 
-  <text x="600" y="40" text-anchor="middle" fill="#e0e0e0" font-size="20" font-weight="bold" letter-spacing="3">DATA PIPELINE — RECORD → EXPORT</text>
-  <text x="600" y="60" text-anchor="middle" fill="#5a7a9a" font-size="11" letter-spacing="1">CoT stream ingestion through GeoPackage output</text>
-  <line x1="200" y1="72" x2="1000" y2="72" stroke="#1a3050" stroke-width="1"/>
+  <!-- ═══ TITLE ═══ -->
+  <text x="960" y="46" text-anchor="middle" fill="#d8e4f0" font-size="30" font-weight="bold" letter-spacing="6">DATA PIPELINE</text>
+  <text x="960" y="72" text-anchor="middle" fill="#4a6a8a" font-size="13" letter-spacing="3">Devices → TAK routing → recorder → SQLite → GPKG export → GIS</text>
+  <line x1="400" y1="88" x2="1520" y2="88" stroke="#1a2a40" stroke-width="1"/>
 
-  <!-- PHASE 1: TAK Server Source -->
-  <rect x="40" y="95" width="200" height="100" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="40" y="95" width="200" height="4" rx="2" fill="#00b4d8"/>
-  <text x="140" y="125" text-anchor="middle" fill="#00b4d8" font-size="13" font-weight="bold">TAK SERVER</text>
-  <text x="140" y="148" text-anchor="middle" fill="#a0b8d0" font-size="10">FreeTAK :8087 (TCP)</text>
-  <text x="140" y="165" text-anchor="middle" fill="#a0b8d0" font-size="10">OpenTAK :8088 (TCP)</text>
-  <text x="140" y="182" text-anchor="middle" fill="#607890" font-size="9">Continuous CoT XML stream</text>
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  TOP: 6-PHASE FLOW                                              -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
 
-  <!-- Arrow 1 -->
-  <line x1="240" y1="145" x2="290" y2="145" stroke="#00b4d8" stroke-width="2" marker-end="url(#arrowCyan)"/>
-  <text x="265" y="138" text-anchor="middle" fill="#00b4d8" font-size="8">TCP</text>
+  <!-- Phase 1: Devices -->
+  <rect x="50" y="105" width="230" height="130" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="50" y="105" width="230" height="5" rx="2" fill="#bb77dd"/>
+  <text x="70" y="135" fill="#bb77dd" font-size="16" font-weight="bold">① DEVICES</text>
+  <text x="70" y="162" fill="#8098b0" font-size="11">iTAK · ATAK · WinTAK · WebTAK</text>
+  <text x="70" y="186" fill="#607890" font-size="10">Publish CoT events: positions,</text>
+  <text x="70" y="202" fill="#607890" font-size="10">markers, shapes, annotations</text>
 
-  <!-- PHASE 2: Recorder -->
-  <rect x="300" y="95" width="250" height="100" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="300" y="95" width="250" height="4" rx="2" fill="#f4a261"/>
-  <text x="425" y="120" text-anchor="middle" fill="#f4a261" font-size="13" font-weight="bold">recorder.py</text>
-  <text x="425" y="143" text-anchor="middle" fill="#a0b8d0" font-size="10">TCP socket client (daemon)</text>
-  <text x="425" y="160" text-anchor="middle" fill="#a0b8d0" font-size="10">SA keepalive every 240s</text>
-  <text x="425" y="177" text-anchor="middle" fill="#a0b8d0" font-size="10">Auto-reconnect on disconnect</text>
+  <line x1="280" y1="170" x2="320" y2="170" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="300" y="162" text-anchor="middle" fill="#4a6a8a" font-size="9">CoT</text>
 
-  <!-- Arrow 2 -->
-  <line x1="425" y1="195" x2="425" y2="235" stroke="#f4a261" stroke-width="2" marker-end="url(#arrowOrange)"/>
-  <text x="445" y="218" fill="#f4a261" font-size="8">feed()</text>
+  <!-- Phase 2: TAK Server -->
+  <rect x="330" y="105" width="250" height="130" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="330" y="105" width="250" height="5" rx="2" fill="#00b4d8"/>
+  <text x="350" y="135" fill="#00b4d8" font-size="16" font-weight="bold">② TAK SERVER</text>
+  <text x="350" y="160" fill="#8098b0" font-size="11">Message routing hub</text>
 
-  <!-- PHASE 3: Parser -->
-  <rect x="300" y="245" width="250" height="90" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="300" y="245" width="250" height="4" rx="2" fill="#e76f51"/>
-  <text x="425" y="272" text-anchor="middle" fill="#e76f51" font-size="13" font-weight="bold">cot_parser.py</text>
-  <text x="425" y="295" text-anchor="middle" fill="#a0b8d0" font-size="10">CotStreamParser — buffers partial TCP</text>
-  <text x="425" y="312" text-anchor="middle" fill="#a0b8d0" font-size="10">yields complete &lt;event&gt;...&lt;/event&gt; XML</text>
-  <text x="425" y="329" text-anchor="middle" fill="#607890" font-size="9">stdlib only — no lxml dependency</text>
+  <rect x="350" y="172" width="210" height="24" rx="4" fill="#1e3350"/>
+  <text x="365" y="189" fill="#40916c" font-size="10">FreeTAK  TCP :8087</text>
+  <text x="520" y="189" fill="#607890" font-size="9">no cert</text>
 
-  <!-- Arrow 3 -->
-  <line x1="425" y1="335" x2="425" y2="375" stroke="#e76f51" stroke-width="2" marker-end="url(#arrowOrange)"/>
-  <text x="450" y="358" fill="#e76f51" font-size="8">parse_cot_event()</text>
+  <rect x="350" y="200" width="210" height="24" rx="4" fill="#1e3350"/>
+  <text x="365" y="217" fill="#00b4d8" font-size="10">OpenTAK SSL :8089</text>
+  <text x="525" y="217" fill="#607890" font-size="9">mTLS</text>
 
-  <!-- PHASE 4: SQLite DB -->
-  <rect x="280" y="385" width="290" height="178" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="280" y="385" width="5" height="178" rx="2" fill="#40916c"/>
-  <text x="305" y="410" fill="#40916c" font-size="13" font-weight="bold">data/cot_records.db</text>
-  <text x="305" y="430" fill="#607890" font-size="10">SQLite — WAL mode</text>
+  <line x1="580" y1="170" x2="620" y2="170" stroke="#00b4d8" stroke-width="1.5" marker-end="url(#ab)"/>
 
-  <!-- Table: recording_sessions -->
-  <rect x="300" y="445" width="245" height="38" rx="3" fill="#1e3350"/>
-  <text x="310" y="462" fill="#00b4d8" font-size="10" font-weight="bold">recording_sessions</text>
-  <text x="310" y="477" fill="#607890" font-size="9">session_id · start · end · event_count</text>
+  <!-- Phase 3: Recorder -->
+  <rect x="630" y="105" width="250" height="130" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="630" y="105" width="250" height="5" rx="2" fill="#f4a261"/>
+  <text x="650" y="135" fill="#f4a261" font-size="16" font-weight="bold">③ RECORDER</text>
+  <text x="650" y="160" fill="#8098b0" font-size="11">Local client consumer</text>
+  <text x="650" y="182" fill="#607890" font-size="10">TCP or SSL socket · stream framing</text>
+  <text x="650" y="200" fill="#607890" font-size="10">XML parse · SA keepalive 240s</text>
+  <text x="650" y="218" fill="#607890" font-size="10">Auto-reconnect</text>
 
-  <!-- Table: cot_events -->
-  <rect x="300" y="485" width="245" height="55" rx="3" fill="#1e3350"/>
-  <text x="310" y="502" fill="#f4a261" font-size="10" font-weight="bold">cot_events</text>
-  <text x="310" y="520" fill="#607890" font-size="9">uid · type · callsign · lat · lon · hae</text>
-  <text x="310" y="533" fill="#607890" font-size="9">UNIQUE(uid, time) — INSERT OR IGNORE dedup</text>
+  <line x1="880" y1="170" x2="920" y2="170" stroke="#f4a261" stroke-width="1.5" marker-end="url(#ao)"/>
 
-  <!-- Table: geometry_points -->
-  <rect x="300" y="535" width="245" height="20" rx="3" fill="#1e3350"/>
-  <text x="310" y="546" fill="#bb77dd" font-size="10" font-weight="bold">cot_geometry_points</text>
+  <!-- Phase 4: SQLite -->
+  <rect x="930" y="105" width="280" height="130" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="930" y="105" width="5" height="130" rx="2" fill="#40916c"/>
+  <text x="955" y="135" fill="#40916c" font-size="16" font-weight="bold">④ STORAGE</text>
+  <text x="955" y="160" fill="#8098b0" font-size="11">data/cot_records.db · SQLite WAL</text>
+  <text x="955" y="185" fill="#00b4d8" font-size="10">recording_sessions</text>
+  <text x="955" y="202" fill="#f4a261" font-size="10">cot_events</text>
+  <text x="1075" y="202" fill="#bb77dd" font-size="10">cot_geometry_points</text>
+  <text x="955" y="222" fill="#607890" font-size="9">UNIQUE(uid, time) dedup · session-scoped</text>
 
-  <!-- ══════ EXPORT SIDE ══════ -->
-  <!-- Arrow to exporter -->
-  <line x1="570" y1="465" x2="640" y2="465" stroke="#40916c" stroke-width="2" marker-end="url(#arrowGreen)"/>
-  <text x="605" y="458" text-anchor="middle" fill="#40916c" font-size="8">query</text>
+  <line x1="1210" y1="170" x2="1250" y2="170" stroke="#40916c" stroke-width="1.5" marker-end="url(#ag)"/>
 
-  <!-- PHASE 5: Exporter -->
-  <rect x="650" y="95" width="250" height="188" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="650" y="95" width="250" height="4" rx="2" fill="#40916c"/>
-  <text x="775" y="120" text-anchor="middle" fill="#40916c" font-size="13" font-weight="bold">exporter.py</text>
+  <!-- Phase 5: Export -->
+  <rect x="1260" y="105" width="280" height="130" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1260" y="105" width="280" height="5" rx="2" fill="#2ecc71"/>
+  <text x="1280" y="135" fill="#2ecc71" font-size="16" font-weight="bold">⑤ EXPORT</text>
+  <text x="1280" y="160" fill="#8098b0" font-size="11">Classify geometry · build layers</text>
+  <text x="1280" y="182" fill="#607890" font-size="10">Raw (CoT type prefix) or GCM mode</text>
+  <text x="1280" y="200" fill="#e76f51" font-size="10" font-weight="bold">NO GDAL</text>
+  <text x="1380" y="200" fill="#607890" font-size="10">shapely + sqlite3</text>
+  <text x="1280" y="218" fill="#607890" font-size="10">OGC GeoPackage · EPSG:4326</text>
 
-  <!-- Raw mode -->
-  <rect x="670" y="135" width="210" height="55" rx="4" fill="#1e3350"/>
-  <text x="680" y="152" fill="#00b4d8" font-size="10" font-weight="bold">RAW MODE (default)</text>
-  <text x="680" y="167" fill="#a0b8d0" font-size="9">a-f-*, a-n-*    → positions (Point)</text>
-  <text x="680" y="180" fill="#a0b8d0" font-size="9">b-m-p-*          → markers (Point)</text>
+  <line x1="1540" y1="170" x2="1580" y2="170" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#ag)"/>
 
-  <!-- GCM mode -->
-  <rect x="670" y="198" width="210" height="55" rx="4" fill="#1e3350"/>
-  <text x="680" y="215" fill="#f4a261" font-size="10" font-weight="bold">GCM MODE (--gcm)</text>
-  <text x="680" y="230" fill="#a0b8d0" font-size="9">gcm_mapper.py loads</text>
-  <text x="680" y="243" fill="#a0b8d0" font-size="9">config/gcm-mapping.yml</text>
+  <!-- Phase 6: Output -->
+  <rect x="1590" y="105" width="280" height="130" rx="8" fill="url(#cardGrad)" filter="url(#glow)"/>
+  <rect x="1590" y="105" width="280" height="5" rx="2" fill="#bb77dd"/>
+  <text x="1610" y="135" fill="#bb77dd" font-size="16" font-weight="bold">⑥ GIS OUTPUT</text>
+  <text x="1610" y="160" fill="#8098b0" font-size="11">data/exports/*.gpkg + summary</text>
+  <text x="1610" y="186" fill="#607890" font-size="10">QGIS · ArcGIS · GeoPandas</text>
+  <text x="1610" y="204" fill="#607890" font-size="10">External pipeline consumers</text>
+  <text x="1610" y="222" fill="#607890" font-size="9">Rich attributes · style · detail XML</text>
 
-  <text x="775" y="270" text-anchor="middle" fill="#607890" font-size="9">classify → layer → geometry type</text>
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  MIDDLE: 3-ZONE DETAIL                                         -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
 
-  <!-- Arrow to gpkg_writer -->
-  <line x1="775" y1="275" x2="775" y2="315" stroke="#40916c" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <!-- ─── LEFT: RECORDER DETAIL ─── -->
+  <rect x="50" y="260" width="560" height="340" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="75" y="285" fill="#4a6a8a" font-size="11" letter-spacing="2">RECORDER PIPELINE</text>
 
-  <!-- PHASE 6: GPKG Writer -->
-  <rect x="650" y="325" width="250" height="138" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="650" y="325" width="250" height="4" rx="2" fill="#2ecc71"/>
-  <text x="775" y="352" text-anchor="middle" fill="#2ecc71" font-size="13" font-weight="bold">gpkg_writer.py</text>
-  <text x="775" y="375" text-anchor="middle" fill="#a0b8d0" font-size="10">OGC GeoPackage writer</text>
-  <text x="775" y="395" text-anchor="middle" fill="#607890" font-size="10">GP binary header (40 bytes) + WKB</text>
-  <text x="775" y="412" text-anchor="middle" fill="#607890" font-size="10">via shapely + sqlite3</text>
-  <text x="775" y="435" text-anchor="middle" fill="#e76f51" font-size="10" font-weight="bold">NO GDAL DEPENDENCY</text>
-  <text x="775" y="450" text-anchor="middle" fill="#607890" font-size="9">EPSG:4326 WGS84</text>
+  <!-- record.sh -->
+  <rect x="75" y="300" width="510" height="60" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="300" width="510" height="4" rx="2" fill="#f4a261"/>
+  <text x="105" y="328" fill="#f4a261" font-size="15" font-weight="bold">lib/record.sh</text>
+  <text x="310" y="328" fill="#607890" font-size="11">Shell wrapper · daemon management</text>
+  <text x="105" y="348" fill="#8098b0" font-size="10">Spawns recorder process · handles start/stop lifecycle</text>
 
-  <!-- Arrow to output -->
-  <line x1="775" y1="455" x2="775" y2="505" stroke="#2ecc71" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <line x1="330" y1="360" x2="330" y2="382" stroke="#f4a261" stroke-width="1.5" marker-end="url(#ao)"/>
 
-  <!-- PHASE 7: Output -->
-  <rect x="650" y="515" width="250" height="76" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="650" y="515" width="250" height="4" rx="2" fill="#bb77dd"/>
-  <text x="775" y="542" text-anchor="middle" fill="#bb77dd" font-size="13" font-weight="bold">output.gpkg</text>
-  <text x="775" y="565" text-anchor="middle" fill="#a0b8d0" font-size="10">QGIS · ArcGIS · GeoPandas</text>
-  <text x="775" y="580" text-anchor="middle" fill="#607890" font-size="9">Any OGC-compliant tool</text>
+  <!-- recorder.py -->
+  <rect x="75" y="388" width="510" height="72" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="388" width="4" height="72" rx="2" fill="#f4a261"/>
+  <text x="105" y="416" fill="#e0e0e0" font-size="15" font-weight="bold">tools/recorder.py</text>
+  <text x="360" y="416" fill="#607890" font-size="11">TCP or SSL socket client</text>
+  <text x="105" y="440" fill="#8098b0" font-size="10">Connects to TAK server as SA client · keepalive 240s · auto-reconnect</text>
 
-  <!-- Connect DB to exporter -->
-  <path d="M 570 465 L 610 465 L 610 200 L 650 200" fill="none" stroke="#40916c" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <line x1="330" y1="460" x2="330" y2="482" stroke="#f4a261" stroke-width="1.5" marker-end="url(#ao)"/>
 
-  <!-- ══════ LEGEND / NOTES ══════ -->
-  <rect x="40" y="250" width="230" height="290" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="60" y="275" fill="#e0e0e0" font-size="12" font-weight="bold">CoT EVENT FIELDS</text>
-  <text x="60" y="298" fill="#00b4d8" font-size="10">uid</text><text x="130" y="298" fill="#607890" font-size="10">unique event ID</text>
-  <text x="60" y="315" fill="#00b4d8" font-size="10">type</text><text x="130" y="315" fill="#607890" font-size="10">CoT type string</text>
-  <text x="60" y="332" fill="#00b4d8" font-size="10">how</text><text x="130" y="332" fill="#607890" font-size="10">origin method</text>
-  <text x="60" y="349" fill="#00b4d8" font-size="10">callsign</text><text x="130" y="349" fill="#607890" font-size="10">device name</text>
-  <text x="60" y="366" fill="#00b4d8" font-size="10">lat/lon/hae</text><text x="130" y="366" fill="#607890" font-size="10">WGS84 position</text>
-  <text x="60" y="383" fill="#00b4d8" font-size="10">ce/le</text><text x="130" y="383" fill="#607890" font-size="10">error ellipse</text>
-  <text x="60" y="400" fill="#00b4d8" font-size="10">detail_xml</text><text x="130" y="400" fill="#607890" font-size="10">raw XML blob</text>
+  <!-- cot_parser.py -->
+  <rect x="75" y="488" width="510" height="68" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="488" width="4" height="68" rx="2" fill="#f4a261"/>
+  <text x="105" y="516" fill="#e0e0e0" font-size="15" font-weight="bold">tools/cot_parser.py</text>
+  <text x="105" y="542" fill="#8098b0" font-size="10">CotStreamParser — buffers partial TCP · yields complete &lt;event&gt; XML docs</text>
 
-  <line x1="60" y1="415" x2="250" y2="415" stroke="#1a3050" stroke-width="1"/>
-  <text x="60" y="435" fill="#e0e0e0" font-size="12" font-weight="bold">GEOMETRY TYPES</text>
-  <text x="60" y="455" fill="#40916c" font-size="10">a-f-*, a-n-*</text><text x="170" y="455" fill="#607890" font-size="10">Point</text>
-  <text x="60" y="472" fill="#40916c" font-size="10">b-m-p-*</text><text x="170" y="472" fill="#607890" font-size="10">Point</text>
-  <text x="60" y="489" fill="#40916c" font-size="10">b-m-r-*, u-d-r-*</text><text x="170" y="489" fill="#607890" font-size="10">LineString</text>
-  <text x="60" y="506" fill="#40916c" font-size="10">u-d-f-*</text><text x="170" y="506" fill="#607890" font-size="10">Polygon</text>
-  <text x="60" y="526" fill="#607890" font-size="9">CoT type prefix → geometry mapping</text>
+  <!-- Arrow out to storage zone -->
+  <line x1="585" y1="440" x2="640" y2="440" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="612" y="432" text-anchor="middle" fill="#4a6a8a" font-size="9">events</text>
 
-  <!-- Auto-export note -->
-  <rect x="40" y="560" width="230" height="82" rx="6" fill="#1a2510" stroke="#40916c" stroke-width="1"/>
-  <text x="60" y="582" fill="#40916c" font-size="11" font-weight="bold">AUTO-EXPORT</text>
-  <text x="60" y="600" fill="#a0b8d0" font-size="10">heartbeat stop triggers</text>
-  <text x="60" y="615" fill="#a0b8d0" font-size="10">auto-export if DB exists</text>
-  <text x="60" y="630" fill="#607890" font-size="9">→ data/cot_export_*.gpkg</text>
+  <!-- ─── CENTER: STORAGE DETAIL ─── -->
+  <rect x="650" y="260" width="560" height="340" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="675" y="285" fill="#4a6a8a" font-size="11" letter-spacing="2">STORAGE SCHEMA</text>
+  <text x="1175" y="285" fill="#3a4a5a" font-size="10" text-anchor="end">data/cot_records.db · SQLite WAL</text>
 
-  <!-- Phase labels along bottom -->
-  <rect x="40" y="660" width="1120" height="30" rx="4" fill="#0d1f35"/>
-  <text x="140" y="680" text-anchor="middle" fill="#00b4d8" font-size="10">① INGEST</text>
-  <text x="425" y="680" text-anchor="middle" fill="#f4a261" font-size="10">② PARSE &amp; STORE</text>
-  <text x="775" y="680" text-anchor="middle" fill="#40916c" font-size="10">③ CLASSIFY &amp; EXPORT</text>
-  <text x="1060" y="680" text-anchor="middle" fill="#bb77dd" font-size="10">④ CONSUME</text>
+  <!-- recording_sessions -->
+  <rect x="675" y="305" width="510" height="75" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="675" y="305" width="510" height="4" rx="2" fill="#00b4d8"/>
+  <text x="705" y="333" fill="#00b4d8" font-size="15" font-weight="bold">recording_sessions</text>
+  <text x="705" y="357" fill="#8098b0" font-size="11">session_id · start · end · event_count</text>
+  <text x="705" y="373" fill="#607890" font-size="10">Session scoping: per-run event count, lifetime totals persist</text>
 
-  <text x="1170" y="18" text-anchor="end" fill="#3a5570" font-size="9">v2 · Feb 2026</text>
+  <!-- cot_events -->
+  <rect x="675" y="395" width="510" height="90" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="675" y="395" width="510" height="4" rx="2" fill="#f4a261"/>
+  <text x="705" y="423" fill="#f4a261" font-size="15" font-weight="bold">cot_events</text>
+  <text x="705" y="448" fill="#8098b0" font-size="11">uid · type · callsign · lat · lon · hae · time · detail</text>
+  <text x="705" y="470" fill="#607890" font-size="10">UNIQUE(uid, time) — dedup via INSERT OR IGNORE</text>
+
+  <!-- cot_geometry_points -->
+  <rect x="675" y="500" width="510" height="75" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="675" y="500" width="510" height="4" rx="2" fill="#bb77dd"/>
+  <text x="705" y="528" fill="#bb77dd" font-size="15" font-weight="bold">cot_geometry_points</text>
+  <text x="705" y="553" fill="#8098b0" font-size="11">Ordered vertices for lines and polygons</text>
+  <text x="705" y="569" fill="#607890" font-size="10">Preserves point order for geometry reconstruction</text>
+
+  <!-- Arrow out to export zone -->
+  <line x1="1210" y1="440" x2="1265" y2="440" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="1237" y="432" text-anchor="middle" fill="#4a6a8a" font-size="9">query</text>
+
+  <!-- ─── RIGHT: EXPORT DETAIL ─── -->
+  <rect x="1275" y="260" width="595" height="340" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="1300" y="285" fill="#4a6a8a" font-size="11" letter-spacing="2">EXPORT PIPELINE</text>
+
+  <!-- export.sh -->
+  <rect x="1300" y="305" width="545" height="55" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1300" y="305" width="545" height="4" rx="2" fill="#2ecc71"/>
+  <text x="1330" y="333" fill="#2ecc71" font-size="15" font-weight="bold">lib/export.sh</text>
+  <text x="1520" y="333" fill="#607890" font-size="11">Shell wrapper</text>
+  <text x="1330" y="350" fill="#8098b0" font-size="10">Invoked automatically on ./heartbeat stop</text>
+
+  <line x1="1572" y1="360" x2="1572" y2="380" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- exporter.py -->
+  <rect x="1300" y="386" width="545" height="80" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1300" y="386" width="4" height="80" rx="2" fill="#2ecc71"/>
+  <text x="1330" y="414" fill="#e0e0e0" font-size="15" font-weight="bold">tools/exporter.py</text>
+  <text x="1330" y="438" fill="#8098b0" font-size="10">Reads DB → classifies events by CoT type → builds geometry layers</text>
+
+  <rect x="1330" y="444" width="130" height="20" rx="4" fill="#1e3350"/>
+  <text x="1340" y="459" fill="#00b4d8" font-size="9">RAW (default)</text>
+
+  <rect x="1475" y="444" width="155" height="20" rx="4" fill="#1e3350"/>
+  <text x="1485" y="459" fill="#f4a261" font-size="9">GCM (--gcm)</text>
+
+  <line x1="1572" y1="466" x2="1572" y2="486" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- gpkg_writer.py -->
+  <rect x="1300" y="492" width="545" height="80" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1300" y="492" width="4" height="80" rx="2" fill="#2ecc71"/>
+  <text x="1330" y="520" fill="#e0e0e0" font-size="15" font-weight="bold">tools/gpkg_writer.py</text>
+  <text x="1330" y="544" fill="#8098b0" font-size="10">OGC GeoPackage — GP binary header (40B) + WKB via shapely</text>
+  <text x="1330" y="562" fill="#607890" font-size="10">NO GDAL · stdlib parser · EPSG:4326 WGS84</text>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  BOTTOM: REFERENCE PANELS                                       -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+
+  <!-- ─── GEOMETRY MAPPING ─── -->
+  <rect x="50" y="625" width="490" height="240" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="50" y="625" width="490" height="5" rx="2" fill="#40916c"/>
+  <text x="80" y="655" fill="#40916c" font-size="15" font-weight="bold">Geometry + CoT Type Mapping</text>
+
+  <text x="80" y="690" fill="#c8d0d8" font-size="11">CoT TYPE PREFIX</text>
+  <text x="340" y="690" fill="#c8d0d8" font-size="11">GEOMETRY</text>
+  <line x1="80" y1="698" x2="510" y2="698" stroke="#1a2a40" stroke-width="1"/>
+
+  <text x="80" y="722" fill="#40916c" font-size="12">a-f-*, a-n-*</text>
+  <text x="340" y="722" fill="#8098b0" font-size="12">Point</text>
+
+  <text x="80" y="748" fill="#40916c" font-size="12">b-m-p-*</text>
+  <text x="340" y="748" fill="#8098b0" font-size="12">Point (markers)</text>
+
+  <text x="80" y="774" fill="#40916c" font-size="12">b-m-r-*, u-d-r-*</text>
+  <text x="340" y="774" fill="#8098b0" font-size="12">LineString</text>
+
+  <text x="80" y="800" fill="#40916c" font-size="12">u-d-f-*</text>
+  <text x="340" y="800" fill="#8098b0" font-size="12">Polygon</text>
+
+  <text x="80" y="826" fill="#40916c" font-size="12">radius metadata</text>
+  <text x="340" y="826" fill="#8098b0" font-size="12">Circle → Polygon conversion</text>
+
+  <text x="80" y="855" fill="#607890" font-size="10">cot_geometry_points preserves ordered vertices for lines/polygons</text>
+
+  <!-- ─── CONSTRAINTS ─── -->
+  <rect x="565" y="625" width="490" height="240" rx="8" fill="#14120a" stroke="#e76f51" stroke-width="1" stroke-opacity="0.5"/>
+  <text x="595" y="655" fill="#e76f51" font-size="15" font-weight="bold">Critical Constraints</text>
+
+  <text x="595" y="690" fill="#c8d0d8" font-size="12" font-weight="bold">SSL/mTLS required for full capture</text>
+  <text x="595" y="712" fill="#8098b0" font-size="11">Plain TCP misses routed annotations</text>
+  <text x="595" y="732" fill="#8098b0" font-size="11">OpenTAK recorder must use SSL path for full fidelity</text>
+
+  <line x1="595" y1="748" x2="1025" y2="748" stroke="#2a2010" stroke-width="1"/>
+
+  <text x="595" y="772" fill="#c8d0d8" font-size="12" font-weight="bold">One cert per physical device</text>
+  <text x="595" y="794" fill="#8098b0" font-size="11">Cert identity collisions break routing</text>
+
+  <line x1="595" y1="810" x2="1025" y2="810" stroke="#2a2010" stroke-width="1"/>
+
+  <text x="595" y="834" fill="#c8d0d8" font-size="12" font-weight="bold">Zero events ≠ exporter bug</text>
+  <text x="595" y="856" fill="#8098b0" font-size="11">PID alive ≠ ingest — indicates transport/auth mismatch</text>
+
+  <!-- ─── RUNTIME + VALIDATION ─── -->
+  <rect x="1080" y="625" width="790" height="240" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1080" y="625" width="790" height="5" rx="2" fill="#00b4d8"/>
+
+  <!-- Left half: Runtime Triggers -->
+  <text x="1110" y="655" fill="#00b4d8" font-size="15" font-weight="bold">Runtime Triggers</text>
+
+  <text x="1110" y="688" fill="#2ecc71" font-size="13" font-weight="bold">start</text>
+  <text x="1190" y="688" fill="#8098b0" font-size="11">Provisions backend → writes config → starts recorder</text>
+
+  <text x="1110" y="714" fill="#e76f51" font-size="13" font-weight="bold">stop</text>
+  <text x="1190" y="714" fill="#8098b0" font-size="11">Stops recorder → auto-exports .gpkg → stops backend</text>
+
+  <text x="1110" y="740" fill="#607890" font-size="10">Mission → stop → GIS artifact automatically</text>
+
+  <!-- Divider -->
+  <line x1="1110" y1="758" x2="1840" y2="758" stroke="#1a2a40" stroke-width="1"/>
+
+  <!-- Right half: Validation -->
+  <text x="1110" y="782" fill="#2ecc71" font-size="15" font-weight="bold">Validation Path</text>
+
+  <text x="1110" y="810" fill="#8098b0" font-size="11">1. ./heartbeat restart → confirm SSL recorder mode</text>
+  <text x="1110" y="832" fill="#8098b0" font-size="11">2. Generate activity: point, line, polygon, circle</text>
+  <text x="1110" y="854" fill="#8098b0" font-size="11">3. ./heartbeat stop → verify nonzero session events</text>
+
+  <!-- ─── OPENTAK NOTES + EXPORT FOOTER ─── -->
+  <rect x="50" y="885" width="860" height="78" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="50" y="885" width="860" height="4" rx="2" fill="#00b4d8"/>
+  <text x="80" y="912" fill="#00b4d8" font-size="14" font-weight="bold">OpenTAK Operational Notes</text>
+  <text x="80" y="936" fill="#8098b0" font-size="11">Broker/exchange friction (flask-socketio path) can degrade map/update behavior</text>
+  <text x="80" y="956" fill="#607890" font-size="10">Pre-create/guard logic in opentak.sh · reset restarts full dependency chain (rabbitmq/postgres/nginx)</text>
+
+  <rect x="935" y="885" width="935" height="78" rx="8" fill="#0c1520" stroke="#1a2a40" stroke-width="0.5"/>
+  <text x="965" y="912" fill="#8098b0" font-size="14" font-weight="bold">Export Attributes</text>
+  <text x="965" y="936" fill="#8098b0" font-size="11">Preserves rich attributes per layer: style, detail XML, raw fields</text>
+  <text x="965" y="956" fill="#607890" font-size="10">GP binary header (40B) + WKB via shapely · NO GDAL · stdlib parser · EPSG:4326 WGS84</text>
+
+  <!-- ─── FOOTER ─── -->
+  <rect x="50" y="980" width="1820" height="38" rx="6" fill="#0c1520" stroke="#1a2a40" stroke-width="0.5"/>
+  <text x="960" y="1005" text-anchor="middle" fill="#4a6a8a" font-size="12">Devices → TAK Server → Recorder → cot_parser → SQLite (session-scoped) → Exporter → gpkg_writer → GeoPackage → GIS</text>
+
+  <text x="80" y="1050" fill="#00b4d8" font-size="11" font-weight="bold">TRANSPORT</text>
+  <text x="200" y="1050" fill="#607890" font-size="10">FreeTAK: TCP :8087 (no cert)</text>
+  <text x="520" y="1050" fill="#607890" font-size="10">OpenTAK: SSL :8089 (mTLS cert identity)</text>
+  <text x="960" y="1050" fill="#607890" font-size="10">Recorder connects to localhost, not SERVER_IP</text>
+
+  <text x="1880" y="22" text-anchor="end" fill="#2a3a50" font-size="10">v2</text>
 </svg>

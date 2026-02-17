@@ -1,182 +1,247 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="Consolas, 'Courier New', monospace">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" font-family="Consolas, 'Courier New', monospace">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0a1628;stop-opacity:1"/>
-      <stop offset="100%" style="stop-color:#122040;stop-opacity:1"/>
+      <stop offset="0%" style="stop-color:#0a1628"/><stop offset="100%" style="stop-color:#101d35"/>
     </linearGradient>
     <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1a2d4a;stop-opacity:1"/>
-      <stop offset="100%" style="stop-color:#152238;stop-opacity:1"/>
+      <stop offset="0%" style="stop-color:#182b48"/><stop offset="100%" style="stop-color:#142035"/>
     </linearGradient>
-    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#00b4d8"/>
-      <stop offset="100%" style="stop-color:#0077b6"/>
-    </linearGradient>
-    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#2d6a4f"/>
-      <stop offset="100%" style="stop-color:#40916c"/>
-    </linearGradient>
-    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#e76f51"/>
-      <stop offset="100%" style="stop-color:#f4a261"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
-    </filter>
-    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#00b4d8"/>
-    </marker>
-    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#40916c"/>
-    </marker>
-    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#f4a261"/>
-    </marker>
+    <filter id="sh"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.35"/></filter>
+    <filter id="glow"><feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#00b4d8" flood-opacity="0.15"/></filter>
+    <marker id="ar" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#3a5a7a"/></marker>
+    <marker id="ag" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#2ecc71"/></marker>
+    <marker id="ao" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#f4a261"/></marker>
   </defs>
 
-  <!-- Background -->
-  <rect width="1200" height="900" fill="url(#bgGrad)"/>
+  <rect width="1920" height="1080" fill="url(#bgGrad)"/>
 
-  <!-- Title -->
-  <text x="600" y="45" text-anchor="middle" fill="#e0e0e0" font-size="22" font-weight="bold" letter-spacing="3">HEARTBEAT — SYSTEM ARCHITECTURE</text>
-  <line x1="200" y1="80" x2="1000" y2="80" stroke="#1a3050" stroke-width="1"/>
+  <!-- ═══ TITLE ═══ -->
+  <text x="960" y="52" text-anchor="middle" fill="#d8e4f0" font-size="30" font-weight="bold" letter-spacing="6">HEARTBEAT</text>
+  <text x="960" y="78" text-anchor="middle" fill="#4a6a8a" font-size="13" letter-spacing="3">SYSTEM ARCHITECTURE</text>
+  <line x1="400" y1="95" x2="1520" y2="95" stroke="#1a2a40" stroke-width="1"/>
 
-  <!-- ════════ FIELD LAPTOP BOX ════════ -->
-  <rect x="30" y="100" width="780" height="680" rx="8" fill="none" stroke="#1a3050" stroke-width="1.5" stroke-dasharray="8,4"/>
-  <text x="50" y="125" fill="#5a7a9a" font-size="11" letter-spacing="2">FIELD LAPTOP (HEARTBEAT HOST)</text>
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  ZONE A  —  ORCHESTRATION (left)                                -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
 
-  <!-- CLI Layer -->
-  <rect x="60" y="145" width="720" height="70" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="145" width="5" height="70" rx="2" fill="url(#accentGrad)"/>
-  <text x="85" y="170" fill="#00b4d8" font-size="14" font-weight="bold">CLI LAYER</text>
-  <text x="85" y="190" fill="#a0b8d0" font-size="11">./heartbeat start | stop | restart | reset | status | record | export | qr | package | serve</text>
-  <text x="85" y="205" fill="#607890" font-size="10">heartbeat (310 lines bash) — prefix-matched commands — 18 total</text>
+  <rect x="50" y="115" width="490" height="555" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="75" y="142" fill="#4a6a8a" font-size="11" letter-spacing="2">ORCHESTRATION</text>
 
-  <!-- Backend Interface -->
-  <rect x="60" y="230" width="720" height="55" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="230" width="5" height="55" rx="2" fill="#6c63ff"/>
-  <text x="85" y="252" fill="#8b80ff" font-size="13" font-weight="bold">BACKEND INTERFACE</text>
-  <text x="85" y="268" fill="#a0b8d0" font-size="10">lib/backends/interface.sh — start / stop / reset / status / health_check / supports</text>
+  <!-- CLI -->
+  <rect x="75" y="160" width="440" height="80" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="160" width="440" height="4" rx="2" fill="#00b4d8"/>
+  <text x="105" y="192" fill="#00b4d8" font-size="18" font-weight="bold">CLI</text>
+  <text x="165" y="192" fill="#607890" font-size="12">./heartbeat</text>
+  <text x="105" y="218" fill="#8098b0" font-size="11">18 commands · 310 lines · prefix-matched dispatch</text>
 
-  <!-- Three backends -->
-  <rect x="60" y="300" width="220" height="110" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="300" width="220" height="4" rx="2" fill="url(#greenGrad)"/>
-  <text x="170" y="325" text-anchor="middle" fill="#40916c" font-size="13" font-weight="bold">FreeTAK (Lite)</text>
-  <text x="170" y="345" text-anchor="middle" fill="#a0b8d0" font-size="10">TCP only · No auth · Docker/venv</text>
-  <text x="170" y="362" text-anchor="middle" fill="#607890" font-size="10">CoT :8087 · REST :19023</text>
-  <text x="170" y="379" text-anchor="middle" fill="#607890" font-size="10">DataPkg :8443</text>
-  <text x="170" y="400" text-anchor="middle" fill="#40916c" font-size="9">✓ IMPLEMENTED</text>
+  <line x1="295" y1="240" x2="295" y2="264" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
 
-  <rect x="310" y="300" width="220" height="110" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="310" y="300" width="220" height="4" rx="2" fill="url(#accentGrad)"/>
-  <text x="420" y="325" text-anchor="middle" fill="#00b4d8" font-size="13" font-weight="bold">OpenTAK (Standard)</text>
-  <text x="420" y="345" text-anchor="middle" fill="#a0b8d0" font-size="10">SSL + WebTAK · Native systemd</text>
-  <text x="420" y="362" text-anchor="middle" fill="#607890" font-size="10">CoT :8088 · SSL :8089 · Web :8443</text>
-  <text x="420" y="379" text-anchor="middle" fill="#607890" font-size="10">Flask :8081 · RabbitMQ · PostgreSQL</text>
-  <text x="420" y="400" text-anchor="middle" fill="#00b4d8" font-size="9">✓ IMPLEMENTED (forked OTS)</text>
+  <!-- Control Plane -->
+  <rect x="75" y="270" width="440" height="72" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="270" width="4" height="72" rx="2" fill="#6c63ff"/>
+  <text x="105" y="300" fill="#8b80ff" font-size="16" font-weight="bold">Control Plane</text>
+  <text x="105" y="322" fill="#8098b0" font-size="11">Lifecycle · backend loading · capability routing</text>
 
-  <rect x="560" y="300" width="220" height="110" rx="6" fill="#111a2a" filter="url(#shadow)"/>
-  <rect x="560" y="300" width="220" height="4" rx="2" fill="#444"/>
-  <text x="670" y="325" text-anchor="middle" fill="#555" font-size="13" font-weight="bold">TAK Server (Enterprise)</text>
-  <text x="670" y="345" text-anchor="middle" fill="#444" font-size="10">tak.gov · Full federation</text>
-  <text x="670" y="362" text-anchor="middle" fill="#444" font-size="10">Group-based filtering</text>
-  <text x="670" y="379" text-anchor="middle" fill="#444" font-size="10">Federation Hub</text>
-  <text x="670" y="400" text-anchor="middle" fill="#e76f51" font-size="9">✗ NOT IMPLEMENTED</text>
+  <line x1="295" y1="342" x2="295" y2="366" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
 
-  <!-- Data Pipeline -->
-  <rect x="60" y="430" width="340" height="145" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="430" width="5" height="145" rx="2" fill="url(#orangeGrad)"/>
-  <text x="85" y="455" fill="#f4a261" font-size="13" font-weight="bold">RECORDING PIPELINE</text>
-  <text x="85" y="478" fill="#a0b8d0" font-size="10">recorder.py → TCP CoT stream client</text>
-  <text x="85" y="495" fill="#a0b8d0" font-size="10">cot_parser.py → XML stream parser (no lxml)</text>
-  <text x="85" y="512" fill="#a0b8d0" font-size="10">SA keepalive every 240s</text>
-  <text x="85" y="535" fill="#607890" font-size="10">▸ data/cot_records.db (SQLite WAL)</text>
-  <text x="85" y="552" fill="#607890" font-size="10">  sessions · events · geometry_points</text>
-  <text x="85" y="569" fill="#607890" font-size="10">  UNIQUE(uid, time) dedup</text>
+  <!-- Lifecycle -->
+  <rect x="75" y="372" width="440" height="170" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="372" width="4" height="170" rx="2" fill="#f4a261"/>
+  <text x="105" y="402" fill="#f4a261" font-size="16" font-weight="bold">Lifecycle Sequences</text>
 
-  <rect x="430" y="430" width="350" height="145" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="430" y="430" width="5" height="145" rx="2" fill="#e76f51"/>
-  <text x="455" y="455" fill="#e76f51" font-size="13" font-weight="bold">EXPORT PIPELINE</text>
-  <text x="455" y="478" fill="#a0b8d0" font-size="10">exporter.py → SQLite → GeoPackage</text>
-  <text x="455" y="495" fill="#a0b8d0" font-size="10">gpkg_writer.py → OGC GPKG (no GDAL)</text>
-  <text x="455" y="512" fill="#a0b8d0" font-size="10">gcm_mapper.py → YAML classification</text>
-  <text x="455" y="535" fill="#607890" font-size="10">Raw mode: classify by CoT type prefix</text>
-  <text x="455" y="552" fill="#607890" font-size="10">GCM mode: config/gcm-mapping.yml rules</text>
-  <text x="455" y="569" fill="#607890" font-size="10">Output: .gpkg → QGIS / ArcGIS / GeoPandas</text>
+  <text x="105" y="432" fill="#2ecc71" font-size="13" font-weight="bold">start</text>
+  <text x="185" y="432" fill="#8098b0" font-size="11">provision → config → recorder</text>
 
-  <!-- Onboarding tools -->
-  <rect x="60" y="595" width="720" height="60" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="595" width="5" height="60" rx="2" fill="#9b59b6"/>
-  <text x="85" y="618" fill="#bb77dd" font-size="13" font-weight="bold">ONBOARDING &amp; CONNECTIVITY</text>
-  <text x="85" y="640" fill="#a0b8d0" font-size="10">qr.sh → QR code  |  package.sh → .zip pkgs  |  serve → HTTP :9000  |  tailscale → VPN IP</text>
+  <text x="105" y="458" fill="#e76f51" font-size="13" font-weight="bold">stop</text>
+  <text x="185" y="458" fill="#8098b0" font-size="11">recorder → export .gpkg → backend</text>
 
-  <!-- Package server -->
-  <rect x="60" y="670" width="720" height="50" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <rect x="60" y="670" width="5" height="50" rx="2" fill="#2ecc71"/>
-  <text x="85" y="693" fill="#2ecc71" font-size="13" font-weight="bold">AUTO-LIFECYCLE</text>
-  <text x="85" y="710" fill="#a0b8d0" font-size="10">start→wait→health→record  |  stop→export→shutdown  |  restart / reset cycle</text>
+  <text x="105" y="484" fill="#00b4d8" font-size="13" font-weight="bold">restart</text>
+  <text x="185" y="484" fill="#8098b0" font-size="11">reset deps (clear stale broker)</text>
 
-  <!-- ════════ NETWORK / VPN ════════ -->
-  <rect x="30" y="795" width="1140" height="35" rx="6" fill="#0d1f35" stroke="#1a3050" stroke-width="1"/>
-  <text x="600" y="818" text-anchor="middle" fill="#5a9abf" font-size="12" font-weight="bold" letter-spacing="3">TAILSCALE VPN MESH — 100.x.x.x</text>
+  <text x="105" y="510" fill="#bb77dd" font-size="13" font-weight="bold">reset</text>
+  <text x="185" y="510" fill="#8098b0" font-size="11">full dependency chain recycle</text>
 
-  <!-- ════════ CLIENTS ════════ -->
-  <rect x="30" y="845" width="1140" height="50" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="120" y="877" text-anchor="middle" fill="#00b4d8" font-size="12" font-weight="bold">iTAK</text>
-  <text x="120" y="888" text-anchor="middle" fill="#607890" font-size="9">iPhone</text>
-  <text x="290" y="877" text-anchor="middle" fill="#00b4d8" font-size="12" font-weight="bold">ATAK</text>
-  <text x="290" y="888" text-anchor="middle" fill="#607890" font-size="9">Android</text>
-  <text x="460" y="877" text-anchor="middle" fill="#00b4d8" font-size="12" font-weight="bold">WinTAK</text>
-  <text x="460" y="888" text-anchor="middle" fill="#607890" font-size="9">Laptop</text>
-  <text x="630" y="877" text-anchor="middle" fill="#00b4d8" font-size="12" font-weight="bold">WebTAK</text>
-  <text x="630" y="888" text-anchor="middle" fill="#607890" font-size="9">Browser :8443</text>
-  <text x="850" y="877" text-anchor="middle" fill="#f4a261" font-size="12" font-weight="bold">QGIS / ArcGIS</text>
-  <text x="850" y="888" text-anchor="middle" fill="#607890" font-size="9">.gpkg consumers</text>
-  <text x="1060" y="877" text-anchor="middle" fill="#f4a261" font-size="12" font-weight="bold">External Pipeline</text>
-  <text x="1060" y="888" text-anchor="middle" fill="#607890" font-size="9">Downstream ingest</text>
+  <text x="105" y="534" fill="#4a6a8a" font-size="10">Mission → stop → GIS artifact automatically</text>
 
-  <!-- ════════ RIGHT SIDE INFO ════════ -->
-  <rect x="840" y="100" width="330" height="680" rx="8" fill="none" stroke="#1a3050" stroke-width="1" stroke-dasharray="8,4"/>
-  <text x="860" y="125" fill="#5a7a9a" font-size="11" letter-spacing="2">PROJECT CONTEXT</text>
+  <!-- Identity -->
+  <rect x="75" y="558" width="440" height="96" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="75" y="558" width="4" height="96" rx="2" fill="#bb77dd"/>
+  <text x="105" y="588" fill="#bb77dd" font-size="16" font-weight="bold">Identity + Onboarding</text>
+  <text x="105" y="612" fill="#8098b0" font-size="11">Package generation · cert provisioning · QR</text>
+  <text x="105" y="632" fill="#8098b0" font-size="11">HTTP serve :9000 · Tailscale VPN detection</text>
+  <text x="105" y="648" fill="#e76f51" font-size="9">One unique cert per device — shared reuse breaks routing</text>
 
-  <rect x="860" y="140" width="290" height="120" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="880" y="185" fill="#a0b8d0" font-size="10">Autonomous Wildland Firefighting</text>
-  <text x="880" y="242" fill="#607890" font-size="10">Network: Tailscale 100.117.14.47</text>
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  ZONE B  —  BACKENDS (center)                                   -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
 
-  <rect x="860" y="275" width="290" height="110" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="880" y="300" fill="#e0e0e0" font-size="12" font-weight="bold">DESIGN PRINCIPLES</text>
-  <text x="880" y="320" fill="#a0b8d0" font-size="10">▸ No GDAL dependency (field laptop)</text>
-  <text x="880" y="337" fill="#a0b8d0" font-size="10">▸ Backend-agnostic CLI abstraction</text>
-  <text x="880" y="354" fill="#a0b8d0" font-size="10">▸ Auto-lifecycle: start → record → export</text>
-  <text x="880" y="371" fill="#a0b8d0" font-size="10">▸ setup.sh → heartbeat start → done</text>
+  <rect x="570" y="115" width="720" height="555" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="595" y="142" fill="#4a6a8a" font-size="11" letter-spacing="2">BACKEND PLANE</text>
+  <text x="1125" y="142" fill="#3a4a5a" font-size="10" text-anchor="end">pluggable adapters behind shared interface contract</text>
 
-  <rect x="860" y="390" width="290" height="160" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="880" y="415" fill="#e0e0e0" font-size="12" font-weight="bold">KEY TECHNOLOGIES</text>
-  <text x="880" y="438" fill="#40916c" font-size="10">▸ Bash CLI + Python tools</text>
-  <text x="880" y="455" fill="#40916c" font-size="10">▸ CoT (Cursor on Target) XML protocol</text>
-  <text x="880" y="472" fill="#40916c" font-size="10">▸ SQLite (WAL mode) + GeoPackage</text>
-  <text x="880" y="489" fill="#40916c" font-size="10">▸ shapely (WKB geometry, no GDAL)</text>
-  <text x="880" y="506" fill="#40916c" font-size="10">▸ Docker / systemd / Python venv</text>
-  <text x="880" y="523" fill="#40916c" font-size="10">▸ Nginx + RabbitMQ + PostgreSQL (OTS)</text>
-  <text x="880" y="540" fill="#40916c" font-size="10">▸ mTLS certificates (OTS)</text>
+  <!-- Arrow from control plane → backends -->
+  <line x1="515" y1="306" x2="570" y2="306" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
 
-  <rect x="860" y="565" width="290" height="120" rx="6" fill="url(#cardGrad)" filter="url(#shadow)"/>
-  <text x="880" y="590" fill="#e0e0e0" font-size="12" font-weight="bold">NOT YET IMPLEMENTED</text>
-  <text x="880" y="610" fill="#e76f51" font-size="10">✗ TAK Server (Enterprise) backend</text>
-  <text x="880" y="627" fill="#e76f51" font-size="10">✗ Federation support</text>
-  <text x="880" y="644" fill="#e76f51" font-size="10">✗ GPKG import pipeline</text>
-  <text x="880" y="661" fill="#e76f51" font-size="10">✗ Export time filters / live mode</text>
-  <text x="880" y="678" fill="#e76f51" font-size="10">✗ CoT injection / simulation</text>
+  <!-- FreeTAK -->
+  <rect x="595" y="165" width="340" height="240" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="595" y="165" width="340" height="5" rx="2" fill="#40916c"/>
+  <text x="625" y="200" fill="#40916c" font-size="20" font-weight="bold">FreeTAK</text>
+  <text x="625" y="224" fill="#607890" font-size="12">Lite tier</text>
 
-  <!-- Data flow arrows -->
-  <line x1="170" y1="410" x2="170" y2="430" stroke="#40916c" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
-  <line x1="420" y1="410" x2="420" y2="430" stroke="#00b4d8" stroke-width="1.5" marker-end="url(#arrowBlue)"/>
-  <line x1="400" y1="500" x2="430" y2="500" stroke="#f4a261" stroke-width="1.5" marker-end="url(#arrowOrange)"/>
+  <text x="625" y="260" fill="#8098b0" font-size="12">TCP CoT :8087</text>
+  <text x="625" y="282" fill="#8098b0" font-size="12">Docker or Python venv</text>
+  <text x="625" y="304" fill="#8098b0" font-size="12">No cert identity</text>
+  <text x="625" y="326" fill="#607890" font-size="11">Lower friction model</text>
 
-  <!-- Version -->
-  <text x="1170" y="18" text-anchor="end" fill="#3a5570" font-size="9">v2 · Feb 2026</text>
+  <rect x="625" y="368" width="120" height="24" rx="12" fill="#1a3020"/>
+  <text x="685" y="385" text-anchor="middle" fill="#40916c" font-size="10" font-weight="bold">IMPLEMENTED</text>
+
+  <!-- OpenTAK -->
+  <rect x="955" y="165" width="315" height="240" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="955" y="165" width="315" height="5" rx="2" fill="#00b4d8"/>
+  <text x="985" y="200" fill="#00b4d8" font-size="20" font-weight="bold">OpenTAK</text>
+  <text x="985" y="224" fill="#607890" font-size="12">Standard tier</text>
+
+  <text x="985" y="260" fill="#8098b0" font-size="12">SSL/mTLS CoT :8089</text>
+  <text x="985" y="282" fill="#8098b0" font-size="12">WebTAK :8443 via Nginx</text>
+  <text x="985" y="304" fill="#8098b0" font-size="12">systemd · RabbitMQ · PostgreSQL</text>
+  <text x="985" y="326" fill="#607890" font-size="11">Cert-backed identity</text>
+
+  <rect x="985" y="368" width="120" height="24" rx="12" fill="#0a2030"/>
+  <text x="1045" y="385" text-anchor="middle" fill="#00b4d8" font-size="10" font-weight="bold">IMPLEMENTED</text>
+
+  <!-- TAK Server -->
+  <rect x="595" y="425" width="675" height="95" rx="8" fill="#0e1520" stroke="#1a2535" stroke-width="1"/>
+  <text x="625" y="460" fill="#3a4a5a" font-size="20" font-weight="bold">TAK Server</text>
+  <text x="835" y="460" fill="#2a3a4a" font-size="12">Enterprise tier</text>
+  <text x="625" y="486" fill="#2a3a4a" font-size="12">tak.gov · Full PKI · Federation Hub · group-based filtering</text>
+  <text x="1230" y="486" fill="#e76f51" font-size="10" text-anchor="end">BACKLOG</text>
+
+  <!-- Runtime services -->
+  <rect x="595" y="540" width="675" height="115" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="595" y="540" width="675" height="4" rx="2" fill="#e76f51"/>
+  <text x="625" y="572" fill="#e76f51" font-size="15" font-weight="bold">Runtime Services</text>
+  <text x="850" y="572" fill="#607890" font-size="11">long-lived processes managed by backend</text>
+
+  <rect x="625" y="590" width="275" height="50" rx="6" fill="#1e3350"/>
+  <text x="645" y="614" fill="#40916c" font-size="12" font-weight="bold">FreeTAK</text>
+  <text x="645" y="632" fill="#607890" font-size="10">Docker container or venv</text>
+
+  <rect x="920" y="590" width="330" height="50" rx="6" fill="#1e3350"/>
+  <text x="940" y="614" fill="#00b4d8" font-size="12" font-weight="bold">OpenTAK</text>
+  <text x="940" y="632" fill="#607890" font-size="10">rabbitmq · postgresql · nginx · OTS</text>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  ZONE C  —  DATA PIPELINE (right)                               -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+
+  <rect x="1320" y="115" width="560" height="555" rx="10" fill="none" stroke="#1a2a40" stroke-width="1"/>
+  <text x="1345" y="142" fill="#4a6a8a" font-size="11" letter-spacing="2">DATA PIPELINE</text>
+
+  <!-- Arrow from backends → data pipeline -->
+  <line x1="1290" y1="306" x2="1320" y2="306" stroke="#3a5a7a" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- Recorder -->
+  <rect x="1345" y="165" width="510" height="100" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1345" y="165" width="510" height="5" rx="2" fill="#f4a261"/>
+  <text x="1375" y="198" fill="#f4a261" font-size="18" font-weight="bold">Recorder</text>
+  <text x="1375" y="224" fill="#8098b0" font-size="11">Local client consumer · CoT stream framing + XML parse</text>
+  <text x="1375" y="246" fill="#607890" font-size="10">SA keepalive 240s · auto-reconnect · OTS: localhost SSL :8089</text>
+
+  <line x1="1600" y1="265" x2="1600" y2="290" stroke="#f4a261" stroke-width="1.5" marker-end="url(#ao)"/>
+
+  <!-- SQLite -->
+  <rect x="1345" y="296" width="510" height="120" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1345" y="296" width="4" height="120" rx="2" fill="#40916c"/>
+  <text x="1375" y="328" fill="#40916c" font-size="18" font-weight="bold">SQLite</text>
+  <text x="1500" y="328" fill="#607890" font-size="12">WAL mode · session-scoped</text>
+
+  <rect x="1375" y="344" width="155" height="26" rx="4" fill="#1e3350"/>
+  <text x="1385" y="362" fill="#00b4d8" font-size="10">recording_sessions</text>
+
+  <rect x="1545" y="344" width="105" height="26" rx="4" fill="#1e3350"/>
+  <text x="1555" y="362" fill="#f4a261" font-size="10">cot_events</text>
+
+  <rect x="1665" y="344" width="165" height="26" rx="4" fill="#1e3350"/>
+  <text x="1675" y="362" fill="#bb77dd" font-size="10">cot_geometry_points</text>
+
+  <text x="1375" y="400" fill="#607890" font-size="10">UNIQUE(uid, time) dedup · ordered vertices for lines/polygons</text>
+
+  <line x1="1600" y1="416" x2="1600" y2="440" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- Export -->
+  <rect x="1345" y="446" width="510" height="100" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1345" y="446" width="4" height="100" rx="2" fill="#2ecc71"/>
+  <text x="1375" y="478" fill="#2ecc71" font-size="18" font-weight="bold">Export</text>
+  <text x="1375" y="504" fill="#8098b0" font-size="11">Classify geometry · raw CoT-type layers or GCM mode</text>
+  <text x="1375" y="526" fill="#607890" font-size="10">NO GDAL · shapely + sqlite3 · OGC GeoPackage · EPSG:4326</text>
+
+  <line x1="1600" y1="546" x2="1600" y2="568" stroke="#2ecc71" stroke-width="1.5" marker-end="url(#ag)"/>
+
+  <!-- Output -->
+  <rect x="1345" y="574" width="510" height="80" rx="8" fill="url(#cardGrad)" filter="url(#glow)"/>
+  <rect x="1345" y="574" width="510" height="5" rx="2" fill="#bb77dd"/>
+  <text x="1375" y="608" fill="#bb77dd" font-size="18" font-weight="bold">.gpkg</text>
+  <text x="1475" y="608" fill="#607890" font-size="12">GIS-ready artifact</text>
+  <text x="1375" y="636" fill="#8098b0" font-size="11">Point · LineString · Polygon · Circle→Polygon</text>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  NETWORK + CLIENTS                                              -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+
+  <rect x="50" y="690" width="1830" height="30" rx="6" fill="#0c1825" stroke="#1a2a40" stroke-width="1"/>
+  <text x="960" y="711" text-anchor="middle" fill="#4a7a9a" font-size="14" font-weight="bold" letter-spacing="5">TAILSCALE VPN MESH</text>
+
+  <!-- TAK Clients -->
+  <rect x="50" y="735" width="930" height="60" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <text x="80" y="764" fill="#00b4d8" font-size="16" font-weight="bold">TAK Clients</text>
+  <text x="260" y="764" fill="#8098b0" font-size="12">iTAK · ATAK · WinTAK · WebTAK</text>
+  <text x="80" y="784" fill="#607890" font-size="10">SSL :8089 · WebTAK :8443 · Packages :9000</text>
+
+  <!-- GIS Consumers -->
+  <rect x="1000" y="735" width="880" height="60" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <text x="1030" y="764" fill="#f4a261" font-size="16" font-weight="bold">GIS Consumers</text>
+  <text x="1230" y="764" fill="#8098b0" font-size="12">QGIS · ArcGIS · GeoPandas</text>
+  <text x="1030" y="784" fill="#607890" font-size="10">.gpkg artifacts with rich attributes + style metadata</text>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!--  BOTTOM — CONSTRAINTS + PRINCIPLES                              -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+
+  <!-- Constraints -->
+  <rect x="50" y="815" width="930" height="145" rx="8" fill="#14120a" stroke="#e76f51" stroke-width="1" stroke-opacity="0.5"/>
+  <text x="80" y="845" fill="#e76f51" font-size="15" font-weight="bold">Critical Constraints</text>
+
+  <text x="80" y="878" fill="#c8d0d8" font-size="12" font-weight="bold">SSL recorder path required</text>
+  <text x="430" y="878" fill="#8098b0" font-size="11">Plain TCP misses routed annotations — recorder must use localhost SSL</text>
+
+  <text x="80" y="908" fill="#c8d0d8" font-size="12" font-weight="bold">One cert per physical device</text>
+  <text x="430" y="908" fill="#8098b0" font-size="11">Shared packages break multi-device routing under OpenTAK</text>
+
+  <text x="80" y="938" fill="#c8d0d8" font-size="12" font-weight="bold">Zero events ≠ exporter bug</text>
+  <text x="430" y="938" fill="#8098b0" font-size="11">Indicates transport or auth mismatch — PID alive ≠ events captured</text>
+
+  <!-- Design Principles -->
+  <rect x="1000" y="815" width="880" height="145" rx="8" fill="url(#cardGrad)" filter="url(#sh)"/>
+  <rect x="1000" y="815" width="880" height="4" rx="2" fill="#8b80ff"/>
+  <text x="1030" y="845" fill="#8b80ff" font-size="15" font-weight="bold">Design Principles</text>
+
+  <text x="1030" y="878" fill="#8098b0" font-size="12">Backend logic in adapters, never in CLI core</text>
+  <text x="1030" y="902" fill="#8098b0" font-size="12">Abstract interface contract keeps orchestration portable</text>
+  <text x="1030" y="926" fill="#8098b0" font-size="12">Data transforms isolated from writer and lifecycle concerns</text>
+  <text x="1030" y="950" fill="#607890" font-size="10">Config generated at runtime, read dynamically — separation keeps system maintainable</text>
+
+  <!-- ─── END-TO-END ─── -->
+  <rect x="50" y="978" width="1830" height="38" rx="6" fill="#0c1520" stroke="#1a2a40" stroke-width="0.5"/>
+  <text x="960" y="1003" text-anchor="middle" fill="#4a6a8a" font-size="12">CLI → Control Plane → Backend Adapter → TAK Services → CoT Routing → Recorder → Parser → SQLite → Exporter → GeoPackage → GIS</text>
+
+  <!-- 5 Jobs -->
+  <text x="80" y="1045" fill="#00b4d8" font-size="11" font-weight="bold">5 JOBS</text>
+  <text x="165" y="1045" fill="#607890" font-size="11">① Provision backend</text>
+  <text x="420" y="1045" fill="#607890" font-size="11">② Onboard devices</text>
+  <text x="670" y="1045" fill="#607890" font-size="11">③ Capture live CoT</text>
+  <text x="960" y="1045" fill="#607890" font-size="11">④ Persist sessions</text>
+  <text x="1240" y="1045" fill="#607890" font-size="11">⑤ Export .gpkg</text>
+
+  <text x="1880" y="22" text-anchor="end" fill="#2a3a50" font-size="10">v2</text>
 </svg>

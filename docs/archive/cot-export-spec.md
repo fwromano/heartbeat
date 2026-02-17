@@ -16,7 +16,7 @@ Two export modes are required:
 - **Raw dump**: all CoT events to a 4-layer GeoPackage (positions, markers, routes, areas)
 - **GCM export**: Graphic Control Measures only (tactical geometry, no position tracks), using a YAML mapping with hardcoded defaults that can be overridden per-export
 
-Recording is manual (user starts/stops) and captures everything so both export views work from the same recording.
+Recording is automatic (starts with `./heartbeat start`, exports on `./heartbeat stop`) and captures everything so both export views work from the same recording. Manual `record start/stop` is also available.
 
 ---
 
@@ -25,7 +25,7 @@ Recording is manual (user starts/stops) and captures everything so both export v
 ```
 ATAK/iTAK clients
      |
-     | CoT XML over TCP (:8087)
+     | CoT XML over TCP/SSL
      v
 +--------------+      +------------------+
 |  TAK Server  |<-----| heartbeat start  |
@@ -33,10 +33,11 @@ ATAK/iTAK clients
 +------+-------+
        |
        | CoT stream (recorder connects as a TAK client)
+       | FreeTAK: TCP :8087 | OpenTAK: SSL mTLS 127.0.0.1:8089
        v
-+----------------+      ./heartbeat record start
++----------------+      auto-starts with ./heartbeat start
 |  recorder.py   |----  Python daemon, PID in data/recorder.pid
-| (TCP client)   |      Sends SA event to identify, then passively listens
+| (TCP or SSL)   |      Sends SA event to identify, then listens
 +------+---------+
        |
        | Parsed events (INSERT OR IGNORE for dedup)

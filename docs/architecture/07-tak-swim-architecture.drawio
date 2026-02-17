@@ -1,0 +1,93 @@
+<mxfile>
+  <diagram name="TAK + SWIM" id="tak-swim">
+    <mxGraphModel dx="1920" dy="1080" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TAK Layer -->
+        <mxCell id="tak" value="TAK" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=5;container=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="1800" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="ops" value="Operators" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=16;fontStyle=1;" vertex="1" parent="tak">
+          <mxGeometry x="40" y="60" width="400" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="srv" value="TAK Server" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;fontStyle=1;" vertex="1" parent="tak">
+          <mxGeometry x="500" y="60" width="400" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="hb" value="Heartbeat" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=16;fontStyle=1;" vertex="1" parent="tak">
+          <mxGeometry x="960" y="60" width="780" height="160" as="geometry"/>
+        </mxCell>
+
+        <!-- Connectors inside TAK -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="ops" target="srv" parent="tak">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="srv" target="hb" parent="tak">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Gateway -->
+        <mxCell id="gw" value="CoT ↔ ROS Gateway" style="rounded=1;whiteSpace=wrap;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=16;fontStyle=1;dashed=1;dashPattern=8 4;" vertex="1" parent="1">
+          <mxGeometry x="340" y="340" width="1240" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- SWIM Layer -->
+        <mxCell id="swim" value="SWIM" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1;verticalAlign=top;spacingTop=5;container=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="460" width="1800" height="320" as="geometry"/>
+        </mxCell>
+        <mxCell id="ra" value="Robot Node A&#xa;(Provider)" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;fontStyle=1;" vertex="1" parent="swim">
+          <mxGeometry x="40" y="60" width="400" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="rb" value="Robot Node B&#xa;(Requester)" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=16;fontStyle=1;" vertex="1" parent="swim">
+          <mxGeometry x="500" y="60" width="400" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="plan" value="Planning + Nav" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontSize=16;fontStyle=1;" vertex="1" parent="swim">
+          <mxGeometry x="960" y="60" width="400" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="store" value="Local Map Store" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="swim">
+          <mxGeometry x="40" y="220" width="400" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mstore" value="Merged Map Store" style="rounded=1;whiteSpace=wrap;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;" vertex="1" parent="swim">
+          <mxGeometry x="500" y="220" width="400" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="nav" value="Robot Navigation" style="rounded=1;whiteSpace=wrap;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;" vertex="1" parent="swim">
+          <mxGeometry x="960" y="220" width="400" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Peer exchange -->
+        <mxCell id="e3" value="map data" style="edgeStyle=orthogonalEdgeStyle;fontSize=11;" edge="1" source="ra" target="rb" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" value="requests" style="edgeStyle=orthogonalEdgeStyle;fontSize=11;" edge="1" source="rb" target="ra" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Store connections -->
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="ra" target="store" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="rb" target="mstore" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="mstore" target="plan" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="plan" target="nav" parent="swim">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Inter-layer flows -->
+        <mxCell id="f1" value="robot positions ↑" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#2ecc71;strokeWidth=2;fontSize=11;fontColor=#2ecc71;" edge="1" source="ra" target="srv" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="f2" value="mission commands ↓" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#3498db;strokeWidth=2;fontSize=11;fontColor=#3498db;" edge="1" source="srv" target="rb" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="f3" value=".gpkg feed" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#27ae60;strokeWidth=2;dashed=1;dashPattern=8 4;fontSize=11;fontColor=#27ae60;" edge="1" source="hb" target="store" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
