@@ -17,15 +17,15 @@ import os
 import signal
 import socket
 import sqlite3
-import ssl
 import sys
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 # Add tools/ to path so we can import cot_parser as a sibling module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cot_parser import CotStreamParser, parse_cot_event
+from tak_client import TakClient
 
 
 # ---------------------------------------------------------------------------
@@ -93,12 +93,6 @@ def iso_now():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def iso_future(minutes=5):
-    """UTC time N minutes in the future as ISO 8601."""
-    t = datetime.now(timezone.utc) + timedelta(minutes=minutes)
-    return t.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-
 class CotRecorder:
     """Main recorder daemon that connects to a TAK server and records CoT events."""
 
@@ -122,7 +116,6 @@ class CotRecorder:
         self.key_path = key_path
         self.ca_path = ca_path
         self.running = True
-        self.sock = None
         self.session_id = None
         self.recorder_uid = f"heartbeat-recorder-{uuid.uuid4()}"
         self.recorder_callsign = f"HB-REC-{uuid.uuid4().hex[:8]}"
@@ -136,6 +129,21 @@ class CotRecorder:
             ],
         )
         self.log = logging.getLogger("recorder")
+        self.client = TakClient(
+            self.host,
+            self.port,
+            callsign=self.recorder_callsign,
+            uid=self.recorder_uid,
+            use_ssl=self.use_ssl,
+            cert_path=self.cert_path,
+            key_path=self.key_path,
+            ca_path=self.ca_path,
+            platform="recorder",
+            device="server",
+            role="HQ",
+            team="Cyan",
+            logger=self.log,
+        )
 
     def init_db(self):
         """Create database schema if it doesn't exist."""
@@ -144,63 +152,9 @@ class CotRecorder:
         conn.close()
         self.log.info("Database initialized: %s", self.db_path)
 
-    def make_sa_event(self):
-        """Build the SA (self-identification) XML event."""
-        now = iso_now()
-        stale = iso_future(5)
-        return (
-            '<?xml version="1.0" encoding="UTF-8"?>'
-            f'<event version="2.0"'
-            f' uid="{self.recorder_uid}"'
-            f' type="a-f-G-U-C"'
-            f' time="{now}"'
-            f' start="{now}"'
-            f' stale="{stale}"'
-            f' how="m-g">'
-            f'<point lat="0.0" lon="0.0" hae="0" ce="9999999" le="9999999"/>'
-            f"<detail>"
-            f'<contact callsign="{self.recorder_callsign}"/>'
-            f'<__group name="Cyan" role="HQ"/>'
-            f'<precisionlocation altsrc="DTED0"/>'
-            f'<takv version="heartbeat" platform="recorder" device="server" os="linux"/>'
-            f"</detail>"
-            f"</event>"
-        )
-
     def connect(self):
         """Establish connection and send SA event."""
-        raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw_sock.settimeout(5)
-
-        if self.use_ssl:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-            context.check_hostname = False
-
-            if self.ca_path:
-                context.load_verify_locations(cafile=self.ca_path)
-                context.verify_mode = ssl.CERT_REQUIRED
-            else:
-                context.verify_mode = ssl.CERT_NONE
-
-            if not self.cert_path or not self.key_path:
-                raise RuntimeError("SSL mode requires cert/key paths")
-
-            context.load_cert_chain(certfile=self.cert_path, keyfile=self.key_path)
-            self.sock = context.wrap_socket(raw_sock, server_hostname=self.host)
-        else:
-            self.sock = raw_sock
-
-        self.sock.connect((self.host, self.port))
-        self.sock.setblocking(True)
-        mode = "SSL" if self.use_ssl else "TCP"
-        self.log.info("Connected (%s) to %s:%d", mode, self.host, self.port)
-
-        # Send SA identification
-        sa = self.make_sa_event()
-        self.sock.sendall(sa.encode("utf-8"))
-        self.log.info(
-            "SA event sent (callsign=%s, uid=%s)", self.recorder_callsign, self.recorder_uid
-        )
+        self.client.connect()
 
     def record_event(self, conn, session_id, xml_str):
         """Parse a CoT event XML and insert into the database."""
@@ -209,7 +163,7 @@ class CotRecorder:
             return False
 
         # Skip our own SA events
-        if parsed["uid"] == self.recorder_uid:
+        if parsed["uid"] == self.client.uid:
             return False
 
         geometry_points = parsed.get("geometry_points") or []
@@ -308,7 +262,7 @@ class CotRecorder:
 
                 while self.running:
                     try:
-                        data = self.sock.recv(65536)
+                        data = self.client.sock.recv(65536)
                     except socket.timeout:
                         data = b""
                     except OSError:
@@ -332,8 +286,7 @@ class CotRecorder:
                     # SA keepalive
                     if time.monotonic() - last_sa_time >= SA_INTERVAL:
                         try:
-                            sa = self.make_sa_event()
-                            self.sock.sendall(sa.encode("utf-8"))
+                            self.client.send_keepalive()
                             last_sa_time = time.monotonic()
                             self.log.debug("SA keepalive sent")
                         except OSError:
@@ -351,12 +304,8 @@ class CotRecorder:
 
             finally:
                 # Close socket
-                if self.sock:
-                    try:
-                        self.sock.close()
-                    except Exception:
-                        pass
-                    self.sock = None
+                if getattr(self, "client", None):
+                    self.client.close()
 
                 # Close recording session
                 if db_conn and self.session_id:
@@ -388,11 +337,8 @@ class CotRecorder:
         """Signal handler -- sets running=False and shuts down the socket."""
         self.log.info("Shutdown signal received")
         self.running = False
-        if self.sock:
-            try:
-                self.sock.shutdown(socket.SHUT_RDWR)
-            except Exception:
-                pass
+        if getattr(self, "client", None):
+            self.client.close()
 
 
 def main():
