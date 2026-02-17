@@ -47,6 +47,7 @@ FIRE_FEED_ENABLED="true"   # Auto-start wildfire feed on ./heartbeat start
 FIRE_FEED_INTERVAL=900     # Poll interval in seconds (default: 15 min)
 FIRE_FEED_BBOX=""          # Optional bbox: "lon_min,lat_min,lon_max,lat_max"
 FIRE_FEED_RANGE_KM=100     # Reserved for future auto-bbox mode
+FIRE_FEED_OTS_API_URL="http://127.0.0.1:8081/api"  # OpenTAK point API base for auto-bbox
 
 # ---------------------------------------------------------------------------
 # Paths (relative to heartbeat repo root)

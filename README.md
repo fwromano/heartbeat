@@ -163,6 +163,10 @@ Packages are auto-generated when you serve. For OpenTAK, each device needs its o
 
 Recording and export are fully automatic. `./heartbeat start` begins capturing all CoT events (positions, markers, routes, polygons) and `./heartbeat stop` exports them to GeoPackage. If enabled, fire incident feed polling also starts automatically.
 
+Fire feed area selection:
+- Set `FIRE_FEED_BBOX` to a fixed area (`lon_min,lat_min,lon_max,lat_max`), or
+- Leave it empty on OpenTAK to auto-derive a bbox from team positions (`FIRE_FEED_RANGE_KM` buffer).
+
 Output files land in `data/exports/` — open directly in QGIS, ArcGIS, or any spatial tool. No GDAL required.
 
 ```bash

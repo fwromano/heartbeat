@@ -105,9 +105,20 @@ fire_start() {
 
     local interval="${FIRE_FEED_INTERVAL:-900}"
     local bbox="${FIRE_FEED_BBOX:-}"
+    local range_km="${FIRE_FEED_RANGE_KM:-100}"
     fire_args+=(--interval "$interval")
     if [[ -n "$bbox" ]]; then
         fire_args+=(--bbox "$bbox")
+    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        # Auto-bbox mode: derive area from team positions known by OpenTAK.
+        local ots_api_base="${FIRE_FEED_OTS_API_URL:-http://127.0.0.1:8081/api}"
+        fire_args+=(
+            --auto-bbox-url "$ots_api_base"
+            --auto-bbox-range-km "$range_km"
+        )
+        if [[ -n "${FTS_USERNAME:-}" && -n "${FTS_PASSWORD:-}" ]]; then
+            fire_args+=(--auto-bbox-user "$FTS_USERNAME" --auto-bbox-password "$FTS_PASSWORD")
+        fi
     fi
 
     log_step "Starting fire feed"
@@ -115,6 +126,8 @@ fire_start() {
     log_info "Interval: ${interval}s"
     if [[ -n "$bbox" ]]; then
         log_info "BBOX: ${bbox}"
+    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        log_info "BBOX: auto from team positions (range ${range_km}km)"
     else
         log_info "BBOX: none (nationwide feed)"
     fi
@@ -227,6 +240,8 @@ fire_status() {
     echo -e "  Interval:  ${FIRE_FEED_INTERVAL:-900}s"
     if [[ -n "${FIRE_FEED_BBOX:-}" ]]; then
         echo -e "  BBOX:      ${FIRE_FEED_BBOX}"
+    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        echo -e "  BBOX:      auto (team centroid ±${FIRE_FEED_RANGE_KM:-100}km)"
     else
         echo -e "  BBOX:      nationwide (no filter)"
     fi
