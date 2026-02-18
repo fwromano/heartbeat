@@ -14,7 +14,7 @@
 #   reset                Full reset (backend + dependencies)
 #   status               Show server status
 #   logs [-f]            View server logs (-f to follow)
-#   package [name]       Generate a connection package (auto-names if omitted)
+#   package [name]       Generate a data package (auto-names if omitted)
 #   packages             List all generated packages
 #   serve [port]         Serve packages over HTTP for phone download
 #   info                 Show server connection info
@@ -47,7 +47,7 @@ show_help() {
     echo -e "${BOLD}Team:${NC}"
     echo "  qr                   Show QR code to scan from iTAK/ATAK"
     echo "  tailscale            Set SERVER_IP to the Tailscale IP"
-    echo "  package [name]       Generate a connection package (auto-names if omitted)"
+    echo "  package [name]       Generate a data package (auto-names if omitted)"
     echo "  packages             List all generated packages"
     echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
     echo ""

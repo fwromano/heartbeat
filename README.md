@@ -76,7 +76,7 @@ Server:
 Team:
   qr                   Show QR code to scan from iTAK/ATAK
   tailscale            Set SERVER_IP to the Tailscale IP
-  package [name]       Generate a connection package (auto-names if omitted)
+  package [name]       Generate a data package (auto-names if omitted)
   packages             List all generated packages
   serve [port]         HTTP-serve packages for phone download (default :9000)
 

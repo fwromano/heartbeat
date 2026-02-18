@@ -580,14 +580,14 @@ conn.close()
     [[ -z "$fts_pkg" ]] && return 0
 
     local container_path="/opt/fts/certs/clientPackages/${fts_pkg}"
-    local local_pkg="${PACKAGES_DIR}/${username}_connection.zip"
+    local local_pkg="${PACKAGES_DIR}/${username}.zip"
 
     if docker exec heartbeat-fts test -f "$container_path" 2>/dev/null; then
         ensure_dir "$PACKAGES_DIR"
         if docker cp "heartbeat-fts:${container_path}" "$local_pkg" 2>/dev/null; then
             # Patch: enable connection by default (FTS sets enabled0=false)
             _patch_package_enabled "$local_pkg"
-            log_ok "Connection package synced: ${local_pkg}"
+            log_ok "Data package synced: ${local_pkg}"
         fi
     fi
 }
