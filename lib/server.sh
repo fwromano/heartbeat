@@ -516,10 +516,16 @@ _show_running_info() {
         echo -e "${BOLD}TAK Server is starting${NC}"
     fi
     echo -e "${DIM}──────────────────────────────────${NC}"
-    echo -e "  ${BOLD}Connect from iTAK/ATAK:${NC}"
-    echo -e "  Server:  ${CYAN}${SERVER_IP}${NC}"
-    echo -e "  Port:    ${CYAN}${COT_PORT}${NC}"
-    echo -e "  Proto:   TCP"
+    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        echo -e "  ${BOLD}Preferred onboarding (OpenTAK):${NC}"
+        echo -e "  Package URL:  ${CYAN}http://${SERVER_IP}:${HEARTBEAT_SERVE_PORT:-9000}/${NC}"
+        echo -e "  SSL CoT:      ${CYAN}${SERVER_IP}:${SSL_COT_PORT:-8089}${NC}"
+    else
+        echo -e "  ${BOLD}Connect from iTAK/ATAK:${NC}"
+        echo -e "  Server:  ${CYAN}${SERVER_IP}${NC}"
+        echo -e "  Port:    ${CYAN}${COT_PORT}${NC}"
+        echo -e "  Proto:   TCP"
+    fi
 
     if [[ "$ready" == "true" ]]; then
         if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
@@ -534,12 +540,18 @@ _show_running_info() {
             _sync_fts_package
         fi
 
-        # Show QR code
-        if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
-            show_qr_compact
+        # Show QR code for FreeTAK quick-connect flow only.
+        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+            if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
+                show_qr_compact
+            fi
         fi
     else
-        log_info "Server still starting. Run ./heartbeat info or ./heartbeat qr in a moment."
+        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+            log_info "Server still starting. Run ./heartbeat info in a moment."
+        else
+            log_info "Server still starting. Run ./heartbeat info or ./heartbeat qr in a moment."
+        fi
         (
             local i=0
             while ! _server_ready && [[ $i -lt 60 ]]; do
@@ -553,7 +565,9 @@ _show_running_info() {
         ) &
     fi
 
-    echo -e "  ${DIM}./heartbeat qr           show QR code again${NC}"
+    if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+        echo -e "  ${DIM}./heartbeat qr           show QR code again${NC}"
+    fi
     echo -e "  ${DIM}./heartbeat listen        live server monitor${NC}"
     echo ""
 }

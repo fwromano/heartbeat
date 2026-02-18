@@ -8,7 +8,7 @@
 #   ./heartbeat <command> [args]
 #
 # Commands:
-#   start                Start the TAK server
+#   start                Start the TAK server (package page auto-starts by default)
 #   stop                 Stop the TAK server
 #   restart              Restart the TAK server
 #   reset                Full reset (backend + dependencies)
@@ -16,7 +16,7 @@
 #   logs [-f]            View server logs (-f to follow)
 #   package [name]       Generate a data package (auto-names if omitted)
 #   packages             List all generated packages
-#   serve [port]         Serve packages over HTTP for phone download
+#   serve [port]         Serve packages over HTTP for device download
 #   info                 Show server connection info
 #   update               Update FreeTAKServer
 #   uninstall            Remove everything
@@ -36,7 +36,7 @@ show_help() {
     echo -e "${BOLD}Usage:${NC} ./heartbeat <command> [args]"
     echo ""
     echo -e "${BOLD}Server:${NC}"
-    echo "  start                Start the TAK server"
+    echo "  start                Start the TAK server (package page auto-starts by default)"
     echo "  stop                 Stop the TAK server"
     echo "  restart              Restart the TAK server (OpenTAK: full stack reset)"
     echo "  reset                Full reset (backend + dependencies)"
@@ -45,11 +45,11 @@ show_help() {
     echo "  logs [-f]            View server logs (-f to follow)"
     echo ""
     echo -e "${BOLD}Team:${NC}"
-    echo "  qr                   Show QR code to scan from iTAK/ATAK"
+    echo "  qr                   Show optional QR for the package page URL"
     echo "  tailscale            Set SERVER_IP to the Tailscale IP"
     echo "  package [name]       Generate a data package (auto-names if omitted)"
     echo "  packages             List all generated packages"
-    echo "  serve [port]         HTTP-serve packages for phone download (default :9000)"
+    echo "  serve [port]         HTTP-serve packages for device download (default :9000)"
     echo ""
     echo -e "${BOLD}Recording & Export:${NC}"
     echo "  record status        Check recorder status and event count"
@@ -174,11 +174,19 @@ case "$cmd" in
         # Auto-start recorder so CoT events are always captured
         source "${LIB_DIR}/record.sh"
         record_start
+        # Auto-start package server unless explicitly disabled
+        load_config
+        if [[ "${HEARTBEAT_AUTOSERVE:-true}" == "true" ]]; then
+            source "${LIB_DIR}/package.sh"
+            serve_start "${HEARTBEAT_SERVE_PORT:-9000}" || true
+        fi
         ;;
     stop)
-        # Stop recorder and auto-export before shutting down server
+        # Stop recorder/package server and auto-export before shutting down server
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/package.sh"
+        serve_stop 2>/dev/null || true
         # Auto-export recorded data if there's a database
         if [[ -f "${DATA_DIR}/cot_records.db" ]]; then
             source "${LIB_DIR}/export.sh"
@@ -190,6 +198,8 @@ case "$cmd" in
     restart)
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/package.sh"
+        serve_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         load_config
         if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
@@ -200,20 +210,34 @@ case "$cmd" in
         fi
         source "${LIB_DIR}/record.sh"
         record_start
+        load_config
+        if [[ "${HEARTBEAT_AUTOSERVE:-true}" == "true" ]]; then
+            source "${LIB_DIR}/package.sh"
+            serve_start "${HEARTBEAT_SERVE_PORT:-9000}" || true
+        fi
         ;;
     reset)
         source "${LIB_DIR}/record.sh"
         record_stop 2>/dev/null || true
+        source "${LIB_DIR}/package.sh"
+        serve_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         server_reset
         source "${LIB_DIR}/record.sh"
         record_start
+        load_config
+        if [[ "${HEARTBEAT_AUTOSERVE:-true}" == "true" ]]; then
+            source "${LIB_DIR}/package.sh"
+            serve_start "${HEARTBEAT_SERVE_PORT:-9000}" || true
+        fi
         ;;
     status)
         source "${LIB_DIR}/server.sh"
         server_status
         source "${LIB_DIR}/record.sh"
         record_status
+        source "${LIB_DIR}/package.sh"
+        serve_status
         ;;
     listen)
         source "${LIB_DIR}/server.sh"
