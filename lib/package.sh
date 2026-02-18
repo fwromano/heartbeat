@@ -332,6 +332,7 @@ serve_packages() {
     local port="${1:-9000}"
     local bind_host="${HEARTBEAT_SERVE_HOST:-0.0.0.0}"
     local preferred_member=""
+    local use_opentak_auto="false"
 
     ensure_dir "$PACKAGES_DIR"
 
@@ -344,21 +345,9 @@ serve_packages() {
     # Ensure at least one package exists
     local pkg_file=""
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
-        log_warn "OpenTAK packages are device-specific (one per device)."
-        log_warn "  ./heartbeat package           # auto: device-1, device-2, ..."
-        log_warn "  ./heartbeat package \"name\"    # or pick a name"
-
-        pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%T@ %f\n' 2>/dev/null \
-            | sort -n | tail -1 | cut -d' ' -f2-)
-        if [[ -z "$pkg_file" ]]; then
-            log_info "No package found, generating one for '${preferred_member}'..."
-            if generate_package "${preferred_member}"; then
-                pkg_file="${preferred_member// /_}.zip"
-            else
-                log_error "Could not generate initial package."
-                return 1
-            fi
-        fi
+        use_opentak_auto="true"
+        log_info "OpenTAK auto package mode: each download gets a unique device package."
+        log_info "Fallback manual generation: ./heartbeat package \"name\""
     else
         if [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
             generate_package "Connection" || true
@@ -393,9 +382,10 @@ serve_packages() {
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         cot_port="${SSL_COT_PORT:-8089}"
         protocol="SSL"
+        download_section='<a class="download-btn" href="/next-package">Generate and Download My Device Package</a><p class="note">Each tap creates one unique package/certificate for one device.</p>'
+    else
+        download_section="<a class=\"download-btn\" href=\"${pkg_file}\" download>Download Data Package</a>"
     fi
-
-    download_section="<a class=\"download-btn\" href=\"${pkg_file}\" download>Download Data Package</a>"
 
     # Render unified template
     sed -e "s|{{SERVER_IP}}|${SERVER_IP}|g" \
@@ -421,6 +411,15 @@ serve_packages() {
         echo ""
     fi
 
-    cd "$PACKAGES_DIR"
-    python3 -m http.server "$port" --bind "${bind_host}" 2>/dev/null
+    if [[ "$use_opentak_auto" == "true" ]]; then
+        python3 "${HEARTBEAT_DIR}/tools/package_server.py" \
+            --port "$port" \
+            --bind "${bind_host}" \
+            --packages-dir "${PACKAGES_DIR}" \
+            --heartbeat-dir "${HEARTBEAT_DIR}" \
+            --opentak-auto
+    else
+        cd "$PACKAGES_DIR"
+        python3 -m http.server "$port" --bind "${bind_host}" 2>/dev/null
+    fi
 }
