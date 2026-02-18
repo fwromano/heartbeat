@@ -12,6 +12,8 @@ SERVER_IP=""
 # Deployment mode: "docker" or "native"
 DEPLOY_MODE="docker"
 TAILSCALE_MODE="false"
+HEARTBEAT_AUTOSERVE="true"   # Auto-start package page with ./heartbeat start
+HEARTBEAT_SERVE_PORT=9000    # Package page port
 
 # ---------------------------------------------------------------------------
 # Backend

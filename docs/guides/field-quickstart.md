@@ -16,20 +16,12 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 ## 1) Setup and start
 ```bash
 ./setup.sh           # first time only (or ./setup.sh --backend opentak)
-./heartbeat start    # server + recorder auto-start, package auto-generated
+./heartbeat start    # server + recorder + package page auto-start
 ```
 
 ## 2) Onboard phones
-```bash
-./heartbeat serve    # packages auto-generate if none exist
-```
-
 Phones open: `http://SERVER_IP:9000` -- download zip -- import into iTAK/ATAK.
-
-For OpenTAK with multiple devices, generate additional packages:
-```bash
-./heartbeat package "Squad 2"    # one unique package per device
-```
+`./heartbeat serve` is optional if you need to run the package page manually.
 
 **OpenTAK important:** Each device must import a *different* package. Sharing one package across phones causes identity collisions and breaks message routing.
 
@@ -77,3 +69,7 @@ The exported GeoPackage opens in QGIS, ArcGIS, or any GIS tool.
 ./heartbeat tailscale    # auto-sets SERVER_IP to Tailscale address
 ```
 After changing the IP, regenerate packages with `./heartbeat serve` (auto-generates) or `./heartbeat package "Name"`.
+After changing the IP, restart to refresh the package page URL:
+```bash
+./heartbeat restart
+```

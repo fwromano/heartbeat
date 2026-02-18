@@ -128,6 +128,8 @@ main() {
     local prev_ots_cert_user=""
     local prev_ots_git_url=""
     local prev_ots_git_ref=""
+    local prev_autoserve=""
+    local prev_serve_port=""
 
     # Default backend for fresh installs: FreeTAK.
     if [[ -z "$backend" ]]; then
@@ -151,6 +153,8 @@ main() {
         prev_ots_cert_user=$(awk -F'"' '/^OTS_RECORDER_CERT_USER=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_url=$(awk -F'"' '/^OTS_GIT_URL=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         prev_ots_git_ref=$(awk -F'"' '/^OTS_GIT_REF=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_autoserve=$(awk -F'"' '/^HEARTBEAT_AUTOSERVE=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
+        prev_serve_port=$(awk -F'[=" ]+' '/^HEARTBEAT_SERVE_PORT=/{print $2; exit}' "$HEARTBEAT_CONF" 2>/dev/null || true)
         if [[ -z "${ARG_BACKEND:-}" && -n "$prev_backend" ]]; then
             backend="$prev_backend"
         fi
@@ -377,6 +381,8 @@ main() {
     local ots_recorder_cert_user="${prev_ots_cert_user:-$fts_user}"
     local ots_git_url="${OTS_GIT_URL:-${prev_ots_git_url:-}}"
     local ots_git_ref="${OTS_GIT_REF:-${prev_ots_git_ref:-}}"
+    local heartbeat_autoserve="${prev_autoserve:-true}"
+    local heartbeat_serve_port="${prev_serve_port:-9000}"
     if [[ -n "$ots_git_url" && -z "$ots_git_ref" ]]; then
         ots_git_ref="main"
     fi
@@ -392,6 +398,8 @@ TEAM_NAME="${team_name}"
 SERVER_IP="${server_ip}"
 DEPLOY_MODE="${mode}"
 TAILSCALE_MODE="${tailscale_mode}"
+HEARTBEAT_AUTOSERVE="${heartbeat_autoserve}"
+HEARTBEAT_SERVE_PORT=${heartbeat_serve_port}
 
 COT_PORT=${cot_port}
 SSL_COT_PORT=${ssl_cot_port}
@@ -451,7 +459,7 @@ EOF
 
         # ---- Generate QR code (uses qrencode inside Docker) ----
         source "${LIB_DIR}/qr.sh"
-        local qr_url="http://${server_ip}:9000"
+        local qr_url="http://${server_ip}:${heartbeat_serve_port}"
         local png_path="${PACKAGES_DIR}/heartbeat_qr.png"
         if save_qr_png "$qr_url" "$png_path" 2>/dev/null && [[ -s "$png_path" ]]; then
             log_ok "QR image saved: ${png_path}"
@@ -464,16 +472,17 @@ EOF
     log_info "Next steps:"
     if [[ "$backend" == "freetak" ]]; then
         echo -e "  ${CYAN}./heartbeat start${NC}      Start the TAK server"
-        echo -e "  ${CYAN}./heartbeat serve${NC}      Serve download page (run in second terminal)"
+        echo -e "  ${DIM}Package page auto-start:${NC} http://${server_ip}:${heartbeat_serve_port}/"
+        echo -e "  ${DIM}Optional manual serve:${NC} ./heartbeat serve ${heartbeat_serve_port}"
         echo ""
         log_info "Then on your device:"
         if is_tailscale_ip "$server_ip"; then
             echo "  1. Connect to Tailscale on your device"
-            echo "  2. Scan the QR code with your device camera"
+            echo -e "  2. Open ${CYAN}http://${server_ip}:${heartbeat_serve_port}/${NC}"
             echo "  3. Download the .zip and open it with iTAK/ATAK"
         else
             echo "  1. Connect to the same WiFi as this machine"
-            echo "  2. Scan the QR code with your device camera"
+            echo -e "  2. Open ${CYAN}http://${server_ip}:${heartbeat_serve_port}/${NC}"
             echo "  3. Download the .zip and open it with iTAK/ATAK"
         fi
         echo ""
@@ -487,11 +496,12 @@ EOF
         echo "  Protocol: TCP"
     else
         echo -e "  ${CYAN}./heartbeat start${NC}      Start the TAK server"
-        echo -e "  ${CYAN}./heartbeat serve${NC}      Serve package page (auto-generates one unique package per download)"
+        echo -e "  ${DIM}Package page auto-start:${NC} http://${server_ip}:${heartbeat_serve_port}/"
+        echo -e "  ${DIM}Optional manual serve:${NC} ./heartbeat serve ${heartbeat_serve_port}"
         echo -e "  ${DIM}Optional:${NC} ./heartbeat package \"name\"  # pre-generate a specific user package"
         echo ""
         log_info "Then on your device:"
-        echo -e "  1. Open ${CYAN}http://${server_ip}:9000/${NC}"
+        echo -e "  1. Open ${CYAN}http://${server_ip}:${heartbeat_serve_port}/${NC}"
         echo "  2. Tap 'Generate and Download My Device Package' once on that device"
         echo "  3. Import the downloaded .zip into iTAK/ATAK"
         echo "  4. If prompted for credentials, use the package account for that downloaded file"

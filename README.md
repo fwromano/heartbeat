@@ -10,11 +10,11 @@ Heartbeat wraps [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) (L
 # First time only
 ./setup.sh                    # picks backend, mode, ports, credentials
 
-# Start the server (recorder auto-starts, packages auto-generate)
+# Start the server (recorder + package page auto-start)
 ./heartbeat start
 
-# Onboard phones (serve packages over HTTP)
-./heartbeat serve             # phones open http://SERVER_IP:9000
+# Onboard devices
+# open http://SERVER_IP:9000 on each device
 
 # After the operation
 ./heartbeat stop              # auto-exports recorded data to .gpkg
@@ -65,7 +65,7 @@ Heartbeat supports two TAK server backends through a pluggable abstraction layer
 ./heartbeat <command> [args]
 
 Server:
-  start                Start the TAK server (recorder auto-starts)
+  start                Start the TAK server (recorder + package page auto-start)
   stop                 Stop the server (auto-exports recorded data)
   restart              Restart the server (OpenTAK: full stack reset)
   reset                Full reset (backend + dependencies)
@@ -74,11 +74,11 @@ Server:
   logs [-f]            View server logs (-f to follow)
 
 Team:
-  qr                   Show QR code to scan from iTAK/ATAK
+  qr                   Show optional QR for package page URL
   tailscale            Set SERVER_IP to the Tailscale IP
   package [name]       Generate a data package (auto-names if omitted)
   packages             List all generated packages
-  serve [port]         HTTP-serve packages for phone download (default :9000)
+  serve [port]         HTTP-serve packages for device download (default :9000)
 
 Recording & Export:
   record status        Check recorder status and event count
@@ -98,6 +98,7 @@ Notes:
 - Commands support prefix matching: "st" -> "start", "sta" -> "status"
 - Packages embed the server IP; if the IP changes, regenerate packages.
 - OpenTAK packages are device-specific (one per device, unique certs). `./heartbeat serve` now auto-generates a unique package per download tap.
+- Package page auto-starts with `./heartbeat start` by default (`HEARTBEAT_AUTOSERVE=true`).
 ```
 
 ## Setup Modes
@@ -142,8 +143,8 @@ OTS_GIT_REF="heartbeat-fixes"   # or main
 
 ### Option A - Data package (recommended)
 
-1. Run `./heartbeat serve` on the server
-2. On your phone, open `http://SERVER_IP:9000` in a browser
+1. Run `./heartbeat start` on the server (package page auto-starts)
+2. On each device, open `http://SERVER_IP:9000` in a browser
 3. Download the `.zip` file
 4. Open it with iTAK (share sheet > iTAK) or ATAK (import manager)
 

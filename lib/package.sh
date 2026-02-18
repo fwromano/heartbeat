@@ -5,6 +5,12 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ---------------------------------------------------------------------------
+# Serve daemon state
+# ---------------------------------------------------------------------------
+SERVE_PID="${DATA_DIR}/serve.pid"
+SERVE_LOG="${DATA_DIR}/serve.log"
+
+# ---------------------------------------------------------------------------
 # Auto-generate the next device name (device-1, device-2, ...)
 #
 # Counts existing packages in the packages/ dir, skipping system artifacts,
@@ -364,15 +370,8 @@ serve_packages() {
         fi
     fi
 
-    # Generate QR code PNG for the download page
+    # Keep template placeholder empty by default (direct URL flow).
     local qr_section=""
-    if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
-        local qr_url_png="${PACKAGES_DIR}/heartbeat_qr.png"
-        local serve_url="http://${SERVER_IP}:${port}"
-        if save_qr_png "$serve_url" "$qr_url_png" 2>/dev/null && [[ -s "$qr_url_png" ]]; then
-            qr_section='<div class="qr-section"><div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="QR code"><p class="qr-label">Share this page</p><p class="qr-hint">Scan to open on another device</p></div></div>'
-        fi
-    fi
 
     # Build download section: package list (OpenTAK) or single button (FreeTAK)
     local download_section=""
@@ -401,15 +400,9 @@ serve_packages() {
     echo -e "  ${CYAN}http://${SERVER_IP}:${port}/${NC}"
     echo -e "  ${DIM}(bind ${bind_host})${NC}"
     echo ""
-    echo -e "  Scan the QR code or open this URL on any phone."
+    echo -e "  Open this URL on each device to download its package."
     echo -e "  ${DIM}Press Ctrl+C to stop.${NC}"
     echo ""
-
-    # Show QR if available
-    if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
-        HEARTBEAT_SERVE_PORT="$port" print_qr_terminal "http://${SERVER_IP}:${port}" || true
-        echo ""
-    fi
 
     if [[ "$use_opentak_auto" == "true" ]]; then
         python3 "${HEARTBEAT_DIR}/tools/package_server.py" \
@@ -421,5 +414,99 @@ serve_packages() {
     else
         cd "$PACKAGES_DIR"
         python3 -m http.server "$port" --bind "${bind_host}" 2>/dev/null
+    fi
+}
+
+# ---------------------------------------------------------------------------
+# Serve daemon lifecycle
+# ---------------------------------------------------------------------------
+serve_start() {
+    load_config
+    local port="${1:-${HEARTBEAT_SERVE_PORT:-9000}}"
+
+    if [[ -f "$SERVE_PID" ]]; then
+        local pid
+        pid=$(cat "$SERVE_PID")
+        if kill -0 "$pid" 2>/dev/null; then
+            log_warn "Package server already running (PID $pid)"
+            return 0
+        fi
+        rm -f "$SERVE_PID"
+    fi
+
+    ensure_dir "$DATA_DIR"
+    ensure_dir "$PACKAGES_DIR"
+
+    nohup "${HEARTBEAT_DIR}/heartbeat" serve "$port" >> "$SERVE_LOG" 2>&1 &
+    echo $! > "$SERVE_PID"
+
+    sleep 1
+    local pid
+    pid=$(cat "$SERVE_PID")
+    if kill -0 "$pid" 2>/dev/null; then
+        log_ok "Package server started (PID $pid)"
+        log_info "Packages URL: http://${SERVER_IP}:${port}/"
+        log_info "Log: ${SERVE_LOG}"
+    else
+        log_error "Package server failed to start. Check ${SERVE_LOG}"
+        rm -f "$SERVE_PID"
+        return 1
+    fi
+}
+
+serve_stop() {
+    if [[ ! -f "$SERVE_PID" ]]; then
+        return 0
+    fi
+
+    local pid
+    pid=$(cat "$SERVE_PID")
+    if ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$SERVE_PID"
+        return 0
+    fi
+
+    log_step "Stopping package server (PID $pid)"
+    kill "$pid" 2>/dev/null || true
+
+    local i=0
+    while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
+        sleep 1
+        i=$((i + 1))
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        log_warn "Package server did not stop gracefully, forcing..."
+        kill -9 "$pid" 2>/dev/null || true
+    fi
+
+    rm -f "$SERVE_PID"
+    log_ok "Package server stopped"
+}
+
+serve_status() {
+    load_config
+    local port="${HEARTBEAT_SERVE_PORT:-9000}"
+
+    echo ""
+    echo -e "${BOLD}Package Server Status${NC}"
+    echo -e "${DIM}══════════════════════════════════════════════${NC}"
+    echo -e "  URL:       http://${SERVER_IP}:${port}/"
+
+    if [[ -f "$SERVE_PID" ]]; then
+        local pid
+        pid=$(cat "$SERVE_PID")
+        if kill -0 "$pid" 2>/dev/null; then
+            echo -e "  State:     ${GREEN}● running${NC} (PID $pid)"
+        else
+            echo -e "  State:     ${RED}● stopped${NC} (stale PID)"
+            rm -f "$SERVE_PID"
+        fi
+    else
+        echo -e "  State:     ${RED}● stopped${NC}"
+    fi
+
+    if [[ -f "$SERVE_LOG" ]]; then
+        echo -e "  Log:       ${SERVE_LOG}"
     fi
 }
