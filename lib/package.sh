@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Heartbeat - Data package generation
-# Creates TAK connection packages (.zip) importable by iTAK and ATAK
+# Creates TAK data packages (.zip) importable by iTAK and ATAK
 
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
@@ -16,10 +16,10 @@ next_device_name() {
 
     if [[ -d "$PACKAGES_DIR" ]]; then
         local n
-        for f in "$PACKAGES_DIR"/device-*_connection.zip; do
+        for f in "$PACKAGES_DIR"/device-*.zip; do
             [[ -e "$f" ]] || continue
             n="${f##*/device-}"          # strip path + "device-"
-            n="${n%%_connection.zip}"    # strip suffix
+            n="${n%%.zip}"              # strip suffix
             if [[ "$n" =~ ^[0-9]+$ ]] && (( n > max )); then
                 max=$n
             fi
@@ -33,7 +33,7 @@ next_device_name() {
 # Generate a connection data package for a team member
 #
 # Usage: generate_package "Member Name"
-# Output: packages/<sanitized_name>_connection.zip
+# Output: packages/<sanitized_name>.zip
 # ---------------------------------------------------------------------------
 generate_package() {
     local member_name="${1:?Usage: generate_package <member_name>}"
@@ -41,7 +41,7 @@ generate_package() {
 
     local safe_name
     safe_name=$(echo "$member_name" | tr ' ' '_' | tr -cd '[:alnum:]_-')
-    local pkg_filename="${safe_name}_connection.zip"
+    local pkg_filename="${safe_name}.zip"
     local pkg_path="${PACKAGES_DIR}/${pkg_filename}"
 
     ensure_dir "$PACKAGES_DIR"
@@ -311,7 +311,7 @@ list_packages() {
         return
     fi
 
-    echo -e "${BOLD}Generated connection packages:${NC}"
+    echo -e "${BOLD}Generated data packages:${NC}"
     echo ""
     for f in "$PACKAGES_DIR"/*.zip; do
         local fname size
@@ -336,16 +336,14 @@ serve_packages() {
     ensure_dir "$PACKAGES_DIR"
 
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
-        preferred_member="${FTS_USERNAME:-admin}"
+        preferred_member="$(next_device_name)"
     else
         preferred_member="$(whoami)"
     fi
 
-    # Prefer a fresh connection package when in Tailscale mode
+    # Ensure at least one package exists
     local pkg_file=""
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
-        # OpenTAK packages are certificate identities. Reusing one package across
-        # devices causes identity collisions and RabbitMQ routing conflicts.
         log_warn "OpenTAK packages are device-specific (one per device)."
         log_warn "  ./heartbeat package           # auto: device-1, device-2, ..."
         log_warn "  ./heartbeat package \"name\"    # or pick a name"
@@ -353,97 +351,62 @@ serve_packages() {
         pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%T@ %f\n' 2>/dev/null \
             | sort -n | tail -1 | cut -d' ' -f2-)
         if [[ -z "$pkg_file" ]]; then
-            log_info "No OpenTAK package found, generating one for '${preferred_member}'..."
+            log_info "No package found, generating one for '${preferred_member}'..."
             if generate_package "${preferred_member}"; then
-                pkg_file="${preferred_member// /_}_connection.zip"
+                pkg_file="${preferred_member// /_}.zip"
             else
-                log_error "Could not generate initial OpenTAK package."
+                log_error "Could not generate initial package."
                 return 1
             fi
         fi
-    elif [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
-        if generate_package "Connection"; then
-            pkg_file="Connection_connection.zip"
-        else
-            log_warn "Could not generate a fresh package; using latest existing package."
-        fi
     else
-        # Use the most recently modified package
+        if [[ "${TAILSCALE_MODE:-false}" == "true" ]]; then
+            generate_package "Connection" || true
+        fi
         pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%T@ %f\n' 2>/dev/null \
             | sort -n | tail -1 | cut -d' ' -f2-)
-    fi
-    if [[ -z "$pkg_file" ]]; then
-        log_info "No package found, generating one..."
-        if ! generate_package "${preferred_member}"; then
-            log_error "Could not generate a package automatically."
-            log_error "Try: ./heartbeat package \"${preferred_member}\""
-            return 1
+        if [[ -z "$pkg_file" ]]; then
+            log_info "No package found, generating one..."
+            if ! generate_package "${preferred_member}"; then
+                log_error "Could not generate a package automatically."
+                return 1
+            fi
+            pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%f\n' 2>/dev/null | head -1)
         fi
-        pkg_file=$(find "$PACKAGES_DIR" -name "*.zip" -printf '%f\n' 2>/dev/null | head -1)
     fi
 
-    # Generate QR code PNGs for the download page
+    # Generate QR code PNG for the download page
     local qr_section=""
     if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
         local qr_url_png="${PACKAGES_DIR}/heartbeat_qr.png"
         local serve_url="http://${SERVER_IP}:${port}"
-        local url_img=""
         if save_qr_png "$serve_url" "$qr_url_png" 2>/dev/null && [[ -s "$qr_url_png" ]]; then
-            url_img='<div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="URL QR code"><p class="qr-label">Open download page</p><p class="qr-hint">Scan with phone camera</p></div>'
-        fi
-        if [[ -n "$url_img" ]]; then
-            qr_section="<div class=\"qr-section\">${url_img}</div>"
+            qr_section='<div class="qr-section"><div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="QR code"><p class="qr-label">Share this page</p><p class="qr-hint">Scan to open on another device</p></div></div>'
         fi
     fi
+
+    # Build download section: package list (OpenTAK) or single button (FreeTAK)
+    local download_section=""
+    local cot_port="${COT_PORT}"
+    local protocol="TCP"
 
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
-        local package_links=""
-        local f=""
-        while IFS= read -r f; do
-            package_links="${package_links}<li><a href=\"${f}\">${f}</a></li>"
-        done < <(find "$PACKAGES_DIR" -maxdepth 1 -name "*.zip" -printf '%f\n' | sort)
-        if [[ -z "$package_links" ]]; then
-            package_links="<li>${pkg_file}</li>"
-        fi
-
-        cat > "${PACKAGES_DIR}/index.html" <<EOF
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${TEAM_NAME} OpenTAK Packages</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
-    .warn { background: #fff3cd; border: 1px solid #ffe69c; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-    code { background: #f1f3f5; padding: 0.15rem 0.3rem; border-radius: 4px; }
-  </style>
-</head>
-<body>
-  <h1>${TEAM_NAME} OpenTAK Packages</h1>
-  <div class="warn">
-    <strong>Important:</strong> Each device must import a different package. Do not share one package across phone/tablet.
-    <br>Generate more with <code>./heartbeat package "&lt;device-name&gt;"</code>.
-  </div>
-  ${qr_section}
-  <h2>Available Packages</h2>
-  <ul>${package_links}</ul>
-  <p>Server: <code>${SERVER_IP}:${SSL_COT_PORT}</code> (SSL)</p>
-</body>
-</html>
-EOF
-    else
-        # Render download.html into packages dir
-        sed -e "s|{{TEAM_NAME}}|${TEAM_NAME}|g" \
-            -e "s|{{PACKAGE_FILE}}|${pkg_file}|g" \
-            -e "s|{{SERVER_IP}}|${SERVER_IP}|g" \
-            -e "s|{{COT_PORT}}|${COT_PORT}|g" \
-            -e "s|{{QR_SECTION}}|${qr_section}|g" \
-            "${TEMPLATES_DIR}/download.html" > "${PACKAGES_DIR}/index.html"
+        cot_port="${SSL_COT_PORT:-8089}"
+        protocol="SSL"
     fi
 
+    download_section="<a class=\"download-btn\" href=\"${pkg_file}\" download>Download Data Package</a>"
+
+    # Render unified template
+    sed -e "s|{{SERVER_IP}}|${SERVER_IP}|g" \
+        -e "s|{{COT_PORT}}|${cot_port}|g" \
+        -e "s|{{PROTOCOL}}|${protocol}|g" \
+        -e "s|{{QR_SECTION}}|${qr_section}|g" \
+        -e "s|{{DOWNLOAD_SECTION}}|${download_section}|g" \
+        "${TEMPLATES_DIR}/download.html" > "${PACKAGES_DIR}/index.html"
+
     echo ""
-    echo -e "${BOLD}Serving connection packages:${NC}"
+    echo -e "${BOLD}Serving data packages:${NC}"
     echo ""
     echo -e "  ${CYAN}http://${SERVER_IP}:${port}/${NC}"
     echo -e "  ${DIM}(bind ${bind_host})${NC}"

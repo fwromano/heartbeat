@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{TEAM_NAME}} - TAK Connection</title>
+<title>Heartbeat - TAK Data Packages</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -14,7 +14,7 @@
   }
   .card {
     background: #1e293b; border-radius: 1rem; padding: 2rem;
-    max-width: 400px; width: 100%; text-align: center;
+    max-width: 440px; width: 100%; text-align: center;
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
   h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
@@ -67,39 +67,32 @@
 </head>
 <body>
 <div class="card">
-  <h1>{{TEAM_NAME}}</h1>
-  <p class="subtitle">TAK Server Connection</p>
+  <h1>TAK Data Packages</h1>
+  <p class="subtitle">Heartbeat</p>
 
-  <a class="download-btn" href="{{PACKAGE_FILE}}" download>
-    Download Connection Package
-  </a>
-
-  {{QR_SECTION}}
+  {{DOWNLOAD_SECTION}}
 
   <div class="steps">
     <h2>Setup Instructions</h2>
     <div class="step">
       <span class="step-num">1</span>
-      <span>Tap the download button above</span>
+      <span>Tap a package above to download it</span>
     </div>
     <div class="step">
       <span class="step-num">2</span>
-      <span><b>iPhone (iTAK):</b> Open the .zip &rarr; Share &rarr; iTAK &rarr; Import</span>
+      <span><b>iTAK:</b> Settings &rarr; Network &rarr; Servers &rarr; <b>+</b> (bottom right) &rarr; Upload Server Package</span>
     </div>
     <div class="step">
       <span class="step-num">3</span>
-      <span><b>Android (ATAK):</b> Downloads &rarr; tap .zip &rarr; Open with ATAK</span>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <span>If not auto-connected, go to Settings &rarr; Network &rarr; enable the server</span>
+      <span><b>ATAK:</b> Downloads &rarr; tap .zip &rarr; Open with ATAK</span>
     </div>
   </div>
 
+  {{QR_SECTION}}
+
   <div class="info">
-    <strong>Manual connect (no certs):</strong><br>
     Server: <code>{{SERVER_IP}}</code> &middot;
-    Port: <code>{{COT_PORT}}</code> &middot; Protocol: <code>TCP</code>
+    Port: <code>{{COT_PORT}}</code> &middot; Protocol: <code>{{PROTOCOL}}</code>
   </div>
 </div>
 </body>
