@@ -370,8 +370,15 @@ serve_packages() {
         fi
     fi
 
-    # Keep template placeholder empty by default (direct URL flow).
+    # Build a QR code for the package page URL when qrencode is available.
+    local serve_url="http://${SERVER_IP}:${port}/"
+    local page_qr_png="${PACKAGES_DIR}/heartbeat_page_qr.png"
     local qr_section=""
+    if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
+        if save_qr_png "${serve_url}" "${page_qr_png}" 2>/dev/null && [[ -s "${page_qr_png}" ]]; then
+            qr_section='<div class="qr-section"><div class="qr-item"><img class="qr-img" src="heartbeat_page_qr.png" alt="Package page URL QR code"><div class="qr-label">Scan to Open Package Page</div><div class="qr-hint">Share this screen so other devices can scan</div></div></div>'
+        fi
+    fi
 
     # Build download section: package list (OpenTAK) or single button (FreeTAK)
     local download_section=""

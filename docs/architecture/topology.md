@@ -429,7 +429,7 @@ When `TAK_BACKEND=opentak`, the server runs as native host services (no Docker).
 
 - `S0..S8` (FSA states): `Unconfigured -> Configured -> Installed -> Starting -> Running (healthy/degraded) -> Stopping -> Stopped`, with `Error` as failure sink/recovery target.
 - `D1` Control: `setup/start/stop/reset/update` through Heartbeat CLI + backend adapter.
-- `D2` Package onboarding: `./heartbeat package` + `./heartbeat serve` to deliver per-device zip.
+- `D2` Package onboarding: package page auto-starts on `./heartbeat start`; each device downloads its own unique zip (manual page control via `./heartbeat serve`).
 - `D3` Identity/auth: OpenTAK SSL/mTLS cert/user identity.
 - `D4` CoT routing: positions + markers + lines/polygons/circles between clients.
 - `D5` Web map: `/api/map_state` + socket updates to WebTAK.

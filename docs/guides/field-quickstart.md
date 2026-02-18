@@ -21,7 +21,7 @@ Goal: get everyone's phone sharing live location on the same map, fast.
 
 ## 2) Onboard phones
 Phones open: `http://SERVER_IP:9000` -- download zip -- import into iTAK/ATAK.
-`./heartbeat serve` is optional if you need to run the package page manually.
+`./heartbeat serve` is optional if you need to run/restart the package page manually.
 
 **OpenTAK important:** Each device must import a *different* package. Sharing one package across phones causes identity collisions and breaks message routing.
 
@@ -68,8 +68,8 @@ The exported GeoPackage opens in QGIS, ArcGIS, or any GIS tool.
 ```bash
 ./heartbeat tailscale    # auto-sets SERVER_IP to Tailscale address
 ```
-After changing the IP, regenerate packages with `./heartbeat serve` (auto-generates) or `./heartbeat package "Name"`.
-After changing the IP, restart to refresh the package page URL:
+After changing the IP, restart to refresh package page links and new package contents:
 ```bash
 ./heartbeat restart
 ```
+Then open `http://SERVER_IP:9000` and download fresh packages on each device.

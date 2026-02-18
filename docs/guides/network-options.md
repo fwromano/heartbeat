@@ -48,7 +48,7 @@ If there is no IP path, TAK will not connect.
 - P2: SSL CoT over TCP (8089, OpenTAK only)
 
 6) Enrollment / distribution
-- D1: Package served locally (`./heartbeat serve`)
+- D1: Package page (auto-starts with `./heartbeat start`; manual via `./heartbeat serve`)
 - D2: Pre-generated packages copied to phones
 - D3: Manual server entry (IP + port)
 
@@ -66,8 +66,8 @@ A1) Local Wi-Fi bubble (no internet)
   - No client isolation on the Wi-Fi
 - Steps:
   1) `./heartbeat start`
-  2) `./heartbeat serve`
-  3) Phones open `http://SERVER_IP:9000` and import package
+  2) Phones open `http://SERVER_IP:9000`
+  3) Generate/download package and import into iTAK/ATAK
 
 A2) Wired LAN + AP
 - Axes: S1 + C2 + R1 + P1 + D1
@@ -167,16 +167,16 @@ F2) Local server + satellite backhaul for command post
 - `COT_PORT` is the TCP port clients connect to (FreeTAK: 8087, OpenTAK: 8088)
 
 ### Minimal client onboarding
-- Generate a package: `./heartbeat package` (auto-names device-1, device-2, ...)
-- Or named: `./heartbeat package "First Last"`
-- Serve packages: `./heartbeat serve`
+- Start Heartbeat: `./heartbeat start` (package page auto-starts)
+- Optional manual page control: `./heartbeat serve`
+- Optional pre-generated package: `./heartbeat package "First Last"`
 - On phone: open `http://SERVER_IP:9000`
 - **OpenTAK:** each device must import a different package (unique cert identity)
 
 ## Connectivity checklist (fast triage)
 
 1) Can a phone reach the server IP?
-- Same Wi-Fi: open `http://SERVER_IP:9000` after `./heartbeat serve`
+- Same Wi-Fi: open `http://SERVER_IP:9000` after `./heartbeat start` (or `./heartbeat serve`)
 - Public: open `http://PUBLIC_IP:9000` from cellular
 
 2) Is the CoT port open?

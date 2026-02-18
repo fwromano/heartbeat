@@ -13,6 +13,34 @@ RECORDER_DB="${DATA_DIR}/cot_records.db"
 RECORDER_SCRIPT_TCP="${HEARTBEAT_DIR}/tools/recorder.py"
 
 # ---------------------------------------------------------------------------
+# Recorder process discovery helpers
+# ---------------------------------------------------------------------------
+_recorder_find_pids() {
+    # Match recorder instances bound to this workspace DB.
+    pgrep -f "tools/recorder.py.*--db ${RECORDER_DB}" 2>/dev/null || true
+}
+
+_record_stop_pid() {
+    local pid="${1:?missing pid}"
+    if ! kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+
+    kill "$pid" 2>/dev/null || true
+
+    local i=0
+    while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
+        sleep 1
+        i=$((i + 1))
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        log_warn "Recorder PID ${pid} did not stop gracefully, forcing..."
+        kill -9 "$pid" 2>/dev/null || true
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Command dispatcher
 # ---------------------------------------------------------------------------
 cmd_record() {
@@ -34,6 +62,26 @@ cmd_record() {
 # ---------------------------------------------------------------------------
 record_start() {
     load_config
+
+    local existing_pids existing_pid_count primary_pid
+    existing_pids="$(_recorder_find_pids)"
+    if [[ -n "$existing_pids" ]]; then
+        primary_pid=$(echo "$existing_pids" | head -n1)
+        existing_pid_count=$(echo "$existing_pids" | wc -l | tr -d ' ')
+        if [[ ! -f "$RECORDER_PID" ]]; then
+            echo "$primary_pid" > "$RECORDER_PID"
+        fi
+        if [[ "$existing_pid_count" -gt 1 ]]; then
+            log_warn "Multiple recorder processes detected (${existing_pid_count}); keeping PID ${primary_pid}, stopping extras."
+            while IFS= read -r pid; do
+                [[ -n "$pid" ]] || continue
+                [[ "$pid" == "$primary_pid" ]] && continue
+                _record_stop_pid "$pid"
+            done <<< "$existing_pids"
+        fi
+        log_warn "Recorder already running (PID ${primary_pid})"
+        return 0
+    fi
 
     # Check if already running
     if [[ -f "$RECORDER_PID" ]]; then
@@ -109,7 +157,11 @@ record_start() {
         if [[ -f "$ca_file" ]]; then
             recorder_args+=(--ca "$ca_file")
         fi
+        local recorder_group="${OTS_RECORDER_GROUP:-__ANON__}"
+        local recorder_role="${OTS_RECORDER_ROLE:-Team Member}"
+        recorder_args+=(--group "$recorder_group" --role "$recorder_role")
         log_info "Mode: OpenTAK SSL client (${cert_user})"
+        log_info "Group: ${recorder_group} (${recorder_role})"
     fi
 
     if [[ "$python_bin" == "python3" ]]; then
@@ -195,7 +247,20 @@ _opentak_pick_recorder_cert_user() {
 # ---------------------------------------------------------------------------
 record_stop() {
     if [[ ! -f "$RECORDER_PID" ]]; then
-        log_warn "Recorder is not running (no PID file)"
+        local orphan_pids
+        orphan_pids="$(_recorder_find_pids)"
+        if [[ -z "$orphan_pids" ]]; then
+            log_warn "Recorder is not running (no PID file)"
+            return 0
+        fi
+
+        log_warn "Recorder PID file missing; stopping detected recorder process(es)."
+        while IFS= read -r pid; do
+            [[ -n "$pid" ]] || continue
+            log_step "Stopping CoT recorder (PID $pid)"
+            _record_stop_pid "$pid"
+        done <<< "$orphan_pids"
+        log_ok "Recorder stopped"
         return 0
     fi
 
@@ -205,25 +270,22 @@ record_stop() {
     if ! kill -0 "$pid" 2>/dev/null; then
         log_warn "Recorder process not found (stale PID $pid)"
         rm -f "$RECORDER_PID"
+        local orphan_pids
+        orphan_pids="$(_recorder_find_pids)"
+        if [[ -n "$orphan_pids" ]]; then
+            log_warn "Found untracked recorder process(es); stopping them."
+            while IFS= read -r opid; do
+                [[ -n "$opid" ]] || continue
+                log_step "Stopping CoT recorder (PID $opid)"
+                _record_stop_pid "$opid"
+            done <<< "$orphan_pids"
+            log_ok "Recorder stopped"
+        fi
         return 0
     fi
 
     log_step "Stopping CoT recorder (PID $pid)"
-
-    # Send SIGTERM for graceful shutdown
-    kill "$pid" 2>/dev/null || true
-
-    # Wait up to 10 seconds
-    local i=0
-    while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
-        sleep 1
-        i=$((i + 1))
-    done
-
-    if kill -0 "$pid" 2>/dev/null; then
-        log_warn "Recorder did not stop gracefully, forcing..."
-        kill -9 "$pid" 2>/dev/null || true
-    fi
+    _record_stop_pid "$pid"
 
     rm -f "$RECORDER_PID"
     log_ok "Recorder stopped"
@@ -238,17 +300,31 @@ record_status() {
     echo -e "${DIM}══════════════════════════════════════════════${NC}"
 
     # Process status
+    local state_printed="false"
     if [[ -f "$RECORDER_PID" ]]; then
         local pid
         pid=$(cat "$RECORDER_PID")
         if kill -0 "$pid" 2>/dev/null; then
             echo -e "  State:     ${GREEN}● recording${NC} (PID $pid)"
+            state_printed="true"
         else
-            echo -e "  State:     ${RED}● stopped${NC} (stale PID)"
             rm -f "$RECORDER_PID"
         fi
-    else
-        echo -e "  State:     ${RED}● stopped${NC}"
+    fi
+
+    if [[ "$state_printed" == "false" ]]; then
+        local orphan_pids orphan_count orphan_pid
+        orphan_pids="$(_recorder_find_pids)"
+        if [[ -n "$orphan_pids" ]]; then
+            orphan_pid=$(echo "$orphan_pids" | head -n1)
+            orphan_count=$(echo "$orphan_pids" | wc -l | tr -d ' ')
+            echo -e "  State:     ${YELLOW}● recording${NC} (PID ${orphan_pid}, untracked)"
+            if [[ "$orphan_count" -gt 1 ]]; then
+                echo -e "  Note:      ${YELLOW}${orphan_count} recorder processes detected${NC}"
+            fi
+        else
+            echo -e "  State:     ${RED}● stopped${NC}"
+        fi
     fi
 
     # Database stats

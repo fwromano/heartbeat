@@ -22,10 +22,7 @@ Heartbeat wraps [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) (L
 
 That's it. Phones download the `.zip` and import it into iTAK/ATAK. After initial onboarding, your daily workflow is just `start` and `stop` — recording and export happen automatically.
 
-For OpenTAK (multiple devices), generate additional packages as needed:
-```bash
-./heartbeat package "Squad 2"   # one unique package per device
-```
+OpenTAK note: each device needs a unique package/certificate identity. The package page issues one unique package per download tap automatically.
 
 ## Backends
 
@@ -76,9 +73,9 @@ Server:
 Team:
   qr                   Show optional QR for package page URL
   tailscale            Set SERVER_IP to the Tailscale IP
-  package [name]       Generate a data package (auto-names if omitted)
+  package [name]       Pre-generate a package (optional)
   packages             List all generated packages
-  serve [port]         HTTP-serve packages for device download (default :9000)
+  serve [port]         Run package page manually (default :9000)
 
 Recording & Export:
   record status        Check recorder status and event count
@@ -97,7 +94,7 @@ System:
 Notes:
 - Commands support prefix matching: "st" -> "start", "sta" -> "status"
 - Packages embed the server IP; if the IP changes, regenerate packages.
-- OpenTAK packages are device-specific (one per device, unique certs). `./heartbeat serve` now auto-generates a unique package per download tap.
+- OpenTAK packages are device-specific (one per device, unique certs). The package page auto-generates a unique package per download tap.
 - Package page auto-starts with `./heartbeat start` by default (`HEARTBEAT_AUTOSERVE=true`).
 ```
 
@@ -145,10 +142,10 @@ OTS_GIT_REF="heartbeat-fixes"   # or main
 
 1. Run `./heartbeat start` on the server (package page auto-starts)
 2. On each device, open `http://SERVER_IP:9000` in a browser
-3. Download the `.zip` file
-4. Open it with iTAK (share sheet > iTAK) or ATAK (import manager)
+3. Tap **Generate and Download My Device Package**
+4. Open the downloaded `.zip` with iTAK (share sheet > iTAK) or ATAK (import manager)
 
-Packages are auto-generated when you serve. For OpenTAK, each tap on the serve page generates a unique per-device package automatically. You can still pre-generate named packages with `./heartbeat package "Name"`.
+For OpenTAK, each tap on the page generates a unique per-device package automatically. You can still pre-generate named packages with `./heartbeat package "Name"` if needed.
 
 ### Option B - Manual connection (FreeTAK only)
 

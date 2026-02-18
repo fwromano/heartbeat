@@ -112,6 +112,8 @@ class CotRecorder:
         cert_path=None,
         key_path=None,
         ca_path=None,
+        group_name="Cyan",
+        group_role="HQ",
     ):
         self.host = host
         self.port = port
@@ -121,6 +123,8 @@ class CotRecorder:
         self.cert_path = cert_path
         self.key_path = key_path
         self.ca_path = ca_path
+        self.group_name = group_name
+        self.group_role = group_role
         self.running = True
         self.sock = None
         self.session_id = None
@@ -160,7 +164,7 @@ class CotRecorder:
             f'<point lat="0.0" lon="0.0" hae="0" ce="9999999" le="9999999"/>'
             f"<detail>"
             f'<contact callsign="{self.recorder_callsign}"/>'
-            f'<__group name="Cyan" role="HQ"/>'
+            f'<__group name="{self.group_name}" role="{self.group_role}"/>'
             f'<precisionlocation altsrc="DTED0"/>'
             f'<takv version="heartbeat" platform="recorder" device="server" os="linux"/>'
             f"</detail>"
@@ -403,6 +407,8 @@ def main():
     parser.add_argument("--cert", default="", help="Client certificate PEM path")
     parser.add_argument("--key", default="", help="Client private key PEM path")
     parser.add_argument("--ca", default="", help="CA certificate PEM path")
+    parser.add_argument("--group", default="Cyan", help="TAK group name for SA keepalive")
+    parser.add_argument("--role", default="HQ", help="TAK group role for SA keepalive")
     parser.add_argument("--db", default="data/cot_records.db", help="SQLite database path")
     parser.add_argument("--log", default="data/recorder.log", help="Log file path")
     args = parser.parse_args()
@@ -416,6 +422,8 @@ def main():
         cert_path=args.cert or None,
         key_path=args.key or None,
         ca_path=args.ca or None,
+        group_name=args.group,
+        group_role=args.role,
     )
 
     signal.signal(signal.SIGTERM, recorder.stop)
