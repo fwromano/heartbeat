@@ -431,13 +431,13 @@ EOF
         install_opentak
     fi
 
-    # ---- Generate connection package for current user ----
+    # ---- Generate data package for current user ----
     if [[ "$backend" == "freetak" ]]; then
         local callsign
         callsign="$(whoami)"
         if $INTERACTIVE; then
             echo ""
-            if prompt_yn "Generate a connection package now?" "y"; then
+            if prompt_yn "Generate a data package now?" "y"; then
                 callsign=$(prompt_default "Your name / callsign" "$callsign")
             fi
         fi
@@ -483,7 +483,7 @@ EOF
         echo ""
         echo -e "  ${BOLD}Then on your phone:${NC}"
         echo ""
-        echo -e "    1. Download and import the generated _connection.zip"
+        echo -e "    1. Download and import the generated .zip data package"
         echo -e "    2. Use WebTAK credentials when prompted: ${CYAN}${fts_user}${NC} / ${CYAN}${fts_pass}${NC}"
     fi
     echo ""

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{TEAM_NAME}} - TAK Connection</title>
+<title>{{TEAM_NAME}} - TAK Data Packages</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -14,7 +14,7 @@
   }
   .card {
     background: #1e293b; border-radius: 1rem; padding: 2rem;
-    max-width: 400px; width: 100%; text-align: center;
+    max-width: 440px; width: 100%; text-align: center;
     box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
   h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
@@ -28,6 +28,20 @@
     transition: background 0.15s;
   }
   .download-btn:hover { background: #2563eb; }
+  .pkg-list { list-style: none; text-align: left; margin: 0.75rem 0; }
+  .pkg-list li { margin-bottom: 0.5rem; }
+  .pkg-list a {
+    display: block; padding: 0.75rem 1rem;
+    background: #334155; border-radius: 0.5rem;
+    color: #38bdf8; text-decoration: none; font-weight: 500;
+    transition: background 0.15s;
+  }
+  .pkg-list a:hover { background: #475569; }
+  .warning {
+    background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3);
+    padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;
+    font-size: 0.85rem; color: #fbbf24; text-align: left;
+  }
   .steps { text-align: left; margin-top: 1.5rem; }
   .steps h2 { font-size: 1rem; margin-bottom: 0.75rem; color: #94a3b8; }
   .step {
@@ -67,12 +81,12 @@
 </head>
 <body>
 <div class="card">
-  <h1>{{TEAM_NAME}}</h1>
-  <p class="subtitle">TAK Server Connection</p>
+  <h1>TAK Data Packages</h1>
+  <p class="subtitle">{{TEAM_NAME}}</p>
 
-  <a class="download-btn" href="{{PACKAGE_FILE}}" download>
-    Download Connection Package
-  </a>
+  {{WARNING_SECTION}}
+
+  {{DOWNLOAD_SECTION}}
 
   {{QR_SECTION}}
 
@@ -80,7 +94,7 @@
     <h2>Setup Instructions</h2>
     <div class="step">
       <span class="step-num">1</span>
-      <span>Tap the download button above</span>
+      <span>Tap a package above to download</span>
     </div>
     <div class="step">
       <span class="step-num">2</span>
@@ -97,9 +111,8 @@
   </div>
 
   <div class="info">
-    <strong>Manual connect (no certs):</strong><br>
     Server: <code>{{SERVER_IP}}</code> &middot;
-    Port: <code>{{COT_PORT}}</code> &middot; Protocol: <code>TCP</code>
+    Port: <code>{{COT_PORT}}</code> &middot; Protocol: <code>{{PROTOCOL}}</code>
   </div>
 </div>
 </body>
