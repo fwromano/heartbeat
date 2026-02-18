@@ -89,7 +89,11 @@ auto_ports() {
     esac
 
     if ! port_available "$dp"; then
-        log_warn "Port 8443 in use, DataPackage service may not be reachable" >&2
+        if [[ "$backend" == "opentak" ]]; then
+            log_info "Port 8443 is currently in use (expected on OpenTAK reruns/WebTAK)." >&2
+        else
+            log_warn "Port 8443 in use, data package service may not be reachable" >&2
+        fi
     fi
 
     # Log any ports that shifted (to stderr so they don't mix with output)
@@ -456,57 +460,53 @@ EOF
 
     # ---- Done ----
     echo ""
-    echo -e "${DIM}==============================================${NC}"
-    echo -e "${GREEN}${BOLD}  Setup complete!${NC}"
-    echo -e "${DIM}==============================================${NC}"
-    echo ""
-    echo -e "  ${BOLD}Next steps:${NC}"
-    echo ""
-    echo -e "    ${CYAN}./heartbeat start${NC}       Start the TAK server"
+    log_step "Setup complete"
+    log_info "Next steps:"
     if [[ "$backend" == "freetak" ]]; then
-        echo -e "    ${CYAN}./heartbeat serve${NC}        Serve download page (run in 2nd terminal)"
+        echo -e "  ${CYAN}./heartbeat start${NC}      Start the TAK server"
+        echo -e "  ${CYAN}./heartbeat serve${NC}      Serve download page (run in second terminal)"
         echo ""
-        echo -e "  ${BOLD}Then on your phone:${NC}"
-        echo ""
+        log_info "Then on your device:"
         if is_tailscale_ip "$server_ip"; then
-            echo -e "    1. Connect to Tailscale on your phone"
-            echo -e "    2. Scan the QR code with your phone camera"
-            echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+            echo "  1. Connect to Tailscale on your device"
+            echo "  2. Scan the QR code with your device camera"
+            echo "  3. Download the .zip and open it with iTAK/ATAK"
         else
-            echo -e "    1. Connect to the same WiFi as this machine"
-            echo -e "    2. Scan the QR code with your phone camera"
-            echo -e "    3. Download the .zip and open it with iTAK/ATAK"
+            echo "  1. Connect to the same WiFi as this machine"
+            echo "  2. Scan the QR code with your device camera"
+            echo "  3. Download the .zip and open it with iTAK/ATAK"
         fi
+        echo ""
+        log_info "Default credentials:"
+        echo -e "  Username: ${CYAN}${fts_user}${NC}"
+        echo -e "  Password: ${CYAN}${fts_pass}${NC}"
+        echo ""
+        log_info "Manual connection (fallback):"
+        echo -e "  Server:   ${CYAN}${server_ip}${NC}"
+        echo -e "  Port:     ${CYAN}${cot_port}${NC}"
+        echo "  Protocol: TCP"
     else
-        echo -e "    ${CYAN}./heartbeat package \"${fts_user}\"${NC}    Generate SSL package for iTAK/ATAK"
-        echo -e "    ${CYAN}./heartbeat serve${NC}                  Serve package download page"
+        echo -e "  ${CYAN}./heartbeat start${NC}      Start the TAK server"
+        echo -e "  ${CYAN}./heartbeat serve${NC}      Serve package page (auto-generates one unique package per download)"
+        echo -e "  ${DIM}Optional:${NC} ./heartbeat package \"name\"  # pre-generate a specific user package"
         echo ""
-        echo -e "  ${BOLD}Then on your phone:${NC}"
+        log_info "Then on your device:"
+        echo -e "  1. Open ${CYAN}http://${server_ip}:9000/${NC}"
+        echo "  2. Tap 'Generate and Download My Device Package' once on that device"
+        echo "  3. Import the downloaded .zip into iTAK/ATAK"
+        echo "  4. If prompted for credentials, use the package account for that downloaded file"
         echo ""
-        echo -e "    1. Download and import the generated .zip data package"
-        echo -e "    2. Use WebTAK credentials when prompted: ${CYAN}${fts_user}${NC} / ${CYAN}${fts_pass}${NC}"
+        log_info "OpenTAK Web UI:"
+        echo -e "  URL:      ${CYAN}https://${server_ip}:${webtak_port}/${NC}"
+        echo -e "  Username: ${CYAN}${fts_user}${NC}"
+        echo -e "  Password: ${CYAN}${fts_pass}${NC}"
+        echo -e "  ${DIM}(accept the self-signed certificate on first load)${NC}"
+        echo ""
+        log_info "Manual iTAK/ATAK connect (advanced):"
+        echo -e "  Server:   ${CYAN}${server_ip}${NC}"
+        echo -e "  Port:     ${CYAN}${ssl_cot_port}${NC}"
+        echo "  Protocol: SSL (client cert package required)"
     fi
-    echo ""
-    if [[ "$backend" == "freetak" ]]; then
-        echo -e "  ${BOLD}Default credentials:${NC}"
-        echo ""
-        echo -e "    Username: ${CYAN}${fts_user}${NC}"
-        echo -e "    Password: ${CYAN}${fts_pass}${NC}"
-        echo ""
-    else
-        echo -e "  ${BOLD}OpenTAK Web UI:${NC}"
-        echo ""
-        echo -e "    URL:      ${CYAN}https://${server_ip}:${webtak_port}/${NC}"
-        echo -e "    Username: ${CYAN}${fts_user}${NC}"
-        echo -e "    Password: ${CYAN}${fts_pass}${NC}"
-        echo -e "    ${DIM}(accept the self-signed certificate on first load)${NC}"
-        echo ""
-    fi
-    echo -e "  ${BOLD}Or connect manually in iTAK/ATAK:${NC}"
-    echo ""
-    echo -e "    Server:  ${CYAN}${server_ip}${NC}"
-    echo -e "    Port:    ${CYAN}${cot_port}${NC}"
-    echo -e "    Proto:   TCP"
     echo ""
 }
 
