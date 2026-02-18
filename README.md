@@ -97,7 +97,7 @@ System:
 Notes:
 - Commands support prefix matching: "st" -> "start", "sta" -> "status"
 - Packages embed the server IP; if the IP changes, regenerate packages.
-- OpenTAK packages are device-specific (one per device, unique certs).
+- OpenTAK packages are device-specific (one per device, unique certs). `./heartbeat serve` now auto-generates a unique package per download tap.
 ```
 
 ## Setup Modes
@@ -147,7 +147,7 @@ OTS_GIT_REF="heartbeat-fixes"   # or main
 3. Download the `.zip` file
 4. Open it with iTAK (share sheet > iTAK) or ATAK (import manager)
 
-Packages are auto-generated when you serve. For OpenTAK, each device needs its own unique package — generate extras with `./heartbeat package "Name"`.
+Packages are auto-generated when you serve. For OpenTAK, each tap on the serve page generates a unique per-device package automatically. You can still pre-generate named packages with `./heartbeat package "Name"`.
 
 ### Option B - Manual connection (FreeTAK only)
 
@@ -194,6 +194,7 @@ heartbeat/
 │       └── opentak.sh          OpenTAK implementation (native systemd)
 ├── tools/
 │   ├── recorder.py             CoT TCP client daemon
+│   ├── package_server.py       HTTP server with OpenTAK auto package endpoint
 │   ├── cot_parser.py           CoT XML stream parser
 │   ├── exporter.py             SQLite -> GeoPackage converter
 │   ├── gpkg_writer.py          OGC GeoPackage writer (no GDAL)
