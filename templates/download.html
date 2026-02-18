@@ -37,11 +37,6 @@
     transition: background 0.15s;
   }
   .pkg-list a:hover { background: #475569; }
-  .warning {
-    background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.3);
-    padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1rem;
-    font-size: 0.85rem; color: #fbbf24; text-align: left;
-  }
   .steps { text-align: left; margin-top: 1.5rem; }
   .steps h2 { font-size: 1rem; margin-bottom: 0.75rem; color: #94a3b8; }
   .step {
@@ -84,31 +79,25 @@
   <h1>TAK Data Packages</h1>
   <p class="subtitle">{{TEAM_NAME}}</p>
 
-  {{WARNING_SECTION}}
-
   {{DOWNLOAD_SECTION}}
-
-  {{QR_SECTION}}
 
   <div class="steps">
     <h2>Setup Instructions</h2>
     <div class="step">
       <span class="step-num">1</span>
-      <span>Tap a package above to download</span>
+      <span>Tap a package above to download it</span>
     </div>
     <div class="step">
       <span class="step-num">2</span>
-      <span><b>iPhone (iTAK):</b> Open the .zip &rarr; Share &rarr; iTAK &rarr; Import</span>
+      <span><b>iTAK:</b> Settings &rarr; Network &rarr; Servers &rarr; <b>+</b> (bottom right) &rarr; Upload Server Package</span>
     </div>
     <div class="step">
       <span class="step-num">3</span>
-      <span><b>Android (ATAK):</b> Downloads &rarr; tap .zip &rarr; Open with ATAK</span>
-    </div>
-    <div class="step">
-      <span class="step-num">4</span>
-      <span>If not auto-connected, go to Settings &rarr; Network &rarr; enable the server</span>
+      <span><b>ATAK:</b> Downloads &rarr; tap .zip &rarr; Open with ATAK</span>
     </div>
   </div>
+
+  {{QR_SECTION}}
 
   <div class="info">
     Server: <code>{{SERVER_IP}}</code> &middot;

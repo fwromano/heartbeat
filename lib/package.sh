@@ -381,20 +381,18 @@ serve_packages() {
         local qr_url_png="${PACKAGES_DIR}/heartbeat_qr.png"
         local serve_url="http://${SERVER_IP}:${port}"
         if save_qr_png "$serve_url" "$qr_url_png" 2>/dev/null && [[ -s "$qr_url_png" ]]; then
-            qr_section='<div class="qr-section"><div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="QR code"><p class="qr-label">Open download page</p><p class="qr-hint">Scan with phone camera</p></div></div>'
+            qr_section='<div class="qr-section"><div class="qr-item"><img class="qr-img" src="heartbeat_qr.png" alt="QR code"><p class="qr-label">Share this page</p><p class="qr-hint">Scan to open on another device</p></div></div>'
         fi
     fi
 
     # Build download section: package list (OpenTAK) or single button (FreeTAK)
     local download_section=""
-    local warning_section=""
     local cot_port="${COT_PORT}"
     local protocol="TCP"
 
     if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         cot_port="${SSL_COT_PORT:-8089}"
         protocol="SSL"
-        warning_section='<div class="warning"><strong>Each device needs its own package.</strong> Do not import the same package on multiple devices. Generate more: <code>./heartbeat package "name"</code></div>'
 
         local pkg_items=""
         local f=""
@@ -415,7 +413,6 @@ serve_packages() {
         -e "s|{{PROTOCOL}}|${protocol}|g" \
         -e "s|{{QR_SECTION}}|${qr_section}|g" \
         -e "s|{{DOWNLOAD_SECTION}}|${download_section}|g" \
-        -e "s|{{WARNING_SECTION}}|${warning_section}|g" \
         "${TEMPLATES_DIR}/download.html" > "${PACKAGES_DIR}/index.html"
 
     echo ""
