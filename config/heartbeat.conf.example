@@ -49,6 +49,7 @@ FIRE_FEED_BBOX=""          # Optional bbox: "lon_min,lat_min,lon_max,lat_max"
 FIRE_FEED_REGION=""        # Optional named polygon filter (supported: texas)
 FIRE_FEED_RANGE_KM=100     # Auto-bbox radius (used only when region+bbox are both unset)
 FIRE_FEED_OTS_API_URL="http://127.0.0.1:8081/api"  # OpenTAK point API base for auto-bbox
+FIRE_FEED_INCIDENTS_ENABLED="true"   # Incident point markers (set false to declutter and focus on perimeter anchors)
 FIRE_FEED_PERIMETERS_ENABLED="false"  # Phase 2: include wildfire perimeter polygons
 FIRE_FEED_PERIMETER_SIMPLIFY=0.001    # Shapely simplify tolerance for perimeter geometry
 FIRE_FEED_PERIMETER_MAX_VERTICES=250  # Vertex cap after simplification/decimation

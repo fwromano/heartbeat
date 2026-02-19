@@ -107,9 +107,11 @@ fire_start() {
     local bbox="${FIRE_FEED_BBOX:-}"
     local region="${FIRE_FEED_REGION:-}"
     local range_km="${FIRE_FEED_RANGE_KM:-100}"
+    local include_incidents="${FIRE_FEED_INCIDENTS_ENABLED:-true}"
     local include_perimeters="${FIRE_FEED_PERIMETERS_ENABLED:-false}"
     local perimeter_simplify="${FIRE_FEED_PERIMETER_SIMPLIFY:-0.001}"
     local perimeter_max_vertices="${FIRE_FEED_PERIMETER_MAX_VERTICES:-250}"
+    include_incidents=$(echo "$include_incidents" | tr '[:upper:]' '[:lower:]')
     include_perimeters=$(echo "$include_perimeters" | tr '[:upper:]' '[:lower:]')
     fire_args+=(--interval "$interval")
     if [[ -n "$bbox" ]]; then
@@ -127,6 +129,10 @@ fire_start() {
         if [[ -n "${FTS_USERNAME:-}" && -n "${FTS_PASSWORD:-}" ]]; then
             fire_args+=(--auto-bbox-user "$FTS_USERNAME" --auto-bbox-password "$FTS_PASSWORD")
         fi
+    fi
+
+    if [[ "$include_incidents" != "true" ]]; then
+        fire_args+=(--no-incidents)
     fi
 
     if [[ "$include_perimeters" == "true" ]]; then
@@ -150,6 +156,7 @@ fire_start() {
     else
         log_info "BBOX: none (nationwide feed)"
     fi
+    log_info "Incidents: ${include_incidents}"
     log_info "Perimeters: ${include_perimeters}"
 
     nohup "$python_bin" "$FIRE_SCRIPT" \
@@ -268,6 +275,7 @@ fire_status() {
     else
         echo -e "  BBOX:      nationwide (no filter)"
     fi
+    echo -e "  Incidents: ${FIRE_FEED_INCIDENTS_ENABLED:-true}"
     echo -e "  Perimeters: ${FIRE_FEED_PERIMETERS_ENABLED:-false}"
     if [[ "${FIRE_FEED_PERIMETERS_ENABLED:-false}" == "true" ]]; then
         echo -e "  Simplify:  ${FIRE_FEED_PERIMETER_SIMPLIFY:-0.001}"

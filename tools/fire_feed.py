@@ -157,6 +157,7 @@ class FireFeed:
         auto_bbox_user="",
         auto_bbox_password="",
         auto_bbox_range_km=100,
+        include_incidents=True,
         include_perimeters=False,
         perimeter_simplify=0.001,
         perimeter_max_vertices=250,
@@ -182,6 +183,7 @@ class FireFeed:
         self._api_logged_in = False
         self._api_cookie_jar = None
         self._api_opener = None
+        self.include_incidents = bool(include_incidents)
         self.include_perimeters = bool(include_perimeters)
         self.perimeter_simplify = max(float(perimeter_simplify), 0.0)
         self.perimeter_max_vertices = max(int(perimeter_max_vertices), 16)
@@ -836,16 +838,20 @@ class FireFeed:
 
                     query_bbox = self._query_bbox(effective_bbox)
 
-                    try:
-                        if query_bbox == "__empty__":
+                    if self.include_incidents:
+                        try:
+                            if query_bbox == "__empty__":
+                                polled_incidents = []
+                            else:
+                                polled_incidents = self.poll_incidents(bbox_override=query_bbox)
+                        except Exception as e:
+                            self.log.warning("ArcGIS poll failed: %s", e)
                             polled_incidents = []
-                        else:
-                            polled_incidents = self.poll_incidents(bbox_override=query_bbox)
-                    except Exception as e:
-                        self.log.warning("ArcGIS poll failed: %s", e)
-                        polled_incidents = []
 
-                    features = [f for f in polled_incidents if self._incident_in_scope(f)]
+                        features = [f for f in polled_incidents if self._incident_in_scope(f)]
+                    else:
+                        polled_incidents = []
+                        features = []
 
                     sent = 0
                     for feature in features:
@@ -974,6 +980,11 @@ def main():
         help="Also poll fire perimeters (FeatureServer layer 1) and emit polygon CoT",
     )
     parser.add_argument(
+        "--no-incidents",
+        action="store_true",
+        help="Disable incident point markers and only emit enabled perimeter products",
+    )
+    parser.add_argument(
         "--perimeter-simplify",
         type=float,
         default=0.001,
@@ -1012,6 +1023,7 @@ def main():
         auto_bbox_user=args.auto_bbox_user,
         auto_bbox_password=args.auto_bbox_password,
         auto_bbox_range_km=args.auto_bbox_range_km,
+        include_incidents=(not args.no_incidents),
         include_perimeters=args.include_perimeters,
         perimeter_simplify=args.perimeter_simplify,
         perimeter_max_vertices=args.perimeter_max_vertices,
