@@ -35,38 +35,36 @@ PERIMETERS_URL = (
 # Coarse Texas outline that is densified to 100 points for region filtering.
 TEXAS_REGION_BASE_COORDS = [
     (-106.645646, 31.895754),
-    (-104.990322, 31.799532),
+    (-105.000000, 31.790000),
     (-103.066650, 31.783148),
     (-103.066650, 36.500704),
     (-100.000381, 36.500704),
     (-100.000381, 34.563278),
-    (-99.063713, 34.563278),
-    (-98.000000, 34.530000),
-    (-97.140000, 33.840000),
-    (-95.900000, 33.890000),
+    (-99.000000, 34.563278),
+    (-98.100000, 34.520000),
+    (-97.300000, 33.900000),
+    (-95.900000, 33.880000),
     (-94.430000, 33.620000),
     (-94.043147, 33.019543),
     (-94.483841, 31.001490),
-    (-93.508292, 30.005611),
-    (-93.700000, 29.760000),
-    (-94.260000, 29.410000),
-    (-94.670000, 28.950000),
-    (-95.090000, 28.780000),
-    (-95.810000, 28.300000),
-    (-96.310000, 28.140000),
-    (-96.560000, 27.730000),
-    (-97.230000, 26.060000),
+    (-93.700000, 30.000000),
+    (-93.650000, 29.760000),
+    (-94.050000, 29.500000),
+    (-94.700000, 28.980000),
+    (-95.300000, 28.700000),
+    (-95.900000, 28.300000),
+    (-96.500000, 27.700000),
+    (-97.150000, 26.300000),
     (-97.420000, 25.840000),
-    (-97.520000, 26.510000),
-    (-98.130000, 26.980000),
-    (-99.170000, 27.500000),
-    (-99.520000, 27.860000),
-    (-100.100000, 28.190000),
-    (-100.800000, 28.650000),
-    (-101.420000, 29.500000),
-    (-102.480000, 29.770000),
-    (-103.070000, 29.370000),
+    (-97.700000, 25.920000),
+    (-98.300000, 26.150000),
+    (-99.100000, 27.100000),
+    (-100.000000, 27.900000),
+    (-101.300000, 29.000000),
+    (-102.500000, 29.700000),
+    (-103.100000, 29.400000),
     (-104.590000, 29.560000),
+    (-106.200000, 31.200000),
     (-106.645646, 31.895754),
 ]
 
@@ -76,7 +74,8 @@ REGION_ALIASES = {"tx": "texas"}
 
 def densify_closed_ring(coords, target_points=100):
     """
-    Return a closed ring with approximately target_points vertices.
+    Return a closed ring with approximately target_points vertices while
+    preserving all original vertices.
     """
     if not coords:
         return []
@@ -86,40 +85,29 @@ def densify_closed_ring(coords, target_points=100):
         ring.append(ring[0])
 
     target_points = max(int(target_points), len(ring))
-    segment_lengths = []
-    total_length = 0.0
-    for idx in range(len(ring) - 1):
-        x1, y1 = ring[idx]
-        x2, y2 = ring[idx + 1]
-        length = math.hypot(x2 - x1, y2 - y1)
-        segment_lengths.append(length)
-        total_length += length
-
-    if total_length <= 0.0:
+    segments = len(ring) - 1
+    if segments <= 0:
         return ring
 
-    samples = max(target_points - 1, 1)
-    out = []
-    for sample_idx in range(samples):
-        distance = (total_length * sample_idx) / samples
-        traversed = 0.0
-        for idx, seg_len in enumerate(segment_lengths):
-            start = ring[idx]
-            end = ring[idx + 1]
-            if seg_len <= 0.0:
-                continue
-            if traversed + seg_len >= distance:
-                ratio = (distance - traversed) / seg_len
-                x = start[0] + ((end[0] - start[0]) * ratio)
-                y = start[1] + ((end[1] - start[1]) * ratio)
-                out.append((x, y))
-                break
-            traversed += seg_len
-        else:
-            out.append(ring[-1])
+    extra_points = target_points - len(ring)
+    if extra_points <= 0:
+        return ring
 
-    if out and out[0] != out[-1]:
-        out.append(out[0])
+    base_per_segment = extra_points // segments
+    remainder = extra_points % segments
+    out = []
+    for idx in range(segments):
+        start = ring[idx]
+        end = ring[idx + 1]
+        out.append(start)
+        inserts = base_per_segment + (1 if idx < remainder else 0)
+        for n in range(1, inserts + 1):
+            ratio = n / (inserts + 1)
+            x = start[0] + ((end[0] - start[0]) * ratio)
+            y = start[1] + ((end[1] - start[1]) * ratio)
+            out.append((x, y))
+
+    out.append(ring[-1])
     return out
 
 
