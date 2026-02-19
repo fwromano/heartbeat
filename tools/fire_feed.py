@@ -32,7 +32,8 @@ PERIMETERS_URL = (
     "USA_Wildfires_v1/FeatureServer/1/query"
 )
 
-# Coarse Texas outline that is densified to 100 points for region filtering.
+# Coarse Texas outline (intentionally generous) that is densified to 100 points
+# for region filtering.
 TEXAS_REGION_BASE_COORDS = [
     (-106.645646, 31.895754),
     (-105.000000, 31.790000),
@@ -40,30 +41,22 @@ TEXAS_REGION_BASE_COORDS = [
     (-103.066650, 36.500704),
     (-100.000381, 36.500704),
     (-100.000381, 34.563278),
-    (-99.000000, 34.563278),
-    (-98.100000, 34.520000),
-    (-97.300000, 33.900000),
-    (-95.900000, 33.880000),
+    (-98.500000, 34.550000),
+    (-97.200000, 33.950000),
+    (-95.500000, 33.950000),
     (-94.430000, 33.620000),
     (-94.043147, 33.019543),
     (-94.483841, 31.001490),
-    (-93.700000, 30.000000),
-    (-93.650000, 29.760000),
-    (-94.050000, 29.500000),
-    (-94.700000, 28.980000),
-    (-95.300000, 28.700000),
-    (-95.900000, 28.300000),
-    (-96.500000, 27.700000),
-    (-97.150000, 26.300000),
-    (-97.420000, 25.840000),
-    (-97.700000, 25.920000),
-    (-98.300000, 26.150000),
-    (-99.100000, 27.100000),
-    (-100.000000, 27.900000),
-    (-101.300000, 29.000000),
-    (-102.500000, 29.700000),
-    (-103.100000, 29.400000),
-    (-104.590000, 29.560000),
+    (-93.500000, 30.000000),
+    (-93.700000, 29.300000),
+    (-94.700000, 28.600000),
+    (-96.100000, 27.800000),
+    (-97.200000, 25.700000),
+    (-98.700000, 26.300000),
+    (-99.900000, 27.500000),
+    (-101.200000, 28.900000),
+    (-102.800000, 29.700000),
+    (-104.500000, 29.500000),
     (-106.200000, 31.200000),
     (-106.645646, 31.895754),
 ]
@@ -710,9 +703,9 @@ class FireFeed:
         stale = iso_future(30)
         escaped_name = html.escape(name, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
-        # Maroon tone; hostile-ground marker class renders as a high-visibility diamond.
+        # Maroon spotmap marker for perimeter anchors.
         color_argb = "-8388608"
-        anchor_type = "a-h-G"
+        anchor_type = "b-m-p-s-o"
 
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -724,6 +717,7 @@ class FireFeed:
             f'<color argb="{color_argb}"/>'
             f'<contact callsign="{escaped_name} Perimeter Anchor"/>'
             f"<marti><dest></dest></marti>"
+            f'<usericon iconsetpath="COT_MAPPING_SPOTMAP/{anchor_type}/{color_argb}"/>'
             f"<remarks>{escaped_remarks}</remarks>"
             f"</detail>"
             f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0.0" ce="0.0" le="0.0"/>'
