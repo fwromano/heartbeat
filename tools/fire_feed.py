@@ -395,8 +395,8 @@ class FireFeed:
 
     def perimeter_anchor_to_cot(self, feature):
         """
-        Emit a high-visibility octagon overlay at the perimeter centroid so
-        operators can quickly locate the expected polygon area.
+        Emit a high-visibility point marker at the perimeter centroid so
+        operators can quickly locate expected polygon areas while zoomed out.
         """
         props = feature.get("properties") or {}
         geometry = feature.get("geometry") or {}
@@ -416,46 +416,30 @@ class FireFeed:
         acres = safe_float(props.get("GISAcres"))
         acres_str = f"{acres:.0f}" if acres is not None else "?"
 
-        remarks = f"{name} perimeter anchor octagon | {acres_str} ac"
+        remarks = f"{name} perimeter anchor | {acres_str} ac"
 
         now = iso_now()
         stale = iso_future(30)
         escaped_name = html.escape(name, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
-
-        # Rough geodesic conversion for a visible octagon footprint.
-        # This is intentionally large enough to spot even at broader zoom.
-        radius_km = 5.0
-        lat_rad = math.radians(lat)
-        dlat = radius_km / 111.0
-        dlon = radius_km / max(111.0 * abs(math.cos(lat_rad)), 1e-6)
-
-        octagon = []
-        for i in range(8):
-            theta = math.radians(i * 45.0)
-            v_lat = lat + dlat * math.sin(theta)
-            v_lon = lon + dlon * math.cos(theta)
-            octagon.append((v_lat, v_lon))
-        octagon.append(octagon[0])
-        links = "".join(f'<link point="{v_lat:.6f},{v_lon:.6f}"/>' for v_lat, v_lon in octagon)
+        # Maroon marker tone.
+        color_argb = "-8388608"
+        anchor_type = "b-m-p-s-o"
 
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
-            f'<event version="2.0" uid="{uid}" type="u-d-f"'
+            f'<event version="2.0" uid="{uid}" type="{anchor_type}"'
             f' time="{now}" start="{now}" stale="{stale}" how="m-g">'
-            f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0" ce="9999999" le="9999999"/>'
             f"<detail>"
-            f"{links}"
-            f'<contact callsign="{escaped_name} Perimeter Anchor"/>'
-            f'<precisionLocation altsrc="DTED0" geopointsrc="manual"/>'
+            f'<precisionlocation geopointsrc="manual" altsrc="manual"/>'
+            f'<status readiness="true"/>'
+            f'<color argb="{color_argb}"/>'
+            f'<contact callsign="{escaped_name} Octagon"/>'
+            f"<marti><dest></dest></marti>"
+            f'<usericon iconsetpath="COT_MAPPING_SPOTMAP/{anchor_type}/{color_argb}"/>'
             f"<remarks>{escaped_remarks}</remarks>"
-            f'<strokeColor value="-65536"/>'
-            f'<fillColor value="570425344"/>'
-            f'<strokeWeight value="4.0"/>'
-            f'<strokeStyle value="solid"/>'
-            f"<marti/>"
-            f'<__geofence elevationMonitored="false" maxElevation="NaN" minElevation="NaN" monitor="All" tracking="false" trigger="Both"/>'
             f"</detail>"
+            f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0.0" ce="0.0" le="0.0"/>'
             f"</event>"
         )
 

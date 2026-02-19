@@ -1,6 +1,6 @@
 # Tasks
 
-> **Last updated:** 2026-02-11
+> **Last updated:** 2026-02-19
 
 ## In Progress
 
@@ -15,6 +15,7 @@
 - **[high] Recorder watchdog + ingest health** -- Upgrade `./heartbeat status` from PID-only to ingest-aware health (last-event age, per-session event delta, recorder heartbeat) so silent recorder failures are surfaced during mission runtime.
 - **[med] OpenTAK portability for Standard tier** -- Evaluate containerized OpenTAK stack (OTS + Postgres + RabbitMQ) to reduce host-coupled cleanup/reinstall burden and improve migration parity with Lite tier.
 - **[med] Add shell test baseline (bats-core)** -- Add regression tests for command resolution + config mutation paths (`resolve_cmd`, `set_config`, backend selection, parser assumptions) to catch brittle shell/output changes early.
+- **[high] Polygon remarks missing on broadcast** -- Investigate/fix path where polygons are relayed to other clients but polygon `remarks` are not preserved/rendered on receivers.
 - **[low] TAK Server backend** -- Add official TAK Server (tak.gov) support
 - **[low] Federation support** -- Connect multiple Heartbeat instances
 - **[low] Add LICENSE file** -- Document "free for humanity" philosophy
