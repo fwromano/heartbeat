@@ -722,9 +722,9 @@ class FireFeed:
         stale = iso_future(30)
         escaped_name = html.escape(name, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
-        # Maroon marker tone.
+        # Maroon tone; hostile-ground marker class renders as a high-visibility diamond.
         color_argb = "-8388608"
-        anchor_type = "b-m-p-s-o"
+        anchor_type = "a-h-G"
 
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
@@ -734,9 +734,8 @@ class FireFeed:
             f'<precisionlocation geopointsrc="manual" altsrc="manual"/>'
             f'<status readiness="true"/>'
             f'<color argb="{color_argb}"/>'
-            f'<contact callsign="{escaped_name} Octagon"/>'
+            f'<contact callsign="{escaped_name} Perimeter Anchor"/>'
             f"<marti><dest></dest></marti>"
-            f'<usericon iconsetpath="COT_MAPPING_SPOTMAP/{anchor_type}/{color_argb}"/>'
             f"<remarks>{escaped_remarks}</remarks>"
             f"</detail>"
             f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0.0" ce="0.0" le="0.0"/>'
