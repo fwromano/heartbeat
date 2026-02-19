@@ -395,8 +395,8 @@ class FireFeed:
 
     def perimeter_anchor_to_cot(self, feature):
         """
-        Emit a high-visibility marker at the perimeter centroid so operators can
-        quickly find where the polygon should be rendered.
+        Emit a high-visibility octagon overlay at the perimeter centroid so
+        operators can quickly locate the expected polygon area.
         """
         props = feature.get("properties") or {}
         geometry = feature.get("geometry") or {}
@@ -416,21 +416,45 @@ class FireFeed:
         acres = safe_float(props.get("GISAcres"))
         acres_str = f"{acres:.0f}" if acres is not None else "?"
 
-        remarks = f"{name} perimeter anchor | {acres_str} ac"
+        remarks = f"{name} perimeter anchor octagon | {acres_str} ac"
 
         now = iso_now()
         stale = iso_future(30)
         escaped_name = html.escape(name, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
+
+        # Rough geodesic conversion for a visible octagon footprint.
+        # This is intentionally large enough to spot even at broader zoom.
+        radius_km = 5.0
+        lat_rad = math.radians(lat)
+        dlat = radius_km / 111.0
+        dlon = radius_km / max(111.0 * abs(math.cos(lat_rad)), 1e-6)
+
+        octagon = []
+        for i in range(8):
+            theta = math.radians(i * 45.0)
+            v_lat = lat + dlat * math.sin(theta)
+            v_lon = lon + dlon * math.cos(theta)
+            octagon.append((v_lat, v_lon))
+        octagon.append(octagon[0])
+        links = "".join(f'<link point="{v_lat:.6f},{v_lon:.6f}"/>' for v_lat, v_lon in octagon)
+
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
-            f'<event version="2.0" uid="{uid}" type="a-h-G"'
+            f'<event version="2.0" uid="{uid}" type="u-d-f"'
             f' time="{now}" start="{now}" stale="{stale}" how="m-g">'
             f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0" ce="9999999" le="9999999"/>'
             f"<detail>"
-            f'<contact callsign="{escaped_name} Perimeter"/>'
+            f"{links}"
+            f'<contact callsign="{escaped_name} Perimeter Anchor"/>'
+            f'<precisionLocation altsrc="DTED0" geopointsrc="manual"/>'
             f"<remarks>{escaped_remarks}</remarks>"
-            f'<usericon iconsetpath="34ae1613-9645-4222-a9d2-e5f243dea2865/Military/fire.png"/>'
+            f'<strokeColor value="-65536"/>'
+            f'<fillColor value="570425344"/>'
+            f'<strokeWeight value="4.0"/>'
+            f'<strokeStyle value="solid"/>'
+            f"<marti/>"
+            f'<__geofence elevationMonitored="false" maxElevation="NaN" minElevation="NaN" monitor="All" tracking="false" trigger="Both"/>'
             f"</detail>"
             f"</event>"
         )
@@ -547,6 +571,7 @@ class FireFeed:
 
                     perimeter_count = 0
                     perimeter_sent = 0
+                    perimeter_anchor_sent = 0
                     if self.include_perimeters:
                         try:
                             perimeter_features = self.poll_perimeters(
@@ -566,6 +591,7 @@ class FireFeed:
                                 # Also emit an anchor marker at centroid for visibility.
                                 anchor = self.perimeter_anchor_to_cot(feature)
                                 self.client.send(anchor)
+                                perimeter_anchor_sent += 1
                                 perimeter_sent += 1
                             except Exception as e:
                                 self.log.debug(
@@ -573,11 +599,12 @@ class FireFeed:
                                 )
 
                     self.log.info(
-                        "Polled incidents=%d sent=%d perimeters=%d sent=%d",
+                        "Polled incidents=%d sent=%d perimeters=%d sent=%d anchors=%d",
                         len(features),
                         sent,
                         perimeter_count,
                         perimeter_sent,
+                        perimeter_anchor_sent,
                     )
 
                     try:
