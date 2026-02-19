@@ -78,6 +78,29 @@ Connect multiple Heartbeat instances to share SA across organizations.
 - OpenTAK: partial (SSL mutual auth)
 - TAK Server: full (native federation protocol)
 
+### Browser TAK Interface (WebTAK + CloudTAK)
+
+Track browser-first TAK access for teams that want map ops without installing ATAK/iTAK on every endpoint.
+
+**Scope:**
+- Keep OpenTAK WebTAK support as the default browser path in Heartbeat Standard
+- Evaluate CloudTAK integration path for browser-based TAK workflows
+- Decide whether CloudTAK is:
+  - a separate backend target, or
+  - an auxiliary web interface attached to existing backends
+
+**Evaluation criteria:**
+- Licensing and redistribution model (confirm open-source status and packaging constraints)
+- Authentication model and certificate compatibility with existing package flow
+- Mission/Data Sync compatibility for operator workflows
+- Deployment fit (native/systemd vs container) and operational complexity
+- Feature parity vs OpenTAK WebTAK for field requirements
+
+**Proposed deliverables:**
+- Capability matrix: OpenTAK WebTAK vs CloudTAK
+- Minimal proof-of-concept deployment guide
+- Recommendation: adopt, defer, or keep as optional experimental backend
+
 ### Simulation Integration (ALIAS)
 
 For training scenarios, inject simulated data into TAK:
@@ -135,3 +158,4 @@ Read features from a GeoPackage file, generate CoT XML events, and inject them i
 - [FreeTAKServer GitHub](https://github.com/FreeTAKTeam/FreeTakServer)
 - [OpenTAK GitHub](https://github.com/brian7704/OpenTAKServer)
 - [TAK Server (tak.gov)](https://tak.gov/products/tak-server)
+- [CloudTAK GitHub](https://github.com/dfpc-coe/CloudTAK)
