@@ -112,7 +112,7 @@ fire_start() {
     include_perimeters=$(echo "$include_perimeters" | tr '[:upper:]' '[:lower:]')
     fire_args+=(--interval "$interval")
     if [[ -n "$bbox" ]]; then
-        fire_args+=(--bbox "$bbox")
+        fire_args+=("--bbox=${bbox}")
     elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         # Auto-bbox mode: derive area from team positions known by OpenTAK.
         local ots_api_base="${FIRE_FEED_OTS_API_URL:-http://127.0.0.1:8081/api}"

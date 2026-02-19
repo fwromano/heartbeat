@@ -381,9 +381,14 @@ class FireFeed:
             f"<detail>"
             f"{links}"
             f'<contact callsign="{escaped_name} Perimeter"/>'
+            f'<precisionLocation altsrc="DTED0" geopointsrc="manual"/>'
             f"<remarks>{escaped_remarks}</remarks>"
-            f'<strokeColor value="#FFFF0000"/>'
-            f'<fillColor value="#44FF0000"/>'
+            f'<strokeColor value="-65536"/>'
+            f'<fillColor value="1157562368"/>'
+            f'<strokeWeight value="3.0"/>'
+            f'<strokeStyle value="solid"/>'
+            f"<marti/>"
+            f'<__geofence elevationMonitored="false" maxElevation="NaN" minElevation="NaN" monitor="All" tracking="false" trigger="Both"/>'
             f"</detail>"
             f"</event>"
         )
