@@ -86,6 +86,7 @@ class FireFeed:
         self.include_perimeters = bool(include_perimeters)
         self.perimeter_simplify = max(float(perimeter_simplify), 0.0)
         self.perimeter_max_vertices = max(int(perimeter_max_vertices), 16)
+        self._bbox_bounds = self._parse_bbox_bounds(self.bbox)
         self._perimeter_shapely_unavailable_logged = False
         self.running = True
 
@@ -100,6 +101,25 @@ class FireFeed:
         self.log.info("Shutdown signal received")
         self.running = False
         self.client.close()
+
+    def _parse_bbox_bounds(self, bbox_value):
+        if not bbox_value:
+            return None
+        try:
+            lon_min, lat_min, lon_max, lat_max = [float(p.strip()) for p in bbox_value.split(",")]
+        except Exception:
+            self.log.warning(
+                "Invalid bbox '%s' for perimeter clipping; expected lon_min,lat_min,lon_max,lat_max",
+                bbox_value,
+            )
+            return None
+        return (min(lon_min, lon_max), min(lat_min, lat_max), max(lon_min, lon_max), max(lat_min, lat_max))
+
+    def _point_in_bbox(self, lat, lon):
+        if self._bbox_bounds is None:
+            return True
+        lon_min, lat_min, lon_max, lat_max = self._bbox_bounds
+        return lon_min <= lon <= lon_max and lat_min <= lat <= lat_max
 
     def _bbox_params(self, bbox_value):
         if not bbox_value:
@@ -292,7 +312,7 @@ class FireFeed:
 
     def _simplify_perimeter(self, geometry):
         try:
-            from shapely.geometry import shape
+            from shapely.geometry import box, shape
         except Exception:
             if not self._perimeter_shapely_unavailable_logged:
                 self.log.warning(
@@ -308,11 +328,23 @@ class FireFeed:
                 return [], None
             centroid_lon = sum(lon for lon, _ in vertices) / len(vertices)
             centroid_lat = sum(lat for _, lat in vertices) / len(vertices)
+            if not self._point_in_bbox(centroid_lat, centroid_lon):
+                in_bbox = [(lon, lat) for lon, lat in vertices if self._point_in_bbox(lat, lon)]
+                if not in_bbox:
+                    return [], None
+                centroid_lon, centroid_lat = in_bbox[0]
             return vertices, (centroid_lat, centroid_lon)
 
         geom = shape(geometry or {})
         if geom.is_empty:
             return [], None
+
+        if self._bbox_bounds is not None:
+            lon_min, lat_min, lon_max, lat_max = self._bbox_bounds
+            bbox_geom = box(lon_min, lat_min, lon_max, lat_max)
+            geom = geom.intersection(bbox_geom)
+            if geom.is_empty:
+                return [], None
 
         if geom.geom_type == "MultiPolygon":
             geom = max(geom.geoms, key=lambda g: g.area)
