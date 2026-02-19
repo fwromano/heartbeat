@@ -393,6 +393,48 @@ class FireFeed:
             f"</event>"
         )
 
+    def perimeter_anchor_to_cot(self, feature):
+        """
+        Emit a high-visibility marker at the perimeter centroid so operators can
+        quickly find where the polygon should be rendered.
+        """
+        props = feature.get("properties") or {}
+        geometry = feature.get("geometry") or {}
+        vertices, centroid = self._simplify_perimeter(geometry)
+        if len(vertices) < 3 or centroid is None:
+            raise ValueError("invalid perimeter geometry")
+
+        lat, lon = centroid
+        perimeter_id = (
+            props.get("IRWINID")
+            or props.get("OBJECTID")
+            or f"{lat:.5f}-{lon:.5f}"
+        )
+        uid = f"fire-perimeter-anchor-{clean_uid_component(str(perimeter_id))}"
+
+        name = str(props.get("IncidentName") or "Unknown Fire")
+        acres = safe_float(props.get("GISAcres"))
+        acres_str = f"{acres:.0f}" if acres is not None else "?"
+
+        remarks = f"{name} perimeter anchor | {acres_str} ac"
+
+        now = iso_now()
+        stale = iso_future(30)
+        escaped_name = html.escape(name, quote=True)
+        escaped_remarks = html.escape(remarks, quote=True)
+        return (
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            f'<event version="2.0" uid="{uid}" type="a-h-G"'
+            f' time="{now}" start="{now}" stale="{stale}" how="m-g">'
+            f'<point lat="{lat:.6f}" lon="{lon:.6f}" hae="0" ce="9999999" le="9999999"/>'
+            f"<detail>"
+            f'<contact callsign="{escaped_name} Perimeter"/>'
+            f"<remarks>{escaped_remarks}</remarks>"
+            f'<usericon iconsetpath="34ae1613-9645-4222-a9d2-e5f243dea2865/Military/fire.png"/>'
+            f"</detail>"
+            f"</event>"
+        )
+
     def feature_to_cot(self, feature):
         props = feature.get("properties") or {}
         geom = feature.get("geometry") or {}
@@ -521,6 +563,9 @@ class FireFeed:
                             try:
                                 cot = self.perimeter_to_cot(feature)
                                 self.client.send(cot)
+                                # Also emit an anchor marker at centroid for visibility.
+                                anchor = self.perimeter_anchor_to_cot(feature)
+                                self.client.send(anchor)
                                 perimeter_sent += 1
                             except Exception as e:
                                 self.log.debug(
