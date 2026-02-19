@@ -126,6 +126,55 @@ def clean_uid_component(value):
     return cleaned or "unknown"
 
 
+def incident_style(properties):
+    """
+    Best-effort style classification for incident point markers.
+    """
+    props = properties or {}
+    candidates = [
+        props.get("IncidentTypeCategory"),
+        props.get("IncidentTypeKind"),
+        props.get("IncidentType"),
+        props.get("FeatureCategory"),
+        props.get("FireCause"),
+        props.get("IncidentName"),
+    ]
+    text = " ".join(str(v).strip().lower() for v in candidates if v not in (None, ""))
+
+    fire_terms = (
+        "wildfire",
+        "fire",
+        "wlf",
+        "rx fire",
+        "prescribed",
+        "burn",
+    )
+    non_fire_terms = (
+        "flood",
+        "hurricane",
+        "storm",
+        "earthquake",
+        "tornado",
+        "landslide",
+        "search",
+        "rescue",
+    )
+
+    if any(term in text for term in fire_terms):
+        return {
+            "type": "a-h-G",
+            "icon": "34ae1613-9645-4222-a9d2-e5f243dea2865/Military/fire.png",
+        }
+    if any(term in text for term in non_fire_terms):
+        return {"type": "a-n-G", "icon": ""}
+
+    # Default to fire styling for the USA_Wildfires feed.
+    return {
+        "type": "a-h-G",
+        "icon": "34ae1613-9645-4222-a9d2-e5f243dea2865/Military/fire.png",
+    }
+
+
 class FireFeed:
     def __init__(
         self,
@@ -487,11 +536,9 @@ class FireFeed:
     def poll_incidents(self, bbox_override=""):
         params = {
             "where": "1=1",
-            "outFields": (
-                "IncidentName,DailyAcres,PercentContained,FireDiscoveryDateTime,"
-                "POOState,POOCounty,GACC,TotalIncidentPersonnel,FireMgmtComplexity,"
-                "FireCause,PredominantFuelGroup,UniqueFireIdentifier,IRWINID,OBJECTID"
-            ),
+            # Pull full properties so subtype/classification fields are available
+            # for best-effort marker stratification.
+            "outFields": "*",
             "f": "geojson",
             "resultRecordCount": 2000,
         }
@@ -767,16 +814,24 @@ class FireFeed:
         stale = iso_future(20)
         escaped_name = html.escape(name, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
+        style = incident_style(props)
+        event_type = style["type"]
+        icon_path = style["icon"]
+
+        icon_xml = ""
+        if icon_path:
+            escaped_icon = html.escape(icon_path, quote=True)
+            icon_xml = f'<usericon iconsetpath="{escaped_icon}"/>'
 
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
-            f'<event version="2.0" uid="{uid}" type="a-h-G"'
+            f'<event version="2.0" uid="{uid}" type="{event_type}"'
             f' time="{now}" start="{now}" stale="{stale}" how="m-g">'
             f'<point lat="{lat}" lon="{lon}" hae="0" ce="9999999" le="9999999"/>'
             f"<detail>"
             f'<contact callsign="{escaped_name}"/>'
             f"<remarks>{escaped_remarks}</remarks>"
-            f'<usericon iconsetpath="34ae1613-9645-4222-a9d2-e5f243dea2865/Military/fire.png"/>'
+            f"{icon_xml}"
             f"</detail>"
             f"</event>"
         )
