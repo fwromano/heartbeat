@@ -187,6 +187,7 @@ class FireFeed:
         auto_bbox_user="",
         auto_bbox_password="",
         auto_bbox_range_km=100,
+        source_callsign="Fire API",
         include_incidents=True,
         include_perimeters=False,
         perimeter_simplify=0.001,
@@ -207,6 +208,7 @@ class FireFeed:
         self.auto_bbox_user = auto_bbox_user or ""
         self.auto_bbox_password = auto_bbox_password or ""
         self.auto_bbox_range_km = max(float(auto_bbox_range_km), 1.0)
+        self.source_callsign = (source_callsign or "Fire API").strip() or "Fire API"
         self.auto_bbox_enabled = bool(self.auto_bbox_url and not self.bbox and not self.region)
         self._auto_bbox_fail_logged = False
         self._auto_bbox_logged_once = False
@@ -689,7 +691,8 @@ class FireFeed:
 
         now = iso_now()
         stale = iso_future(30)
-        escaped_name = html.escape(name, quote=True)
+        label = f"{self.source_callsign} | {name}"
+        escaped_name = html.escape(label, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
         links = "".join(
             f'<link point="{v_lat:.6f},{v_lon:.6f},0" type="b-m-p-w" relation="c"/>'
@@ -748,7 +751,8 @@ class FireFeed:
 
         now = iso_now()
         stale = iso_future(30)
-        escaped_name = html.escape(name, quote=True)
+        label = f"{self.source_callsign} | {name}"
+        escaped_name = html.escape(label, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
         # Use standard CoT atom type for consistent rendering across TAK clients.
         color_argb = "-8388608"
@@ -812,7 +816,8 @@ class FireFeed:
 
         now = iso_now()
         stale = iso_future(20)
-        escaped_name = html.escape(name, quote=True)
+        label = f"{self.source_callsign} | {name}"
+        escaped_name = html.escape(label, quote=True)
         escaped_remarks = html.escape(remarks, quote=True)
         style = incident_style(props)
         event_type = style["type"]
@@ -989,6 +994,11 @@ def main():
         help="Poll interval in seconds (default: 900)",
     )
     parser.add_argument(
+        "--source-callsign",
+        default="Fire API",
+        help="Display name used as sender/source for fire feed items",
+    )
+    parser.add_argument(
         "--auto-bbox-url",
         default="",
         help="OTS API base URL (example: http://127.0.0.1:8081/api)",
@@ -1037,7 +1047,7 @@ def main():
     client = TakClient(
         host=args.host,
         port=args.port,
-        callsign="HB-FIRE-FEED",
+        callsign=args.source_callsign,
         uid=f"heartbeat-fire-feed-{uuid.uuid4()}",
         use_ssl=args.ssl,
         cert_path=args.cert or None,
@@ -1058,6 +1068,7 @@ def main():
         auto_bbox_user=args.auto_bbox_user,
         auto_bbox_password=args.auto_bbox_password,
         auto_bbox_range_km=args.auto_bbox_range_km,
+        source_callsign=args.source_callsign,
         include_incidents=(not args.no_incidents),
         include_perimeters=args.include_perimeters,
         perimeter_simplify=args.perimeter_simplify,

@@ -106,6 +106,7 @@ fire_start() {
     local interval="${FIRE_FEED_INTERVAL:-900}"
     local bbox="${FIRE_FEED_BBOX:-}"
     local region="${FIRE_FEED_REGION:-}"
+    local source_callsign="${FIRE_FEED_CALLSIGN:-Fire API}"
     local range_km="${FIRE_FEED_RANGE_KM:-100}"
     local include_incidents="${FIRE_FEED_INCIDENTS_ENABLED:-true}"
     local include_perimeters="${FIRE_FEED_PERIMETERS_ENABLED:-false}"
@@ -114,6 +115,7 @@ fire_start() {
     include_incidents=$(echo "$include_incidents" | tr '[:upper:]' '[:lower:]')
     include_perimeters=$(echo "$include_perimeters" | tr '[:upper:]' '[:lower:]')
     fire_args+=(--interval "$interval")
+    fire_args+=(--source-callsign "$source_callsign")
     if [[ -n "$bbox" ]]; then
         fire_args+=("--bbox=${bbox}")
     fi
@@ -145,6 +147,7 @@ fire_start() {
 
     log_step "Starting fire feed"
     log_info "Server: ${target_label}"
+    log_info "Source: ${source_callsign}"
     log_info "Interval: ${interval}s"
     if [[ -n "$region" ]]; then
         log_info "Region: ${region}"
@@ -264,6 +267,7 @@ fire_status() {
     fi
 
     echo -e "  Enabled:   ${GREEN}yes${NC}"
+    echo -e "  Source:    ${FIRE_FEED_CALLSIGN:-Fire API}"
     echo -e "  Interval:  ${FIRE_FEED_INTERVAL:-900}s"
     if [[ -n "${FIRE_FEED_REGION:-}" ]]; then
         echo -e "  Region:    ${FIRE_FEED_REGION}"
