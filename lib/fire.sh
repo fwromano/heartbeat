@@ -105,6 +105,7 @@ fire_start() {
 
     local interval="${FIRE_FEED_INTERVAL:-900}"
     local bbox="${FIRE_FEED_BBOX:-}"
+    local region="${FIRE_FEED_REGION:-}"
     local range_km="${FIRE_FEED_RANGE_KM:-100}"
     local include_perimeters="${FIRE_FEED_PERIMETERS_ENABLED:-false}"
     local perimeter_simplify="${FIRE_FEED_PERIMETER_SIMPLIFY:-0.001}"
@@ -113,7 +114,10 @@ fire_start() {
     fire_args+=(--interval "$interval")
     if [[ -n "$bbox" ]]; then
         fire_args+=("--bbox=${bbox}")
-    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    fi
+    if [[ -n "$region" ]]; then
+        fire_args+=(--region "$region")
+    elif [[ -z "$bbox" && "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         # Auto-bbox mode: derive area from team positions known by OpenTAK.
         local ots_api_base="${FIRE_FEED_OTS_API_URL:-http://127.0.0.1:8081/api}"
         fire_args+=(
@@ -136,9 +140,12 @@ fire_start() {
     log_step "Starting fire feed"
     log_info "Server: ${target_label}"
     log_info "Interval: ${interval}s"
+    if [[ -n "$region" ]]; then
+        log_info "Region: ${region}"
+    fi
     if [[ -n "$bbox" ]]; then
         log_info "BBOX: ${bbox}"
-    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    elif [[ -z "$region" && "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         log_info "BBOX: auto from team positions (range ${range_km}km)"
     else
         log_info "BBOX: none (nationwide feed)"
@@ -251,9 +258,12 @@ fire_status() {
 
     echo -e "  Enabled:   ${GREEN}yes${NC}"
     echo -e "  Interval:  ${FIRE_FEED_INTERVAL:-900}s"
+    if [[ -n "${FIRE_FEED_REGION:-}" ]]; then
+        echo -e "  Region:    ${FIRE_FEED_REGION}"
+    fi
     if [[ -n "${FIRE_FEED_BBOX:-}" ]]; then
         echo -e "  BBOX:      ${FIRE_FEED_BBOX}"
-    elif [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    elif [[ -z "${FIRE_FEED_REGION:-}" && "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
         echo -e "  BBOX:      auto (team centroid ±${FIRE_FEED_RANGE_KM:-100}km)"
     else
         echo -e "  BBOX:      nationwide (no filter)"
