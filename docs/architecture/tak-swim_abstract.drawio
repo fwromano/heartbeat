@@ -1,0 +1,95 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.3.8">
+  <diagram name="TAK + SWIM" id="tak-swim">
+    <mxGraphModel dx="1031" dy="940" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1080" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-5" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=8;" value="HeartBeat&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="160" x="280" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-22" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=8;fontStyle=1;fontColor=#333333;" value="Robots&#xa;&#xa;&#xa;&#xa;&#xa;" vertex="1">
+          <mxGeometry height="120" width="160" x="760" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-37" edge="1" parent="1" source="b9cSh1l_Qo-6_1VYOe4T-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.25;entryDx=0;entryDy=0;fontSize=8;strokeWidth=2;" target="b9cSh1l_Qo-6_1VYOe4T-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-40" connectable="0" parent="b9cSh1l_Qo-6_1VYOe4T-37" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;" value="GCMs" vertex="1">
+          <mxGeometry relative="1" x="0.1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-2" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#f5f5f5;strokeColor=#666666;fontSize=8;fontStyle=1;fontColor=#333333;" value="Human Operators&#xa;&#xa;&#xa;&#xa;&#xa;&#xa;" vertex="1">
+          <mxGeometry height="120" width="160" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-4" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=8;fontStyle=0;" value="OpenTak&#xa;Server " vertex="1">
+          <mxGeometry height="40" width="40" x="310" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-6" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=8;" value="iTak" vertex="1">
+          <mxGeometry height="40" width="20" x="70" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-7" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=8;" value="ATAK" vertex="1">
+          <mxGeometry height="40" width="20" x="140" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-11" edge="1" parent="1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;fontSize=8;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="280" y="80" as="sourcePoint" />
+            <mxPoint x="200" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-17" parent="1" style="shape=mxgraph.signs.transportation.helicopter;html=1;pointerEvents=1;fillColor=#000000;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;sketch=0;fontSize=8;" value="OPVs" vertex="1">
+          <mxGeometry height="30" width="50" x="780" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-24" parent="1" style="shape=mxgraph.signs.transportation.tank;html=1;pointerEvents=1;fillColor=#000000;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;sketch=0;fontSize=8;" value="UGVs" vertex="1">
+          <mxGeometry height="30" width="60" x="840" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-39" edge="1" parent="1" source="b9cSh1l_Qo-6_1VYOe4T-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;fontSize=8;entryX=1;entryY=0.75;entryDx=0;entryDy=0;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" target="b9cSh1l_Qo-6_1VYOe4T-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-41" connectable="0" parent="b9cSh1l_Qo-6_1VYOe4T-39" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fillColor=#FF0000;" value="Ego Data" vertex="1">
+          <mxGeometry relative="1" x="0.1667" y="-2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-26" parent="1" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=8;" value="SWM&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="120" width="160" x="520" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-28" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=8;fontStyle=1;" value="SWIM" vertex="1">
+          <mxGeometry height="40" width="40" x="580" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-42" edge="1" parent="1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="680" y="80" as="sourcePoint" />
+            <mxPoint x="760" y="80" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-44" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=8;fontStyle=0;" value="Broadcast Listener" vertex="1">
+          <mxGeometry height="40" width="40" x="370" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-45" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=8;fontStyle=1;" value="Vector Layers" vertex="1">
+          <mxGeometry height="40" width="40" x="610" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-46" parent="1" style="rounded=1;whiteSpace=wrap;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=8;fontStyle=1;" value="Raster Layers" vertex="1">
+          <mxGeometry height="40" width="40" x="550" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-47" edge="1" parent="1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;fontSize=8;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0;exitY=0.5;exitDx=0;exitDy=0;endSize=7;strokeWidth=2;" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="280" y="119.49000000000001" as="sourcePoint" />
+            <mxPoint x="200" y="119.49000000000001" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-49" edge="1" parent="1" style="shape=flexArrow;endArrow=classic;startArrow=classic;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;strokeWidth=2;" value="">
+          <mxGeometry height="100" relative="1" width="100" as="geometry">
+            <mxPoint x="680" y="119.99999999999999" as="sourcePoint" />
+            <mxPoint x="760" y="119.99999999999999" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-52" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Each Client connected to the server" vertex="1">
+          <mxGeometry height="30" width="320" x="80" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="b9cSh1l_Qo-6_1VYOe4T-53" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="Each Robot run a SWM instance" vertex="1">
+          <mxGeometry height="30" width="320" x="560" y="170" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
