@@ -85,6 +85,9 @@ CREATE INDEX IF NOT EXISTS idx_geom_event ON cot_geometry_points(event_id);
 
 # SA keepalive interval (seconds)
 SA_INTERVAL = 240  # 4 minutes
+STARTUP_SA_INTERVAL = 2
+STARTUP_SA_RETRIES = 3
+SOCKET_READ_TIMEOUT = 5
 RECONNECT_DELAY = 3
 
 
@@ -130,6 +133,7 @@ class CotRecorder:
         self.session_id = None
         self.recorder_uid = f"heartbeat-recorder-{uuid.uuid4()}"
         self.recorder_callsign = f"HB-REC-{uuid.uuid4().hex[:8]}"
+        self.received_foreign_event = False
 
         # Set up logging
         logging.basicConfig(
@@ -174,7 +178,7 @@ class CotRecorder:
     def connect(self):
         """Establish connection and send SA event."""
         raw_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        raw_sock.settimeout(5)
+        raw_sock.settimeout(SOCKET_READ_TIMEOUT)
 
         if self.use_ssl:
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
@@ -195,16 +199,25 @@ class CotRecorder:
             self.sock = raw_sock
 
         self.sock.connect((self.host, self.port))
-        self.sock.setblocking(True)
+        self.sock.settimeout(SOCKET_READ_TIMEOUT)
         mode = "SSL" if self.use_ssl else "TCP"
         self.log.info("Connected (%s) to %s:%d", mode, self.host, self.port)
 
         # Send SA identification
+        self.send_sa_event("initial")
+
+    def send_sa_event(self, reason="keepalive"):
+        """Send an SA event to keep the recorder registered as a client."""
         sa = self.make_sa_event()
         self.sock.sendall(sa.encode("utf-8"))
-        self.log.info(
-            "SA event sent (callsign=%s, uid=%s)", self.recorder_callsign, self.recorder_uid
-        )
+        if reason == "initial":
+            self.log.info(
+                "SA event sent (callsign=%s, uid=%s)",
+                self.recorder_callsign,
+                self.recorder_uid,
+            )
+        else:
+            self.log.info("SA %s sent", reason)
 
     def record_event(self, conn, session_id, xml_str):
         """Parse a CoT event XML and insert into the database."""
@@ -215,6 +228,7 @@ class CotRecorder:
         # Skip our own SA events
         if parsed["uid"] == self.recorder_uid:
             return False
+        self.received_foreign_event = True
 
         geometry_points = parsed.get("geometry_points") or []
         has_point = parsed["lat"] is not None and parsed["lon"] is not None
@@ -308,38 +322,52 @@ class CotRecorder:
                 db_conn.commit()
                 self.log.info("Recording session %d started", self.session_id)
 
+                self.received_foreign_event = False
                 last_sa_time = time.monotonic()
+                startup_sa_retries = 0
 
                 while self.running:
                     try:
                         data = self.sock.recv(65536)
                     except socket.timeout:
-                        data = b""
+                        data = None
                     except OSError:
                         break
 
-                    if not data:
+                    if data == b"":
                         self.log.warning("Connection closed by server")
                         break
 
-                    try:
-                        text = data.decode("utf-8", errors="replace")
-                    except Exception:
-                        continue
+                    if data:
+                        try:
+                            text = data.decode("utf-8", errors="replace")
+                        except Exception:
+                            continue
 
-                    events = parser.feed(text)
-                    for event_xml in events:
-                        inserted = self.record_event(db_conn, self.session_id, event_xml)
-                        if inserted:
-                            self.log.debug("Recorded event")
+                        events = parser.feed(text)
+                        for event_xml in events:
+                            inserted = self.record_event(db_conn, self.session_id, event_xml)
+                            if inserted:
+                                self.log.debug("Recorded event")
+
+                    elapsed = time.monotonic() - last_sa_time
+                    if (
+                        not self.received_foreign_event
+                        and startup_sa_retries < STARTUP_SA_RETRIES
+                        and elapsed >= STARTUP_SA_INTERVAL
+                    ):
+                        try:
+                            self.send_sa_event(f"startup retry {startup_sa_retries + 1}")
+                            last_sa_time = time.monotonic()
+                            startup_sa_retries += 1
+                        except OSError:
+                            break
 
                     # SA keepalive
-                    if time.monotonic() - last_sa_time >= SA_INTERVAL:
+                    elif elapsed >= SA_INTERVAL:
                         try:
-                            sa = self.make_sa_event()
-                            self.sock.sendall(sa.encode("utf-8"))
+                            self.send_sa_event("keepalive")
                             last_sa_time = time.monotonic()
-                            self.log.debug("SA keepalive sent")
                         except OSError:
                             break
 

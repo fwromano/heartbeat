@@ -20,6 +20,32 @@ _recorder_find_pids() {
     pgrep -f "tools/recorder.py.*--db ${RECORDER_DB}" 2>/dev/null || true
 }
 
+record_is_running() {
+    if [[ -f "$RECORDER_PID" ]]; then
+        local pid
+        pid=$(cat "$RECORDER_PID")
+        if kill -0 "$pid" 2>/dev/null; then
+            return 0
+        fi
+    fi
+    [[ -n "$(_recorder_find_pids)" ]]
+}
+
+record_latest_session_id() {
+    if [[ ! -f "$RECORDER_DB" ]] || ! has_cmd python3; then
+        echo ""
+        return 0
+    fi
+    python3 - "$RECORDER_DB" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+row = conn.execute("SELECT id FROM recording_sessions ORDER BY id DESC LIMIT 1").fetchone()
+conn.close()
+if row:
+    print(int(row[0]))
+PY
+}
+
 _record_stop_pid() {
     local pid="${1:?missing pid}"
     if ! kill -0 "$pid" 2>/dev/null; then
@@ -157,7 +183,7 @@ record_start() {
         if [[ -f "$ca_file" ]]; then
             recorder_args+=(--ca "$ca_file")
         fi
-        local recorder_group="${OTS_RECORDER_GROUP:-__ANON__}"
+        local recorder_group="${OTS_RECORDER_GROUP:-Cyan}"
         local recorder_role="${OTS_RECORDER_ROLE:-Team Member}"
         recorder_args+=(--group "$recorder_group" --role "$recorder_role")
         log_info "Mode: OpenTAK SSL client (${cert_user})"

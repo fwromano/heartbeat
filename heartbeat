@@ -54,6 +54,7 @@ show_help() {
     echo -e "${BOLD}Recording & Export:${NC}"
     echo "  record status        Check recorder status and event count"
     echo "  record start|stop    Manually control recorder (auto-starts with server)"
+    echo "  save                 Checkpoint: export current session and start fresh"
     echo "  export [-o file]     Export recorded events to GeoPackage (.gpkg)"
     echo "  export --gcm [-o f]  Export GCM (tactical geometry) only"
     echo ""
@@ -119,13 +120,13 @@ cmd_update() {
 # Command prefix matching
 # Allows short abbreviations: "st" -> "start", "sta" -> "status" etc.
 # ---------------------------------------------------------------------------
-COMMANDS=(start stop restart reset status listen logs qr tailscale package packages serve clean info update systemd uninstall record export help)
+COMMANDS=(start stop restart reset status listen logs qr tailscale package packages serve clean info update systemd uninstall record export save help)
 
 resolve_cmd() {
     local input="$1"
     # Exact match first (including aliases)
     case "$input" in
-        start|stop|restart|reset|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|help)
+        start|stop|restart|reset|status|listen|logs|qr|tailscale|package|packages|serve|clean|info|update|systemd|uninstall|record|export|save|help)
             echo "$input"; return ;;
         log) echo "logs"; return ;;
         pkg) echo "package"; return ;;
@@ -323,6 +324,24 @@ case "$cmd" in
     record)
         source "${LIB_DIR}/record.sh"
         cmd_record "$@"
+        ;;
+    save)
+        source "${LIB_DIR}/record.sh"
+        source "${LIB_DIR}/export.sh"
+        if ! record_is_running; then
+            log_error "Recorder is not running. Nothing to save."
+            exit 1
+        fi
+        session_id=$(record_latest_session_id)
+        log_step "Saving recording session${session_id:+ ${session_id}}"
+        record_stop
+        if [[ -n "$session_id" ]]; then
+            cmd_export --session-id "$session_id"
+        else
+            cmd_export
+        fi
+        record_start
+        log_ok "Session saved. New recording started."
         ;;
     export)
         source "${LIB_DIR}/export.sh"

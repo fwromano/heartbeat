@@ -176,6 +176,10 @@ heartbeat (CLI entry point)
   │                                ├─ cot_parser.py (XML framing)
   │                                └─ SQLite DB (cot_records.db)
   │
+  ├─ save ─────► record.sh ──► stop recorder
+  │              export.sh ──► export session → .gpkg
+  │              record.sh ──► restart recorder (new session)
+  │
   ├─ export ───► export.sh ──► exporter.py
   │                                ├─ raw mode: 4 layers (positions/markers/routes/areas)
   │                                └─ gcm mode: gcm_mapper.py + gcm-mapping.yml
