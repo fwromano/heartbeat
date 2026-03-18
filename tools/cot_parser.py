@@ -163,11 +163,21 @@ def extract_geometry_points(detail: ET.Element) -> list:
     return points
 
 
-def classify_event(event_type: str) -> str:
-    """Classify a CoT event type into a layer name by prefix matching."""
-    if event_type.startswith("a-f-"):
-        return "positions"
+def classify_event(event_type: str, how: str = "") -> str:
+    """Classify a CoT event type into a layer name.
+
+    For atom (a-*) events, the ``how`` field is the primary discriminator:
+    machine-generated (m-*) → positions, human-entered (h-*) → markers.
+    Falls back to affiliation when ``how`` is unavailable: a-f-* → positions.
+    """
     if event_type.startswith("a-"):
+        if how.startswith("m-"):
+            return "positions"
+        if how.startswith("h-"):
+            return "markers"
+        # Fallback: friendly SA is usually machine-generated
+        if event_type.startswith("a-f-"):
+            return "positions"
         return "markers"
     if event_type.startswith("b-m-p"):
         return "markers"

@@ -395,7 +395,7 @@ def export_raw(db_path: str, output_path: str, session_id: int | None = None):
         query += " ORDER BY time"
 
         for row in conn.execute(query, params):
-            layer = classify_event(row["event_type"])
+            layer = classify_event(row["event_type"], row["how"] or "")
             points = []
             if layer not in RAW_LAYERS:
                 points = load_geometry_points(conn, row["id"])
