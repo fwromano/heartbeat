@@ -425,11 +425,60 @@ serve_packages() {
 }
 
 # ---------------------------------------------------------------------------
+# Serve daemon process discovery
+# ---------------------------------------------------------------------------
+_serve_find_pids() {
+    # Match package_server.py instances launched from this heartbeat install.
+    pgrep -f "tools/package_server.py.*--packages-dir ${PACKAGES_DIR}" 2>/dev/null || true
+}
+
+_serve_stop_pid() {
+    local pid="${1:?missing pid}"
+    if ! kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+
+    kill "$pid" 2>/dev/null || true
+
+    local i=0
+    while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
+        sleep 1
+        i=$((i + 1))
+    done
+
+    if kill -0 "$pid" 2>/dev/null; then
+        log_warn "Package server PID ${pid} did not stop gracefully, forcing..."
+        kill -9 "$pid" 2>/dev/null || true
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # Serve daemon lifecycle
 # ---------------------------------------------------------------------------
 serve_start() {
     load_config
     local port="${1:-${HEARTBEAT_SERVE_PORT:-9000}}"
+
+    # Check PID file first
+    local existing_pids existing_pid_count primary_pid
+    existing_pids="$(_serve_find_pids)"
+    if [[ -n "$existing_pids" ]]; then
+        primary_pid=$(echo "$existing_pids" | head -n1)
+        existing_pid_count=$(echo "$existing_pids" | wc -l | tr -d ' ')
+        if [[ ! -f "$SERVE_PID" ]]; then
+            echo "$primary_pid" > "$SERVE_PID"
+        fi
+        if [[ "$existing_pid_count" -gt 1 ]]; then
+            log_warn "Multiple package server processes detected (${existing_pid_count}); keeping PID ${primary_pid}, stopping extras."
+            while IFS= read -r pid; do
+                [[ -n "$pid" ]] || continue
+                [[ "$pid" == "$primary_pid" ]] && continue
+                _serve_stop_pid "$pid"
+            done <<< "$existing_pids"
+        fi
+        log_warn "Package server already running (PID ${primary_pid})"
+        return 0
+    fi
 
     if [[ -f "$SERVE_PID" ]]; then
         local pid
@@ -463,29 +512,44 @@ serve_start() {
 
 serve_stop() {
     if [[ ! -f "$SERVE_PID" ]]; then
+        local orphan_pids
+        orphan_pids="$(_serve_find_pids)"
+        if [[ -z "$orphan_pids" ]]; then
+            return 0
+        fi
+
+        log_warn "Package server PID file missing; stopping detected process(es)."
+        while IFS= read -r pid; do
+            [[ -n "$pid" ]] || continue
+            log_step "Stopping package server (PID $pid)"
+            _serve_stop_pid "$pid"
+        done <<< "$orphan_pids"
+        log_ok "Package server stopped"
         return 0
     fi
 
     local pid
     pid=$(cat "$SERVE_PID")
+
     if ! kill -0 "$pid" 2>/dev/null; then
         rm -f "$SERVE_PID"
+        # PID file was stale — check for orphans too
+        local orphan_pids
+        orphan_pids="$(_serve_find_pids)"
+        if [[ -n "$orphan_pids" ]]; then
+            log_warn "Found untracked package server process(es); stopping them."
+            while IFS= read -r opid; do
+                [[ -n "$opid" ]] || continue
+                log_step "Stopping package server (PID $opid)"
+                _serve_stop_pid "$opid"
+            done <<< "$orphan_pids"
+            log_ok "Package server stopped"
+        fi
         return 0
     fi
 
     log_step "Stopping package server (PID $pid)"
-    kill "$pid" 2>/dev/null || true
-
-    local i=0
-    while kill -0 "$pid" 2>/dev/null && [[ $i -lt 10 ]]; do
-        sleep 1
-        i=$((i + 1))
-    done
-
-    if kill -0 "$pid" 2>/dev/null; then
-        log_warn "Package server did not stop gracefully, forcing..."
-        kill -9 "$pid" 2>/dev/null || true
-    fi
+    _serve_stop_pid "$pid"
 
     rm -f "$SERVE_PID"
     log_ok "Package server stopped"
@@ -500,17 +564,27 @@ serve_status() {
     echo -e "${DIM}══════════════════════════════════════════════${NC}"
     echo -e "  URL:       http://${SERVER_IP}:${port}/"
 
+    local state_printed="false"
     if [[ -f "$SERVE_PID" ]]; then
         local pid
         pid=$(cat "$SERVE_PID")
         if kill -0 "$pid" 2>/dev/null; then
             echo -e "  State:     ${GREEN}● running${NC} (PID $pid)"
+            state_printed="true"
         else
-            echo -e "  State:     ${RED}● stopped${NC} (stale PID)"
             rm -f "$SERVE_PID"
         fi
-    else
-        echo -e "  State:     ${RED}● stopped${NC}"
+    fi
+
+    if [[ "$state_printed" == "false" ]]; then
+        local orphan_pids orphan_pid
+        orphan_pids="$(_serve_find_pids)"
+        if [[ -n "$orphan_pids" ]]; then
+            orphan_pid=$(echo "$orphan_pids" | head -n1)
+            echo -e "  State:     ${YELLOW}● running${NC} (PID ${orphan_pid}, untracked)"
+        else
+            echo -e "  State:     ${RED}● stopped${NC}"
+        fi
     fi
 
     if [[ -f "$SERVE_LOG" ]]; then
