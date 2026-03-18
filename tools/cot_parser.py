@@ -165,8 +165,10 @@ def extract_geometry_points(detail: ET.Element) -> list:
 
 def classify_event(event_type: str) -> str:
     """Classify a CoT event type into a layer name by prefix matching."""
-    if event_type.startswith("a-"):
+    if event_type.startswith("a-f-"):
         return "positions"
+    if event_type.startswith("a-"):
+        return "markers"
     if event_type.startswith("b-m-p"):
         return "markers"
     if event_type.startswith("b-m-r"):
