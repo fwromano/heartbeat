@@ -80,6 +80,7 @@ Team:
 Recording & Export:
   record status        Check recorder status and event count
   record start|stop    Manually control recorder (auto-starts with server)
+  save                 Checkpoint: export current session and start fresh
   export [-o file]     Export recorded events to GeoPackage (.gpkg)
   export --gcm [-o f]  Export GCM (tactical geometry) only
 
@@ -164,6 +165,9 @@ Output files land in `data/exports/` — open directly in QGIS, ArcGIS, or any s
 ```bash
 # Check what's been recorded (during an operation)
 ./heartbeat record status
+
+# Checkpoint: export current session and start a fresh recording
+./heartbeat save
 
 # Manual export anytime (without stopping the server)
 ./heartbeat export -o tracks.gpkg
