@@ -52,7 +52,7 @@ generate_package() {
 
     ensure_dir "$PACKAGES_DIR"
 
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         _generate_opentak_package "$member_name" "$safe_name" "$pkg_path"
         return $?
     fi
@@ -342,7 +342,7 @@ serve_packages() {
 
     ensure_dir "$PACKAGES_DIR"
 
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         preferred_member="$(next_device_name)"
     else
         preferred_member="$(whoami)"
@@ -350,7 +350,7 @@ serve_packages() {
 
     # Ensure at least one package exists
     local pkg_file=""
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         use_opentak_auto="true"
         log_info "OpenTAK auto package mode: each download gets a unique device package."
         log_info "Fallback manual generation: ./heartbeat package \"name\""
@@ -385,7 +385,7 @@ serve_packages() {
     local cot_port="${COT_PORT}"
     local protocol="TCP"
 
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         cot_port="${SSL_COT_PORT:-8089}"
         protocol="SSL"
         download_section='<a class="download-btn" href="/next-package">Generate and Download My Device Package</a><p class="note">Each tap creates one unique package/certificate for one device.</p>'

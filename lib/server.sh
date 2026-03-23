@@ -9,7 +9,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # ---------------------------------------------------------------------------
 _load_backend() {
     load_config
-    local backend="${TAK_BACKEND:-freetak}"
+    local backend="${TAK_BACKEND:-opentak}"
     local backend_file="${LIB_DIR}/backends/${backend}.sh"
 
     if [[ ! -f "$backend_file" ]]; then
@@ -43,14 +43,14 @@ _load_backend() {
 }
 
 _backend_compose_dir() {
-    case "${TAK_BACKEND:-freetak}" in
+    case "${TAK_BACKEND:-opentak}" in
         opentak) echo "${DOCKER_DIR}/opentak" ;;
         *) echo "${DOCKER_DIR}" ;;
     esac
 }
 
 _backend_container_name() {
-    case "${TAK_BACKEND:-freetak}" in
+    case "${TAK_BACKEND:-opentak}" in
         opentak) echo "heartbeat-opentak" ;;
         *) echo "heartbeat-fts" ;;
     esac
@@ -154,7 +154,7 @@ server_status() {
         if $backend_running; then
             running=true
             echo -e "  State:   ${GREEN}● running${NC} (native)"
-            if [[ "${TAK_BACKEND:-freetak}" == "freetak" && -f "$PID_FILE" ]]; then
+            if [[ "${TAK_BACKEND:-opentak}" == "freetak" && -f "$PID_FILE" ]]; then
                 echo -e "  PID:     $(cat "$PID_FILE")"
             else
                 echo -e "  Service: opentakserver.service"
@@ -248,7 +248,7 @@ _show_api_health() {
     echo -e "  ${DIM}──────────────────────────────────${NC}"
 
     if [[ "$DEPLOY_MODE" == "docker" ]]; then
-        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "freetak" ]]; then
             # Query FTS REST API from inside container
             # Note: 401 means the API is up (requires auth); only connection
             # errors mean the API is truly down.
@@ -335,7 +335,7 @@ _show_recent_logs() {
         fi
     else
         local native_log="$LOG_FILE"
-        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
             native_log="${DATA_DIR}/opentak/logs/opentakserver.log"
         fi
         if [[ -f "$native_log" ]]; then
@@ -516,7 +516,7 @@ _show_running_info() {
         echo -e "${BOLD}TAK Server is starting${NC}"
     fi
     echo -e "${DIM}──────────────────────────────────${NC}"
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         echo -e "  ${BOLD}Preferred onboarding (OpenTAK):${NC}"
         echo -e "  Package URL:  ${CYAN}http://${SERVER_IP}:${HEARTBEAT_SERVE_PORT:-9000}/${NC}"
         echo -e "  SSL CoT:      ${CYAN}${SERVER_IP}:${SSL_COT_PORT:-8089}${NC}"
@@ -528,7 +528,7 @@ _show_running_info() {
     fi
 
     if [[ "$ready" == "true" ]]; then
-        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "freetak" ]]; then
             # Create default user and sync certificate package
             local user_result
             user_result=$(_create_default_user)
@@ -541,13 +541,13 @@ _show_running_info() {
         fi
 
         # Show QR code for FreeTAK quick-connect flow only.
-        if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "freetak" ]]; then
             if source "${LIB_DIR}/qr.sh" 2>/dev/null; then
                 show_qr_compact
             fi
         fi
     else
-        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
             log_info "Server still starting. Run ./heartbeat info in a moment."
         else
             log_info "Server still starting. Run ./heartbeat info or ./heartbeat qr in a moment."
@@ -558,14 +558,14 @@ _show_running_info() {
                 sleep 2
                 i=$((i + 1))
             done
-            if _server_ready && [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+            if _server_ready && [[ "${TAK_BACKEND:-opentak}" == "freetak" ]]; then
                 _create_default_user >/dev/null 2>&1 || true
                 _sync_fts_package >/dev/null 2>&1 || true
             fi
         ) &
     fi
 
-    if [[ "${TAK_BACKEND:-freetak}" == "freetak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "freetak" ]]; then
         echo -e "  ${DIM}./heartbeat qr           show QR code again${NC}"
     fi
     echo -e "  ${DIM}./heartbeat listen        live server monitor${NC}"
@@ -574,7 +574,7 @@ _show_running_info() {
 
 # Sync the default user's FTS certificate package to the packages dir
 _sync_fts_package() {
-    [[ "${TAK_BACKEND:-freetak}" != "freetak" ]] && return 0
+    [[ "${TAK_BACKEND:-opentak}" != "freetak" ]] && return 0
     [[ "$DEPLOY_MODE" != "docker" ]] && return 0
 
     local username="${FTS_USERNAME:-team}"
@@ -683,7 +683,7 @@ server_listen() {
             | _highlight_log_stream
     else
         local native_log="$LOG_FILE"
-        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
             native_log="${DATA_DIR}/opentak/logs/opentakserver.log"
         fi
         if [[ ! -f "$native_log" ]]; then

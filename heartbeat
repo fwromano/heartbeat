@@ -88,11 +88,11 @@ cmd_info() {
     echo ""
     echo -e "  Team:        ${TEAM_NAME}"
     echo -e "  Server IP:   ${CYAN}${SERVER_IP}${NC}"
-    echo -e "  Backend:     ${TAK_BACKEND:-freetak}"
+    echo -e "  Backend:     ${TAK_BACKEND:-opentak}"
     echo -e "  CoT Port:    ${CYAN}${COT_PORT}${NC} (TCP)"
     echo -e "  SSL Port:    ${SSL_COT_PORT}"
     echo -e "  API Port:    ${API_PORT}"
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         echo -e "  WebTAK:      ${CYAN}https://${SERVER_IP}:${WEBTAK_PORT:-8443}/${NC}"
     fi
     echo -e "  Mode:        ${DEPLOY_MODE}"
@@ -203,7 +203,7 @@ case "$cmd" in
         serve_stop 2>/dev/null || true
         source "${LIB_DIR}/server.sh"
         load_config
-        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
             # OpenTAK restart should recycle broker/dependencies to clear stale channels.
             server_reset
         else
@@ -284,7 +284,7 @@ case "$cmd" in
         source "${LIB_DIR}/server.sh"
         server_stop 2>/dev/null || true
         load_config
-        if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+        if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
             source "${LIB_DIR}/backends/opentak.sh"
             backend_uninstall
         fi
@@ -294,7 +294,7 @@ case "$cmd" in
         rm -f "${HEARTBEAT_DIR}/.config.nodes.json" "${HEARTBEAT_DIR}/.config.runtime.json" \
               "${HEARTBEAT_DIR}/package.json" 2>/dev/null
         rm -rf "${HEARTBEAT_DIR}/JsonDB" 2>/dev/null
-        if [[ "${TAK_BACKEND:-freetak}" != "opentak" ]] && has_docker; then
+        if [[ "${TAK_BACKEND:-opentak}" != "opentak" ]] && has_docker; then
             compose_cmd=$(get_compose_cmd)
             if [[ -n "$compose_cmd" ]]; then
                 (cd "$DOCKER_DIR" && $compose_cmd down -v 2>/dev/null) || true

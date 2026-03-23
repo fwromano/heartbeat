@@ -74,11 +74,12 @@ install_python_deps() {
 
     log_step "Installing Python dependencies for CoT tools"
     if pip3 install --quiet -r "$req" 2>/dev/null || \
-       python3 -m pip install --quiet -r "$req" 2>/dev/null; then
+       python3 -m pip install --quiet --break-system-packages -r "$req" 2>/dev/null || \
+       pip3 install --quiet --break-system-packages -r "$req" 2>/dev/null; then
         log_ok "Python dependencies installed (shapely, pyyaml)"
     else
         log_warn "Could not install Python dependencies automatically."
-        log_warn "Install manually: pip install -r tools/requirements.txt"
+        log_warn "Install manually: pip install --break-system-packages -r tools/requirements.txt"
     fi
 }
 
@@ -316,11 +317,25 @@ install_opentak_system_deps() {
         postgresql postgresql-postgis \
         rabbitmq-server \
         nginx libnginx-mod-stream \
-        openssl curl unzip git 2>/dev/null
+        openssl curl unzip zip git net-tools qrencode libgeos-dev 2>/dev/null
 
     sudo systemctl enable --now postgresql 2>/dev/null || true
     sudo systemctl enable --now rabbitmq-server 2>/dev/null || true
     sudo systemctl enable --now nginx 2>/dev/null || true
+
+    # Wait for PostgreSQL to accept connections before proceeding.
+    local pg_ready=false
+    for i in 1 2 3 4 5; do
+        if sudo -u postgres pg_isready -q 2>/dev/null; then
+            pg_ready=true
+            break
+        fi
+        sleep "$i"
+    done
+    if ! $pg_ready; then
+        log_warn "PostgreSQL may not be ready yet — continuing anyway"
+    fi
+
     log_ok "OpenTAK dependencies installed"
 }
 
@@ -668,7 +683,9 @@ install_webtak_ui() {
         2>/dev/null || true)
 
     if [[ -z "$ui_url" ]]; then
-        log_warn "Could not determine latest OpenTAK UI release URL"
+        log_warn "Could not download WebTAK UI (GitHub API unreachable or rate-limited)"
+        log_warn "WebTAK browser map on :8443 will not be available"
+        log_warn "Retry later with: sudo mkdir -p /var/www/html/opentakserver && manually install UI"
         return 0
     fi
 

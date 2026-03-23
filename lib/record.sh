@@ -130,7 +130,7 @@ record_start() {
     local target_label="${cot_host}:${cot_port}"
     local recorder_args=()
 
-    if [[ "${TAK_BACKEND:-freetak}" == "opentak" ]]; then
+    if [[ "${TAK_BACKEND:-opentak}" == "opentak" ]]; then
         # OpenTAK recorder path is SSL-only (mTLS) to capture all routed CoT types.
         local transport="${OTS_RECORDER_TRANSPORT:-ssl}"
         transport=$(echo "$transport" | tr '[:upper:]' '[:lower:]')
