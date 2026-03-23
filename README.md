@@ -4,19 +4,29 @@ TAK server deployment and management for teams.
 
 Heartbeat wraps [FreeTAKServer](https://github.com/FreeTAKTeam/FreeTakServer) (Lite) and [OpenTAK Server](https://github.com/brian7704/OpenTAKServer) (Standard) behind a single CLI so your team can share locations, draw routes, and drop annotations via [iTAK](https://apps.apple.com/us/app/itak/id1561656396) (iOS) and [ATAK](https://play.google.com/store/apps/details?id=com.atakmap.app.civ) (Android).
 
-## Quick Start
+## Install
 
 ```bash
-# First time only
-./setup.sh                    # picks backend, mode, ports, credentials
+git clone https://github.com/fwromano/heartbeat.git && cd heartbeat && ./setup.sh
+```
 
-# Start the server (recorder + package page auto-start)
-./heartbeat start
+That's one command. It clones the repo, drops you into it, and runs interactive setup. The default backend is OpenTAK (SSL, WebTAK, per-device certs) installed from the [heartbeat-fixes fork](https://github.com/fwromano/OpenTAKServer). Everything else — PostgreSQL, RabbitMQ, nginx, certs — is installed automatically.
 
-# Onboard devices
-# open http://SERVER_IP:9000 on each device
+For the lightweight option (FreeTAK, TCP-only, no certs):
 
-# After the operation
+```bash
+git clone https://github.com/fwromano/heartbeat.git && cd heartbeat && ./setup.sh --backend freetak
+```
+
+## Quick Start
+
+Once installed:
+
+```bash
+./heartbeat start             # server + recorder + package page auto-start
+
+# Onboard devices — open http://SERVER_IP:9000 on each phone
+
 ./heartbeat stop              # auto-exports recorded data to .gpkg
 ```
 
@@ -38,19 +48,19 @@ Heartbeat supports two TAK server backends through a pluggable abstraction layer
 | Default CoT port | 8087 | 8088 |
 
 ```bash
-# Lite (default)
+# Standard (default)
 ./setup.sh
 
-# Standard
-./setup.sh --backend opentak
+# Lite
+./setup.sh --backend freetak
 ```
 
 ## Requirements
 
 **Server** (any one of):
+- Linux with Python 3.10+ (OpenTAK — PostgreSQL, RabbitMQ, nginx are auto-installed)
 - Linux with Docker (FreeTAK Docker mode)
 - Linux with Python 3.8+ (FreeTAK native mode)
-- Linux with Python 3.10+, PostgreSQL, RabbitMQ, nginx (OpenTAK)
 
 **Clients** (team members' phones):
 - iPhone: [iTAK](https://apps.apple.com/us/app/itak/id1561656396) (free)
@@ -101,38 +111,38 @@ Notes:
 
 ## Setup Modes
 
-### FreeTAK - Docker (recommended for Lite)
+### OpenTAK - Native (default)
 
-Runs FreeTAKServer in an isolated container. Requires Docker and Docker Compose.
-
-```bash
-./setup.sh --docker
-```
-
-### FreeTAK - Native
-
-Installs FreeTAKServer into a Python virtualenv under `data/venv/`. No Docker needed.
+Installs OpenTAK Server from the [heartbeat-fixes fork](https://github.com/fwromano/OpenTAKServer) as native systemd services with PostgreSQL, RabbitMQ, and nginx.
 
 ```bash
-./setup.sh --native
-```
-
-### OpenTAK - Native (Standard tier)
-
-Installs OpenTAK Server as native systemd services with PostgreSQL, RabbitMQ, and nginx.
-
-```bash
-./setup.sh --backend opentak
+./setup.sh
 ```
 
 This gives you SSL certificates, per-device identity, WebTAK browser map on :8443, and reliable relay of lines/polygons/annotations between devices.
 
-To install OpenTAK from a fork/branch instead of PyPI, set:
+To use upstream OpenTAK or a different fork, override with environment variables:
 
 ```bash
-OTS_GIT_URL="https://github.com/fwromano/OpenTAKServer.git"
-OTS_GIT_REF="heartbeat-fixes"   # or main
-./setup.sh --backend opentak
+OTS_GIT_URL="https://github.com/brian7704/OpenTAKServer.git"
+OTS_GIT_REF="main"
+./setup.sh
+```
+
+### FreeTAK - Docker (Lite tier)
+
+Runs FreeTAKServer in an isolated container. Requires Docker and Docker Compose.
+
+```bash
+./setup.sh --backend freetak --docker
+```
+
+### FreeTAK - Native (Lite tier)
+
+Installs FreeTAKServer into a Python virtualenv under `data/venv/`. No Docker needed.
+
+```bash
+./setup.sh --backend freetak --native
 ```
 
 `setup.sh` persists these in `config/heartbeat.conf`, and `./heartbeat update` uses the same source.

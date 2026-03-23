@@ -7,8 +7,8 @@ and connecting phones in the field. The key invariant is:
 
 If there is no IP path, TAK will not connect.
 
-> **FreeTAK (Lite, default):** TCP only, no authentication. Phones connect directly -- no certs required.
-> **OpenTAK (Standard):** SSL with per-device certificates. Each device imports a unique connection package.
+> **OpenTAK (Standard, default):** SSL with per-device certificates. Each device imports a unique connection package.
+> **FreeTAK (Lite):** TCP only, no authentication. Phones connect directly -- no certs required.
 
 ## Glossary (quick)
 - Server: the machine running Heartbeat + TAK backend (FreeTAK or OpenTAK)

@@ -18,7 +18,7 @@ HEARTBEAT_SERVE_PORT=9000    # Package page port
 # ---------------------------------------------------------------------------
 # Backend
 # ---------------------------------------------------------------------------
-TAK_BACKEND="freetak"   # Options: freetak (default), opentak
+TAK_BACKEND="opentak"   # Options: opentak (default), freetak
 
 # OpenTAK-specific (only used when TAK_BACKEND=opentak)
 WEBTAK_PORT=8443        # WebTAK HTTPS interface

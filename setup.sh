@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --interactive    Ask questions during setup"
             echo "  --docker         Force Docker deployment"
             echo "  --native         Force native pip deployment"
-            echo "  --backend NAME   TAK backend: freetak (default), opentak"
+            echo "  --backend NAME   TAK backend: opentak (default), freetak"
             echo "  --team \"Name\"    Set team/org name"
             echo "  --server-ip IP   Set server IP/hostname for clients"
             echo "  --username NAME  Default TAK/WebTAK username"
@@ -70,7 +70,7 @@ done
 # Auto-detect safe ports (skip ports already in use)
 # ---------------------------------------------------------------------------
 auto_ports() {
-    local backend="${1:-freetak}"
+    local backend="${1:-opentak}"
     local cot ssl api dp
 
     case "$backend" in
@@ -131,9 +131,9 @@ main() {
     local prev_autoserve=""
     local prev_serve_port=""
 
-    # Default backend for fresh installs: FreeTAK.
+    # Default backend for fresh installs: OpenTAK (heartbeat fork).
     if [[ -z "$backend" ]]; then
-        backend="freetak"
+        backend="opentak"
     fi
 
     case "$backend" in
@@ -379,8 +379,8 @@ main() {
     fi
 
     local ots_recorder_cert_user="${prev_ots_cert_user:-$fts_user}"
-    local ots_git_url="${OTS_GIT_URL:-${prev_ots_git_url:-}}"
-    local ots_git_ref="${OTS_GIT_REF:-${prev_ots_git_ref:-}}"
+    local ots_git_url="${OTS_GIT_URL:-${prev_ots_git_url:-https://github.com/fwromano/OpenTAKServer.git}}"
+    local ots_git_ref="${OTS_GIT_REF:-${prev_ots_git_ref:-heartbeat-fixes}}"
     local heartbeat_autoserve="${prev_autoserve:-true}"
     local heartbeat_serve_port="${prev_serve_port:-9000}"
     if [[ -n "$ots_git_url" && -z "$ots_git_ref" ]]; then
