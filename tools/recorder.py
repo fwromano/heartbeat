@@ -131,8 +131,10 @@ class CotRecorder:
         self.running = True
         self.sock = None
         self.session_id = None
-        self.recorder_uid = f"heartbeat-recorder-{uuid.uuid4()}"
-        self.recorder_callsign = f"HB-REC-{uuid.uuid4().hex[:8]}"
+        # Stable identity built from real info so it's recognizable in OTS.
+        hostname = socket.gethostname()
+        self.recorder_uid = f"heartbeat-recorder-{hostname}"
+        self.recorder_callsign = f"HB-REC-{hostname}"
         self.received_foreign_event = False
 
         # Set up logging
