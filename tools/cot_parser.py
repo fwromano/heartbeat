@@ -166,16 +166,18 @@ def extract_geometry_points(detail: ET.Element) -> list:
 def classify_event(event_type: str, how: str = "") -> str:
     """Classify a CoT event type into a layer name.
 
-    For atom (a-*) events, the ``how`` field is the primary discriminator:
-    machine-generated (m-*) → positions, human-entered (h-*) → markers.
-    Falls back to affiliation when ``how`` is unavailable: a-f-* → positions.
+    Friendly ground SA (a-f-G) is always a position regardless of ``how``,
+    because ATAK sends h-g-i-g-o / h-e for automatic SA reports.
+    For other atoms, ``how`` discriminates: m-* → positions, h-* → markers.
     """
     if event_type.startswith("a-"):
+        # Friendly ground units are always SA position reports
+        if event_type.startswith("a-f-G"):
+            return "positions"
         if how.startswith("m-"):
             return "positions"
         if how.startswith("h-"):
             return "markers"
-        # Fallback: friendly SA is usually machine-generated
         if event_type.startswith("a-f-"):
             return "positions"
         return "markers"
