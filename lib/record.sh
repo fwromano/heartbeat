@@ -154,10 +154,17 @@ record_start() {
         fi
         cert_user=$(_opentak_pick_recorder_cert_user "$ots_dir" "$preferred_cert_user" "$fallback_cert_user")
         if [[ -z "$cert_user" ]]; then
-            log_error "OpenTAK recorder cert/key not found."
-            log_error "Expected under: ${ots_dir}/ca/certs/<user>/<user>.pem and .key/.nopass.key"
-            log_error "Generate at least one user package/cert first, then retry."
-            return 1
+            # No cert exists yet (fresh install). Auto-generate one for the recorder.
+            cert_user="$preferred_cert_user"
+            log_info "No recorder cert found — generating one for '${cert_user}'"
+            source "${LIB_DIR}/package.sh"
+            ensure_dir "$PACKAGES_DIR"
+            local _pkg_path="${PACKAGES_DIR}/${cert_user}.zip"
+            if ! _generate_opentak_package "$cert_user" "$cert_user" "$_pkg_path"; then
+                log_error "Failed to auto-generate recorder cert for '${cert_user}'."
+                log_error "Try manually: ./heartbeat package \"${cert_user}\""
+                return 1
+            fi
         fi
         if [[ "$cert_user" != "$preferred_cert_user" ]]; then
             log_warn "Recorder cert user '${preferred_cert_user}' not found, using '${cert_user}'"
