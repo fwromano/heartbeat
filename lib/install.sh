@@ -480,8 +480,8 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
 
-    location /SocketIO/ {
-        proxy_pass http://127.0.0.1:8081/SocketIO/;
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:8081/socket.io/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -521,8 +521,8 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
 
-    location /SocketIO/ {
-        proxy_pass http://127.0.0.1:8081/SocketIO/;
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:8081/socket.io/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
